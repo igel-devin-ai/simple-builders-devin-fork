@@ -6,14 +6,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.testing.compile.Compilation;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Set;
 import javax.tools.JavaFileObject;
 import org.javahelpers.simple.builders.core.enums.AccessModifier;
 import org.javahelpers.simple.builders.core.enums.FormattingMode;
 import org.javahelpers.simple.builders.core.enums.OptionState;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
+import org.javahelpers.simple.builders.processor.testing.FormatterProfileTestUtils;
 import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests ensuring all configuration options are properly handled.
@@ -45,63 +51,20 @@ class ConfigurationProcessingTest {
    *   <li>Add the parameter to BuilderConfiguration record
    *   <li>Add builder methods in BuilderConfiguration.Builder
    *   <li>Update DEFAULT configuration
-   *   <li>Update this test to include the new option
+   *   <li>Update these tests to include the new option
    * </ol>
    */
   @Test
   void allConfigurationOptions_MustBeSettableViaBuilder() {
-    // This test will fail to compile if any builder method is missing
-    BuilderConfiguration config =
-        BuilderConfiguration.builder()
-            // Field setter generation options
-            .generateSupplier(OptionState.ENABLED)
-            .generateConsumer(OptionState.ENABLED)
-            .generateBuilderConsumer(OptionState.ENABLED)
-            // Conditional logic
-            .generateConditionalLogic(OptionState.ENABLED)
-            // Access control
-            .builderAccess(AccessModifier.PACKAGE_PRIVATE)
-            .builderConstructorAccess(AccessModifier.PRIVATE)
-            .methodAccess(AccessModifier.PACKAGE_PRIVATE)
-            // Helper method generation
-            .generateVarArgsHelpers(OptionState.ENABLED)
-            .generateStringFormatHelpers(OptionState.ENABLED)
-            .generateUnboxedOptional(OptionState.ENABLED)
-            .copyTypeAnnotations(OptionState.ENABLED)
-            // Collection builder options
-            .usingArrayListBuilder(OptionState.ENABLED)
-            .usingArrayListBuilderWithElementBuilders(OptionState.ENABLED)
-            .usingHashSetBuilder(OptionState.ENABLED)
-            .usingHashSetBuilderWithElementBuilders(OptionState.ENABLED)
-            .usingHashMapBuilder(OptionState.ENABLED)
-            // Annotations
-            .usingGeneratedAnnotation(OptionState.ENABLED)
-            .usingBuilderImplementationAnnotation(OptionState.ENABLED)
-            // Integration
-            .implementsBuilderBase(OptionState.ENABLED)
-            .generateWithInterface(OptionState.ENABLED)
-            .usingJacksonDeserializerAnnotation(OptionState.ENABLED)
-            .generateJacksonModule(OptionState.ENABLED)
-            // Documentation
-            .generateJavaDoc(OptionState.ENABLED)
-            // Naming
-            .builderSuffix("Builder")
-            .setterSuffix("")
-            // Formatting
-            .formattingMode("lightweight")
-            .build();
-
-    // Verify all options are accessible (this will fail to compile if accessors are missing)
+    BuilderConfiguration config = buildFullyConfigured();
     assertNotNull(config);
     assertEquals(OptionState.ENABLED, config.generateFieldSupplier());
     assertEquals(OptionState.ENABLED, config.generateFieldConsumer());
     assertEquals(OptionState.ENABLED, config.generateBuilderConsumer());
     assertEquals(OptionState.ENABLED, config.generateConditionalHelper());
-    assertEquals(AccessModifier.PACKAGE_PRIVATE, config.getBuilderAccess());
-    assertEquals(AccessModifier.PRIVATE, config.getBuilderConstructorAccess());
-    assertEquals(AccessModifier.PACKAGE_PRIVATE, config.getMethodAccess());
     assertEquals(OptionState.ENABLED, config.generateVarArgsHelpers());
     assertEquals(OptionState.ENABLED, config.generateStringFormatHelpers());
+    assertEquals(OptionState.ENABLED, config.generateUpdateHelpers());
     assertEquals(OptionState.ENABLED, config.generateUnboxedOptional());
     assertEquals(OptionState.ENABLED, config.copyTypeAnnotations());
     assertEquals(OptionState.ENABLED, config.usingArrayListBuilder());
@@ -116,9 +79,92 @@ class ConfigurationProcessingTest {
     assertEquals(OptionState.ENABLED, config.usingJacksonDeserializerAnnotation());
     assertEquals(OptionState.ENABLED, config.generateJacksonModule());
     assertEquals(OptionState.ENABLED, config.generateJavaDoc());
+  }
+
+  @Test
+  void allConfigurationOptions_AccessNamingAndFormatting_MustBeReadable() {
+    BuilderConfiguration config = buildFullyConfigured();
+
+    assertEquals(AccessModifier.PACKAGE_PRIVATE, config.getBuilderAccess());
+    assertEquals(AccessModifier.PRIVATE, config.getBuilderConstructorAccess());
+    assertEquals(AccessModifier.PACKAGE_PRIVATE, config.getMethodAccess());
     assertEquals("Builder", config.getBuilderSuffix());
     assertEquals("", config.getSetterSuffix());
     assertEquals("lightweight", config.formattingMode());
+    assertEquals(Set.of("a.b"), config.getBuilderGenerationPackagesSet());
+    assertEquals(Set.of("c.d"), config.getBuilderUsagePackagesSet());
+  }
+
+  @Test
+  void compilerArguments_FormatterProfile_UsesCustomProfile(@TempDir Path tempDir)
+      throws IOException {
+    Path profilePath =
+        FormatterProfileTestUtils.createFormatterProfile(
+            tempDir, Map.of("org.eclipse.jdt.core.formatter.tabulation.char", "tab"));
+
+    JavaFileObject source =
+        ProcessorTestUtils.simpleBuilderClass(
+            "test",
+            "FormatterProfileDto",
+            """
+            private String name;
+            public String getName() { return name; }
+            public void setName(String name) { this.name = name; }
+            """);
+    Compilation compilation =
+        ProcessorTestUtils.createCompiler()
+            .withOptions("-Asimplebuilder.formatterProfile=" + profilePath)
+            .compile(source);
+
+    assertThat(compilation).succeeded();
+    String generated =
+        ProcessorTestUtils.loadGeneratedSource(compilation, "FormatterProfileDtoBuilder");
+    assertTrue(generated.contains("\t"), "Custom formatter profile should produce tab indentation");
+  }
+
+  private static BuilderConfiguration buildFullyConfigured() {
+    return BuilderConfiguration.builder()
+        // Field setter generation options
+        .generateSupplier(OptionState.ENABLED)
+        .generateConsumer(OptionState.ENABLED)
+        .generateBuilderConsumer(OptionState.ENABLED)
+        // Conditional logic
+        .generateConditionalLogic(OptionState.ENABLED)
+        // Access control
+        .builderAccess(AccessModifier.PACKAGE_PRIVATE)
+        .builderConstructorAccess(AccessModifier.PRIVATE)
+        .methodAccess(AccessModifier.PACKAGE_PRIVATE)
+        // Helper method generation
+        .generateVarArgsHelpers(OptionState.ENABLED)
+        .generateStringFormatHelpers(OptionState.ENABLED)
+        .generateUpdateHelpers(OptionState.ENABLED)
+        .generateUnboxedOptional(OptionState.ENABLED)
+        .copyTypeAnnotations(OptionState.ENABLED)
+        // Collection builder options
+        .usingArrayListBuilder(OptionState.ENABLED)
+        .usingArrayListBuilderWithElementBuilders(OptionState.ENABLED)
+        .usingHashSetBuilder(OptionState.ENABLED)
+        .usingHashSetBuilderWithElementBuilders(OptionState.ENABLED)
+        .usingHashMapBuilder(OptionState.ENABLED)
+        // Annotations
+        .usingGeneratedAnnotation(OptionState.ENABLED)
+        .usingBuilderImplementationAnnotation(OptionState.ENABLED)
+        // Integration
+        .implementsBuilderBase(OptionState.ENABLED)
+        .generateWithInterface(OptionState.ENABLED)
+        .usingJacksonDeserializerAnnotation(OptionState.ENABLED)
+        .generateJacksonModule(OptionState.ENABLED)
+        // Documentation
+        .generateJavaDoc(OptionState.ENABLED)
+        // Naming
+        .builderSuffix("Builder")
+        .setterSuffix("")
+        // Formatting
+        .formattingMode("lightweight")
+        // Builder scoping
+        .builderGenerationPackages("a.b")
+        .builderUsagePackages("c.d")
+        .build();
   }
 
   /**
@@ -210,6 +256,7 @@ class ConfigurationProcessingTest {
                 "-Asimplebuilder.methodAccess=PACKAGE_PRIVATE",
                 "-Asimplebuilder.generateVarArgsHelpers=false",
                 "-Asimplebuilder.generateStringFormatHelpers=false",
+                "-Asimplebuilder.generateUpdateHelpers=false",
                 "-Asimplebuilder.generateUnboxedOptional=false",
                 "-Asimplebuilder.copyTypeAnnotations=false",
                 "-Asimplebuilder.usingArrayListBuilder=false",
@@ -396,6 +443,7 @@ class ConfigurationProcessingTest {
         import java.util.function.BooleanSupplier;
         import java.util.function.Consumer;
         import java.util.function.Supplier;
+        import java.util.function.UnaryOperator;
         import javax.annotation.processing.Generated;
         import org.apache.commons.lang3.builder.ToStringBuilder;
         import org.javahelpers.simple.builders.core.annotations.BuilderImplementation;
@@ -420,11 +468,6 @@ class ConfigurationProcessingTest {
             return new PersonDtoBuilder();
           }
 
-          public PersonDtoBuilder name(String name) {
-            this.name = changedValue(name);
-            return this;
-          }
-
           public PersonDtoBuilder name(Consumer<StringBuilder> nameStringBuilderConsumer) {
             StringBuilder builder = new StringBuilder();
             nameStringBuilderConsumer.accept(builder);
@@ -439,6 +482,19 @@ class ConfigurationProcessingTest {
 
           public PersonDtoBuilder name(String format, Object... args) {
             this.name = changedValue(String.format(format, args));
+            return this;
+          }
+
+          public PersonDtoBuilder name(String name) {
+            this.name = changedValue(name);
+            return this;
+          }
+
+          public PersonDtoBuilder nameUpdate(UnaryOperator<String> nameUpdater) {
+            if (!this.name.isSet()) {
+              throw new IllegalStateException("Cannot update 'name' before it is set");
+            }
+            this.name = changedValue(nameUpdater.apply(this.name.value()));
             return this;
           }
 
@@ -511,6 +567,8 @@ class ConfigurationProcessingTest {
             .generateConsumer(OptionState.ENABLED)
             .builderAccess(AccessModifier.PUBLIC)
             .setterSuffix("")
+            .builderGenerationPackages("base.pkg")
+            .builderUsagePackages("base.lib")
             .build();
 
     // When: Merge with override configuration
@@ -519,6 +577,7 @@ class ConfigurationProcessingTest {
             .generateSupplier(OptionState.DISABLED) // Override
             .generateBuilderConsumer(OptionState.DISABLED) // New value
             .setterSuffix("with") // Override setterSuffix
+            .builderGenerationPackages("override.pkg")
             // generateConsumer not set, should keep base value
             .build();
 
@@ -540,6 +599,8 @@ class ConfigurationProcessingTest {
         merged.getBuilderAccess(),
         "Base value should be kept when override is DEFAULT");
     assertEquals("with", merged.getSetterSuffix(), "Override should win for setterSuffix");
+    assertEquals(Set.of("override.pkg"), merged.getBuilderGenerationPackagesSet());
+    assertEquals(Set.of("base.lib"), merged.getBuilderUsagePackagesSet());
   }
 
   /** Merge logic test for formattingMode: Annotation value must override compiler arg default. */

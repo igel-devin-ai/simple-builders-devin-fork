@@ -6,6 +6,7 @@ import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import javax.annotation.processing.Generated;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.simple.builders.core.annotations.BuilderImplementation;
@@ -28,12 +29,15 @@ import org.javahelpers.simple.builders.core.util.TrackedValue;
  *     .name("Hello %s", "World")
  *     .name(() -> "example value")
  *     .name(sb -> sb.append("text"))
+ *     .nameUpdate(String::trim)
  *     .price(3.14)
  *     .price(() -> 3.14)
+ *     .priceUpdate(Math::abs)
  *     .category("example value")
  *     .category("Hello %s", "World")
  *     .category(() -> "example value")
  *     .category(sb -> sb.append("text"))
+ *     .categoryUpdate(String::trim)
  *     .build();
  * }</pre>
  */
@@ -84,26 +88,6 @@ public class ProductRecordBuilder implements IBuilderBase<ProductRecord> {
    */
   public static ProductRecordBuilder create() {
     return new ProductRecordBuilder();
-  }
-
-  /**
-   * Sets the value for <code>category</code>.
-   * <p>
-   * Generated from parameter in constructor {@link ProductRecord#ProductRecord(String, double, String)
-   * ProductRecord(String name, double price, String category)}
-   * 
-   * <h4>Example:</h4>
-   * 
-   * <pre>{@code
-   * builder.category("example value");
-   * }</pre>
-   * 
-   * @param category category
-   * @return current instance of builder
-   */
-  public ProductRecordBuilder category(String category) {
-    this.category = changedValue(category);
-    return this;
   }
 
   /**
@@ -171,7 +155,7 @@ public class ProductRecordBuilder implements IBuilderBase<ProductRecord> {
   }
 
   /**
-   * Sets the value for <code>name</code>.
+   * Sets the value for <code>category</code>.
    * <p>
    * Generated from parameter in constructor {@link ProductRecord#ProductRecord(String, double, String)
    * ProductRecord(String name, double price, String category)}
@@ -179,14 +163,41 @@ public class ProductRecordBuilder implements IBuilderBase<ProductRecord> {
    * <h4>Example:</h4>
    * 
    * <pre>{@code
-   * builder.name("example value");
+   * builder.category("example value");
    * }</pre>
    * 
-   * @param name name
+   * @param category category
    * @return current instance of builder
    */
-  public ProductRecordBuilder name(String name) {
-    this.name = changedValue(name);
+  public ProductRecordBuilder category(String category) {
+    this.category = changedValue(category);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>category</code> in place by applying the given operator, instead of reading it
+   * out, changing it and setting it again. Useful for adjustments relative to the current value, e.g. trimming,
+   * upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify flow. The
+   * value must have been set before (directly or via an existing instance).
+   * <p>
+   * Generated from parameter in constructor {@link ProductRecord#ProductRecord(String, double, String)
+   * ProductRecord(String name, double price, String category)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.category("example value").categoryUpdate(String::trim);
+   * }</pre>
+   * 
+   * @param categoryUpdater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>category</code> has not been set yet
+   */
+  public ProductRecordBuilder categoryUpdate(UnaryOperator<String> categoryUpdater) {
+    if (!this.category.isSet()) {
+      throw new IllegalStateException("Cannot update 'category' before it is set");
+    }
+    this.category = changedValue(categoryUpdater.apply(this.category.value()));
     return this;
   }
 
@@ -255,7 +266,7 @@ public class ProductRecordBuilder implements IBuilderBase<ProductRecord> {
   }
 
   /**
-   * Sets the value for <code>price</code>.
+   * Sets the value for <code>name</code>.
    * <p>
    * Generated from parameter in constructor {@link ProductRecord#ProductRecord(String, double, String)
    * ProductRecord(String name, double price, String category)}
@@ -263,14 +274,41 @@ public class ProductRecordBuilder implements IBuilderBase<ProductRecord> {
    * <h4>Example:</h4>
    * 
    * <pre>{@code
-   * builder.price(3.14);
+   * builder.name("example value");
    * }</pre>
    * 
-   * @param price price
+   * @param name name
    * @return current instance of builder
    */
-  public ProductRecordBuilder price(double price) {
-    this.price = changedValue(price);
+  public ProductRecordBuilder name(String name) {
+    this.name = changedValue(name);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>name</code> in place by applying the given operator, instead of reading it out,
+   * changing it and setting it again. Useful for adjustments relative to the current value, e.g. trimming,
+   * upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify flow. The
+   * value must have been set before (directly or via an existing instance).
+   * <p>
+   * Generated from parameter in constructor {@link ProductRecord#ProductRecord(String, double, String)
+   * ProductRecord(String name, double price, String category)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.name("example value").nameUpdate(String::trim);
+   * }</pre>
+   * 
+   * @param nameUpdater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>name</code> has not been set yet
+   */
+  public ProductRecordBuilder nameUpdate(UnaryOperator<String> nameUpdater) {
+    if (!this.name.isSet()) {
+      throw new IllegalStateException("Cannot update 'name' before it is set");
+    }
+    this.name = changedValue(nameUpdater.apply(this.name.value()));
     return this;
   }
 
@@ -291,6 +329,53 @@ public class ProductRecordBuilder implements IBuilderBase<ProductRecord> {
    */
   public ProductRecordBuilder price(Supplier<Double> priceSupplier) {
     this.price = changedValue(priceSupplier.get());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>price</code>.
+   * <p>
+   * Generated from parameter in constructor {@link ProductRecord#ProductRecord(String, double, String)
+   * ProductRecord(String name, double price, String category)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.price(3.14);
+   * }</pre>
+   * 
+   * @param price price
+   * @return current instance of builder
+   */
+  public ProductRecordBuilder price(double price) {
+    this.price = changedValue(price);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>price</code> in place by applying the given operator, instead of reading it out,
+   * changing it and setting it again. Useful for adjustments relative to the current value, e.g. trimming,
+   * upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify flow. The
+   * value must have been set before (directly or via an existing instance).
+   * <p>
+   * Generated from parameter in constructor {@link ProductRecord#ProductRecord(String, double, String)
+   * ProductRecord(String name, double price, String category)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.price(3.14).priceUpdate(Math::abs);
+   * }</pre>
+   * 
+   * @param priceUpdater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>price</code> has not been set yet
+   */
+  public ProductRecordBuilder priceUpdate(UnaryOperator<Double> priceUpdater) {
+    if (!this.price.isSet()) {
+      throw new IllegalStateException("Cannot update 'price' before it is set");
+    }
+    this.price = changedValue(priceUpdater.apply(this.price.value()));
     return this;
   }
 

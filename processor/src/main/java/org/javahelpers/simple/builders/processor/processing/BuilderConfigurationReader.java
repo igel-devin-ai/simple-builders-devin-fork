@@ -28,7 +28,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -36,7 +38,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.OptionState;
 import org.javahelpers.simple.builders.processor.exceptions.BuilderException;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
 import org.javahelpers.simple.builders.processor.processing.logging.ProcessingLogger;
@@ -135,6 +136,42 @@ public class BuilderConfigurationReader {
 
     // Validate access modifiers and warn about problematic configurations
     validateAccessModifiers(element, result);
+    validatePackageName(element, result);
+
+    logger.debugEndOperation("Resulting configuration resolved: %s", result.toString());
+    return result;
+  }
+
+  /**
+   * Resolves the complete builder configuration for a {@code @SimpleBuilderFor} holder.
+   *
+   * <p>Unlike {@link #resolveConfiguration(Element)}, no template annotations of the target type
+   * are considered - the type is typically external and must not be modified, so its annotations
+   * (if any) do not participate in configuration. The configuration is composed of the built-in
+   * defaults, the global compiler arguments, and the {@code options()} of the
+   * {@code @SimpleBuilderFor} annotation instance found on the given element.
+   *
+   * @param element the {@code @SimpleBuilderFor} holder (used for validation messages)
+   * @param annotationInstance one {@code @SimpleBuilderFor} annotation instance on the element;
+   *     repeated declarations each resolve their own configuration
+   * @return the fully resolved configuration with all sources merged
+   */
+  public BuilderConfiguration resolveHolderConfiguration(
+      Element element, AnnotationMirror annotationInstance) throws BuilderException {
+    Objects.requireNonNull(element, "element must not be null");
+    Objects.requireNonNull(annotationInstance, "annotationInstance must not be null");
+    String elementName = element.getSimpleName().toString();
+    logger.debugStartOperation(
+        "Resolving configuration for @SimpleBuilderFor target: %s", elementName);
+
+    BuilderConfiguration optionsConfig = extractOptionsFromAnnotationMirror(annotationInstance);
+
+    BuilderConfiguration result =
+        BuilderConfiguration.DEFAULT.merge(globalConfiguration).merge(optionsConfig);
+
+    // Validate access modifiers and warn about problematic configurations
+    validateAccessModifiers(element, result);
+    validatePackageName(element, result);
 
     logger.debugEndOperation("Resulting configuration resolved: %s", result.toString());
     return result;
@@ -286,71 +323,28 @@ public class BuilderConfigurationReader {
 
     BuilderConfiguration.Builder builder = BuilderConfiguration.builder();
 
-    for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
-        values.entrySet()) {
-      String name = entry.getKey().getSimpleName().toString();
-      Object value = entry.getValue().getValue();
-      String enumValue = extractEnumName(value);
-
-      switch (name) {
-        case "generateFieldSupplier" -> builder.generateSupplier(OptionState.valueOf(enumValue));
-        case "generateFieldConsumer" -> builder.generateConsumer(OptionState.valueOf(enumValue));
-        case "generateBuilderConsumer" ->
-            builder.generateBuilderConsumer(OptionState.valueOf(enumValue));
-        case "generateConditionalHelper" ->
-            builder.generateConditionalLogic(OptionState.valueOf(enumValue));
-        case "builderAccess" -> builder.builderAccess(AccessModifier.valueOf(enumValue));
-        case "builderConstructorAccess" ->
-            builder.builderConstructorAccess(AccessModifier.valueOf(enumValue));
-        case "methodAccess" -> builder.methodAccess(AccessModifier.valueOf(enumValue));
-        case "generateVarArgsHelpers" ->
-            builder.generateVarArgsHelpers(OptionState.valueOf(enumValue));
-        case "generateStringFormatHelpers" ->
-            builder.generateStringFormatHelpers(OptionState.valueOf(enumValue));
-        case "generateAddToCollectionHelpers" ->
-            builder.generateAddToCollectionHelpers(OptionState.valueOf(enumValue));
-        case "generateUnboxedOptional" ->
-            builder.generateUnboxedOptional(OptionState.valueOf(enumValue));
-        case "copyTypeAnnotations" -> builder.copyTypeAnnotations(OptionState.valueOf(enumValue));
-        case "usingArrayListBuilder" ->
-            builder.usingArrayListBuilder(OptionState.valueOf(enumValue));
-        case "usingArrayListBuilderWithElementBuilders" ->
-            builder.usingArrayListBuilderWithElementBuilders(OptionState.valueOf(enumValue));
-        case "usingHashSetBuilder" -> builder.usingHashSetBuilder(OptionState.valueOf(enumValue));
-        case "usingHashSetBuilderWithElementBuilders" ->
-            builder.usingHashSetBuilderWithElementBuilders(OptionState.valueOf(enumValue));
-        case "usingHashMapBuilder" -> builder.usingHashMapBuilder(OptionState.valueOf(enumValue));
-        case "usingGeneratedAnnotation" ->
-            builder.usingGeneratedAnnotation(OptionState.valueOf(enumValue));
-        case "usingBuilderImplementationAnnotation" ->
-            builder.usingBuilderImplementationAnnotation(OptionState.valueOf(enumValue));
-        case "implementsBuilderBase" ->
-            builder.implementsBuilderBase(OptionState.valueOf(enumValue));
-        case "generateWithInterface" ->
-            builder.generateWithInterface(OptionState.valueOf(enumValue));
-        case "usingJacksonDeserializerAnnotation" ->
-            builder.usingJacksonDeserializerAnnotation(OptionState.valueOf(enumValue));
-        case "generateJacksonModule" ->
-            builder.generateJacksonModule(OptionState.valueOf(enumValue));
-        case "generateJavaDoc" -> builder.generateJavaDoc(OptionState.valueOf(enumValue));
-        case "jacksonModulePackage" -> builder.jacksonModulePackage(value.toString());
-        case "builderSuffix" -> builder.builderSuffix(value.toString());
-        case "setterSuffix" -> builder.setterSuffix(value.toString());
-        case "formattingMode" -> builder.formattingMode(value.toString());
-        default ->
-            logger.warning(
-                "Unknown configuration option '%s' with value '%s' - ignoring", name, value);
-      }
-    }
+    values.entrySet().forEach(entry -> applyOption(builder, entry.getKey(), entry.getValue()));
 
     return builder.build();
   }
 
-  private String extractEnumName(Object value) {
-    String enumString = value.toString();
-    return enumString.contains(".")
-        ? enumString.substring(enumString.lastIndexOf('.') + 1)
-        : enumString;
+  private void applyOption(
+      BuilderConfiguration.Builder builder,
+      ExecutableElement key,
+      AnnotationValue annotationValue) {
+    String name = key.getSimpleName().toString();
+    Object value = annotationValue.getValue();
+    CompilerArgumentsEnum option = CompilerArgumentsEnum.fromOptionName(name);
+    if (isNotABuilderOption(option)) {
+      logger.warning("Unknown configuration option '%s' with value '%s' - ignoring", name, value);
+      return;
+    }
+    option.apply(builder, value, logger);
+  }
+
+  /** Returns whether the option is unknown or not settable via @SimpleBuilder.Options. */
+  private static boolean isNotABuilderOption(CompilerArgumentsEnum option) {
+    return option == null || !option.hasValueApplier();
   }
 
   private enum AnnotationScope {
@@ -433,6 +427,23 @@ public class BuilderConfigurationReader {
               + "inaccessible and the builder unusable. "
               + "Use PUBLIC or PACKAGE_PRIVATE instead.",
           elementName);
+    }
+  }
+
+  /**
+   * Validates the {@code packageName} option and throws an exception for values that are not a
+   * valid Java package name.
+   *
+   * @param element the element being processed
+   * @param config the resolved configuration
+   * @throws BuilderException if the configured package name is invalid
+   */
+  private static void validatePackageName(Element element, BuilderConfiguration config)
+      throws BuilderException {
+    String packageName = config.getPackageName();
+    if (packageName != null && !SourceVersion.isName(packageName)) {
+      throw new BuilderException(
+          element, "Option packageName '%s' is not a valid Java package name", packageName);
     }
   }
 }

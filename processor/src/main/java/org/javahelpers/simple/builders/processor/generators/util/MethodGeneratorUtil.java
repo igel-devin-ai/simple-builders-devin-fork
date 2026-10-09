@@ -35,7 +35,9 @@ import org.javahelpers.simple.builders.processor.model.core.FieldDto;
 import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.model.method.MethodParameterDto;
+import org.javahelpers.simple.builders.processor.model.type.BuilderInstantiation;
 import org.javahelpers.simple.builders.processor.model.type.GenericParameterDto;
+import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
 import org.javahelpers.simple.builders.processor.model.type.TypeNameList;
@@ -205,7 +207,8 @@ public final class MethodGeneratorUtil {
    * Creates a field consumer method that accepts a builder for the field value.
    *
    * @param field the field DTO
-   * @param fieldBuilderType the builder type used to construct the field value
+   * @param fieldBuilder the resolved builder used to construct the field value, including the
+   *     instantiation paths to emit
    * @param existingValueConstructorArgs constructor arguments when field already has a value
    * @param emptyConstructorArgs constructor arguments when field is not yet set
    * @param additionalTemplateArguments additional code template arguments for method generation
@@ -215,12 +218,13 @@ public final class MethodGeneratorUtil {
    */
   public static BuilderMethodDto createFieldConsumerWithBuilder(
       FieldDto field,
-      TypeName fieldBuilderType,
+      ResolvedBuilder fieldBuilder,
       String existingValueConstructorArgs,
       String emptyConstructorArgs,
       Map<String, TypeName> additionalTemplateArguments,
       TypeName parentBuilderType,
       ProcessingContext context) {
+    TypeName fieldBuilderType = fieldBuilder.typeName();
     TypeNameGeneric consumerType = createConsumerType(fieldBuilderType);
     MethodParameterDto parameter = new MethodParameterDto();
     parameter.setParameterName(field.getFieldNameInBuilder() + BUILDER_SUFFIX + SUFFIX_CONSUMER);
@@ -229,18 +233,26 @@ public final class MethodGeneratorUtil {
         createBuilderMethod(field.getOriginalFieldName(), parentBuilderType, context);
     methodDto.addParameter(parameter);
 
-    String buildExpression = calculateBuildExpression(field.getFieldType());
+    String buildExpression =
+        wrapConcreteCollectionType(field.getFieldType(), fieldBuilder.buildCall("builder"));
 
     methodDto.setCode(
         """
         $helperType:T builder = this.$fieldName:N.isSet()
-          ? new $helperType:T(%s)
-          : new $helperType:T(%s);
+          ? %s
+          : %s;
         $dtoMethodParam:N.accept(builder);
         this.$fieldName:N = $builderFieldWrapper:T.changedValue($buildExpression:N);
         return this;
         """
-            .formatted(existingValueConstructorArgs, emptyConstructorArgs));
+            .formatted(
+                fieldBuilder
+                    .funcForPrefilledBuilder()
+                    .orElseThrow()
+                    .instantiationCode("$helperType:T", existingValueConstructorArgs),
+                fieldBuilder
+                    .funcForEmptyBuilder()
+                    .instantiationCode("$helperType:T", emptyConstructorArgs)));
     methodDto.addArgument("fieldName", field.getFieldNameInBuilder());
     methodDto.addArgument("dtoMethodParam", parameter.getParameterName());
     methodDto.addArgument("helperType", fieldBuilderType);
@@ -263,6 +275,42 @@ public final class MethodGeneratorUtil {
   }
 
   /**
+   * Creates the private prefilling method backing a {@link BuilderInstantiation.PrefillCall}:
+   * obtains an empty builder and calls one field function per prefilled property of the value.
+   *
+   * @param prefillCall the resolved field-prefilling instantiation
+   * @return the method DTO for the prefilling method
+   */
+  public static BuilderMethodDto createFieldPrefillMethod(
+      BuilderInstantiation.PrefillCall prefillCall) {
+    MethodParameterDto parameter = new MethodParameterDto();
+    parameter.setParameterName("value");
+    parameter.setParameterTypeName(prefillCall.sourceType());
+    BuilderMethodDto methodDto = new BuilderMethodDto();
+    methodDto.setModifier(AccessModifier.PRIVATE);
+    methodDto.setStatic(true);
+    methodDto.setOrdering(2100); // last: private helpers go below toString
+    methodDto.setMethodName(prefillCall.methodName());
+    methodDto.setReturnType(prefillCall.builderType());
+    methodDto.addParameter(parameter);
+    StringBuilder code = new StringBuilder();
+    code.append("$builderType:T builder = ")
+        .append(prefillCall.funcForEmptyBuilder().instantiationCode("$builderType:T", ""))
+        .append(";\n");
+    for (BuilderInstantiation.PrefillCall.Field prefilledField : prefillCall.prefilledFields()) {
+      code.append("builder.")
+          .append(prefillCall.builderMethodFor(prefilledField))
+          .append("(value.")
+          .append(prefilledField.accessor())
+          .append(");\n");
+    }
+    code.append("return builder;");
+    methodDto.setCode(code.toString());
+    methodDto.addArgument("builderType", prefillCall.builderType());
+    return methodDto;
+  }
+
+  /**
    * Creates a Consumer<BuilderType> type.
    *
    * @param builderType the builder type
@@ -270,16 +318,6 @@ public final class MethodGeneratorUtil {
    */
   public static TypeNameGeneric createConsumerType(TypeName builderType) {
     return new TypeNameGeneric(JavaLangMapper.map2TypeName(Consumer.class), builderType);
-  }
-
-  /**
-   * Calculates the build expression for a field type, wrapping concrete collections if needed.
-   *
-   * @param fieldType the field type
-   * @return the build expression
-   */
-  private static String calculateBuildExpression(TypeName fieldType) {
-    return wrapConcreteCollectionType(fieldType, "builder.build()");
   }
 
   /**
@@ -320,7 +358,8 @@ public final class MethodGeneratorUtil {
    *
    * @param field the field DTO
    * @param collectionBuilderType the collection builder type
-   * @param elementBuilderType the element builder type
+   * @param elementBuilder the resolved element builder; its empty-instantiation path is passed to
+   *     the collection builder as a method reference
    * @param returnBuilderType the return builder type
    * @param context the processing context
    * @return the method DTO for the consumer
@@ -328,15 +367,19 @@ public final class MethodGeneratorUtil {
   public static BuilderMethodDto createFieldConsumerWithElementBuilders(
       FieldDto field,
       TypeName collectionBuilderType,
-      TypeName elementBuilderType,
+      ResolvedBuilder elementBuilder,
       TypeName returnBuilderType,
       ProcessingContext context) {
+    // The collection builder receives a supplier for element builders: the resolved
+    // instantiation path as a method reference
+    String elementSupplier =
+        elementBuilder.funcForEmptyBuilder().methodReference("$elementBuilderType:T");
     return createFieldConsumerWithBuilder(
         field,
-        collectionBuilderType,
-        "this.$fieldName:N.value(), $elementBuilderType:T::create",
-        "$elementBuilderType:T::create",
-        Map.of("elementBuilderType", elementBuilderType),
+        new ResolvedBuilder(collectionBuilderType),
+        "this.$fieldName:N.value(), " + elementSupplier,
+        elementSupplier,
+        Map.of("elementBuilderType", elementBuilder.typeName()),
         returnBuilderType,
         context);
   }

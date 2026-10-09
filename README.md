@@ -31,6 +31,8 @@ A zero-reflection Java annotation processor that generates fluent, type-safe bui
   - [Elementary Builder Example](#elementary-builder-example)
   - [Full-Featured Examples](#full-featured-examples)
   - [Advanced Features](#advanced-features)
+  - [External Type Builder Example](#external-type-builder-example)
+  - [Builder Scoping Example](#builder-scoping-example)
 - [Performance Measurement](#performance-measurement)
 - [Contributing](#contributing)
 - [License](#license)
@@ -48,6 +50,8 @@ Simple Builders generates fluent, type-safe builders for your **existing** class
 - **Lombok** — the closest "add a builder to my existing class" tool, but it works very differently: rather than generating separate source, it mutates your class at compile time through the compiler's internal, non-public AST APIs. That steps outside the standard model (a normal annotation processor may only add new files, not alter existing ones), so it needs an IDE plugin, hides the generated code behind `delombok`, and — because it depends on internal compiler APIs — generally needs a Lombok update for each new JDK before your project compiles (e.g. JDK 16's strong encapsulation, [JEP 396](https://openjdk.org/jeps/396), broke it until [v1.18.20](https://projectlombok.org/changelog), a pattern that recurs for JDK 17, 21, and 23). Lombok is also a broad toolkit (`@Data`, `@Value`, `@SneakyThrows`, `@Delegate`, `val`, and more) whose implicit behavior can be misused by less-experienced developers — e.g. `@Data`/`@EqualsAndHashCode` on JPA entities (broken equality, lazy-loading pitfalls) or `@SneakyThrows` bypassing checked exceptions. Choose Lombok if you're already invested in it for broad boilerplate reduction; choose Simple Builders for one focused capability with explicit, readable source.
 - **Immutables / Google AutoValue / FreeBuilder** — value-type generators: you declare an abstract class or interface and they generate an immutable implementation plus a builder. Great when you want to define new immutable value types; less suited when you just want a builder for classes or records you already have and don't want to restructure your model.
 - **RecordBuilder** — focused, excellent builders and `with` methods for records. Choose it if you use records exclusively.
+
+What none of them cover: [`@SimpleBuilderFor`](docs/CONFIGURATION.md#generating-builders-for-external-types) generates builders for types you cannot annotate — third-party classes, generated code, shared libraries — and [`packageName`](docs/CONFIGURATION.md#packagename) places the generated builders in a package of your choice.
 
 Use Simple Builders when you want fluent, type-safe builders for the classes and records you already have, generated as plain readable source, with no bytecode manipulation and no IDE plugin — and no lock-in: because the builders are ordinary generated Java, you can drop the dependency at any time by copying the generated builder classes into your own sources, and they keep working.
 
@@ -72,6 +76,7 @@ Value semantics (`equals`, `hashCode`, `toString`) and generating brand-new immu
 - **Annotation Preservation**: Validation annotations are automatically copied to builder methods
 - **With Interface Pattern**: Type-safe object modifications using generated With interfaces
 - **Jackson Support**: Supporting Jackson deserialization via `@JsonPOJOBuilder` and optional generation of `SimpleModule`s (one per package) (both need to be enabled)
+- **External Type Builders**: `@SimpleBuilderFor` generates builders for types that cannot be annotated - for example classes from third-party libraries
 - **JavaDoc Usage Examples**: Generated builder methods include auto-generated usage examples in their JavaDoc (per-method fluent snippets plus a class-level example), so IDE tooltips show exactly how to use each builder
 
 ## Requirements
@@ -464,6 +469,25 @@ Examples demonstrating special annotations and nested object relationships:
 - **Sponsor DTO**: [`SponsorDto.java`](example/src/main/java/org/javahelpers/simple/builders/example/SponsorDto.java) and [`SponsorDtoBuilder.java`](example/generated-example-builder/org/javahelpers/simple/builders/example/SponsorDtoBuilder.java) - Simple DTO used as nested object in other examples
 - **Mannschaft DTO**: [`MannschaftDto.java`](example/src/main/java/org/javahelpers/simple/builders/example/MannschaftDto.java) and [`MannschaftDtoBuilder.java`](example/generated-example-builder/org/javahelpers/simple/builders/example/MannschaftDtoBuilder.java) - Demonstrates `@IgnoreInBuilder` annotation to exclude specific setter methods from the generated builder, plus Set collections with nested objects
 - **Default Values**: [`ProductWithDefaults.java`](example/src/main/java/org/javahelpers/simple/builders/example/ProductWithDefaults.java) (record) and [`OrderWithDefaults.java`](example/src/main/java/org/javahelpers/simple/builders/example/OrderWithDefaults.java) (class) - Demonstrate `@Default` annotation for unset builder fields
+
+### External Type Builder Example
+
+A runnable example of `@SimpleBuilderFor`, which generates builders for types that cannot carry `@SimpleBuilder` themselves:
+
+- **Declaration**: [`package-info.java`](example/src/main/java/org/javahelpers/simple/builders/example/package-info.java) - Declares `@SimpleBuilderFor(ExternalAddress.class)` on the package; generated builders land in the annotated package (a holder class may be used instead)
+- **External type**: [`external/ExternalAddress.java`](example/src/main/java/org/javahelpers/simple/builders/example/external/ExternalAddress.java) - Plain class simulating third-party code, no annotations
+- **Generated Builder**: [`ExternalAddressBuilder.java`](example/generated-example-builder/org/javahelpers/simple/builders/example/ExternalAddressBuilder.java)
+- **Tests**: [`ExternalAddressBuilderTest.java`](example/src/test/java/org/javahelpers/simple/builders/example/ExternalAddressBuilderTest.java)
+
+### Builder Scoping Example
+
+A runnable example demonstrating package-scoped builder generation and usage:
+
+- **Source DTO**: [`ScopedOwnerDto.java`](example/src/main/java/org/javahelpers/simple/builders/example/scoping/ScopedOwnerDto.java) - Configures both package scopes inline and demonstrates the generation-scope, usage-scope, and out-of-scope field cases
+- **Trusted helper**: [`TrustedHelperDto.java`](example/src/main/java/org/javahelpers/simple/builders/example/scoping/TrustedHelperDto.java) - In-generation-scope helper whose builder is referenced as a builder consumer
+- **Library helper**: [`library/LibraryHelperDto.java`](example/src/main/java/org/javahelpers/simple/builders/example/library/LibraryHelperDto.java) - Annotated but outside the generation scope, so no builder exists and the owner falls back to a plain setter
+- **Generated Builder**: [`ScopedOwnerDtoBuilder.java`](example/generated-example-builder/org/javahelpers/simple/builders/example/scoping/ScopedOwnerDtoBuilder.java) - Shows the consumer overload for `trusted` and plain setters for `library` and `sponsor`
+- **Tests**: [`ScopedOwnerDtoBuilderTest.java`](example/src/test/java/org/javahelpers/simple/builders/example/scoping/ScopedOwnerDtoBuilderTest.java) - Asserts the generated API shape
 
 These examples serve as both documentation and integration tests for the annotation processor.
 

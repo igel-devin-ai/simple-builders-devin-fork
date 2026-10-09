@@ -78,6 +78,7 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
             generateConditionalHelper = OptionState.DISABLED,
             generateVarArgsHelpers = OptionState.DISABLED,
             generateStringFormatHelpers = OptionState.DISABLED,
+            generateUpdateHelpers = OptionState.DISABLED,
             generateAddToCollectionHelpers = OptionState.DISABLED,
             generateUnboxedOptional = OptionState.DISABLED,
             generateWithInterface = OptionState.DISABLED,
@@ -93,6 +94,8 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
             generateJavaDoc = OptionState.DISABLED,
             copyTypeAnnotations = OptionState.DISABLED,
             implementsBuilderBase = OptionState.DISABLED,
+            usingExistingBuilders = OptionState.DISABLED,
+            usingFieldFunctionPrefill = OptionState.DISABLED,
             builderSuffix = "Builder",
             setterSuffix = "",
             formattingMode = "lightweight"))

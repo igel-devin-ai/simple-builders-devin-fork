@@ -86,20 +86,31 @@ class BuilderProcessorTest {
     // Then: Compilation succeeds and debug messages are present
     assertThat(compilation).succeeded();
 
-    // Verify key debug messages are logged with hierarchical format
-    ProcessorAsserts.assertHadNoteContaining(
+    // Assert the complete ordered log output so that ANY change (added, removed, or
+    // modified message) fails this test. When you change logging, update the expected
+    // list below and the documentation in DEBUG_LOGGING.md / CONTRIBUTING.md.
+    ProcessorAsserts.assertNotesInOrder(
         compilation,
+        // Processor init
         "[DEBUG] Starting BuilderProcessor...",
         "[DEBUG] Loaded global configuration from compiler arguments: BuilderConfiguration[]",
         "[DEBUG] Initializing generator registry",
-        "[DEBUG] ├─ Loaded 14 method generators and 9 builder enhancers total",
-        "[DEBUG] └─ Initialized GeneratorRegistry with 14 method generators and 9 builder",
+        "[DEBUG] ├─ Loaded 15 method generators and 10 builder enhancers total",
+        "[DEBUG] └─ Initialized GeneratorRegistry with 15 method generators and 10 builder",
+        // Round 1 — start
         "simple-builders: PROCESSING ROUND START",
-        "[DEBUG] simple-builders: Processing round started. Found 1 annotated elements.",
+        "[DEBUG] simple-builders: Processing round started.",
+        "[DEBUG] simple-builders: Found 1 annotated elements.",
+        "[DEBUG] simple-builders: Found 0 type(s) for generation with @SimpleBuilderFor.",
+        // Round 1 — configuration resolution
         "[DEBUG] Processing element: VerboseTest",
         "[DEBUG] ├─ Resolving configuration for element: VerboseTest",
         "[DEBUG] │  ├─ Built-in template @SimpleBuilder found in DIRECT scope",
         "[DEBUG] │  └─ Resulting configuration resolved: BuilderConfiguration[",
+        "[DEBUG] simple-builders: 1 of 1 annotated element(s) are inside the"
+            + " builderGenerationPackages scope.",
+        // Round 1 — builder definition extraction
+        "[DEBUG] Processing element: VerboseTest",
         "[DEBUG] ├─ Extracting builder definition from: test.VerboseTest",
         "[DEBUG] │  ├─ Builder will be generated as: test.VerboseTestBuilder",
         "[DEBUG] │  ├─ Analysing setters for finding fields",
@@ -109,24 +120,29 @@ class BuilderProcessorTest {
         "[DEBUG] │  │  │  │  ├─ Applying: StringFormatHelperGenerator (priority: 80)",
         "[DEBUG] │  │  │  │  ├─ Applying: SupplierMethodGenerator (priority: 60)",
         "[DEBUG] │  │  │  │  ├─ Applying: StringBuilderConsumerGenerator (priority: 45)",
-        "[DEBUG] │  │  │  │  └─ Generated 4 methods",
+        "[DEBUG] │  │  │  │  ├─ Applying: UpdateHelperGenerator (priority: 31)",
+        "[DEBUG] │  │  │  │  └─ Generated 5 methods",
         "[DEBUG] │  │  │  └─ Adding field: name (type: java.lang.String)",
         "[DEBUG] │  │  └─ Processed 1 possible setters: added 1 fields, skipped 0",
         "[DEBUG] │  ├─ Processing class based enhancer",
         "[DEBUG] │  │  ├─ Applying: GeneratedAnnotationEnhancer (priority: 120)",
         "[DEBUG] │  │  ├─ Applying: BuilderImplementationAnnotationEnhancer (priority: 115)",
+        "[DEBUG] │  │  ├─ Added @BuilderImplementation annotation to builder VerboseTestBuilder",
         "[DEBUG] │  │  ├─ Applying: CoreMethodsEnhancer (priority: 100)",
+        "[DEBUG] │  │  ├─ Applying: ConstructorEnhancer (priority: 95)",
         "[DEBUG] │  │  ├─ Applying: WithInterfaceEnhancer (priority: 95)",
         "[DEBUG] │  │  ├─ Applying: InterfaceEnhancer (priority: 90)",
         "[DEBUG] │  │  ├─ Applying: ConditionalEnhancer (priority: 80)",
+        "[DEBUG] │  │  ├─ Added conditional methods to builder VerboseTestBuilder",
         "[DEBUG] │  │  ├─ Applying: ClassJavaDocEnhancer (priority: 10)",
         "[DEBUG] │  │  └─ Applied 8 builder enhancers",
         "[DEBUG] │  ├─ Finalizing builder definition",
         "[DEBUG] │  │  ├─ Resolving method conflicts",
-        "[DEBUG] │  │  │  └─ Resolved: 9 signatures, 0 conflicts, 0 methods removed",
+        "[DEBUG] │  │  │  └─ Resolved: 10 signatures, 0 conflicts, 0 methods removed",
         "[DEBUG] │  │  └─ Finalized: 1 class fields, 5 builder-level methods, 2 constructors",
         "[DEBUG] │  ├─ Builder will be generated as: VerboseTestBuilder",
         "[DEBUG] │  └─ Builder definition extracted: VerboseTestBuilder",
+        // Round 1 — code generation
         "[DEBUG] ├─ Code generation for class: VerboseTestBuilder",
         "[DEBUG] │  ├─ JavaClassSource created",
         "[DEBUG] │  ├─ Class metadata added",
@@ -134,19 +150,27 @@ class BuilderProcessorTest {
         "[DEBUG] │  │  └─ Fields added: 1 fields",
         "[DEBUG] │  ├─ Generating 2 constructors",
         "[DEBUG] │  │  └─ Constructors added: 2",
-        "[DEBUG] │  ├─ Generating 9 method candidates",
-        "[DEBUG] │  │  ├─ Resolved to 9 methods after conflict resolution",
-        "[DEBUG] │  │  └─ Methods added: 9",
+        "[DEBUG] │  ├─ Generating 10 method candidates",
+        "[DEBUG] │  │  ├─ Resolved to 10 methods after conflict resolution",
+        "[DEBUG] │  │  └─ Methods added: 10",
         "[DEBUG] │  ├─ Generating 1 nested type(s)",
         "[DEBUG] │  │  ├─ Generated nested type: With",
         "[DEBUG] │  │  └─ Nested types added",
         "[DEBUG] │  ├─ Class-level annotations added",
+        "[DEBUG] │  ├─ Using JDT source formatting with Eclipse formatter"
+            + " profile 'eclipse-java-format.xml'.",
         "[DEBUG] │  ├─ Writing class to file: test.VerboseTestBuilder",
         "[DEBUG] │  └─ Successfully generated class: VerboseTestBuilder",
         "[DEBUG] ├─ Jackson module entry added",
-        "[DEBUG] └─ Generated builder with 1 fields and 9 methods for VerboseTestBuilder",
+        "[DEBUG] └─ Generated builder with 1 fields and 10 methods for VerboseTestBuilder",
         "simple-builders: Successfully generated 1 builder(s) in this processing round",
-        "");
+        // Round 2 — no new elements
+        "simple-builders: PROCESSING ROUND START",
+        "[DEBUG] simple-builders: Processing round started.",
+        "[DEBUG] simple-builders: Found 0 annotated elements.",
+        "[DEBUG] simple-builders: Found 0 type(s) for generation with @SimpleBuilderFor.",
+        "[DEBUG] simple-builders: 0 of 0 annotated element(s) are inside the"
+            + " builderGenerationPackages scope.");
   }
 
   @Test
@@ -1370,7 +1394,7 @@ class BuilderProcessorTest {
         generatedCode,
         "private TrackedValue<HelperAnno> helper = unsetValue();",
         "helperBuilderConsumer",
-        "HelperAnnoBuilder builder = this.helper.isSet() ? new HelperAnnoBuilder(this.helper.value()) : new HelperAnnoBuilder();",
+        "HelperAnnoBuilder builder = this.helper.isSet() ? new HelperAnnoBuilder(this.helper.value()) : HelperAnnoBuilder.create();",
         "helperBuilderConsumer.accept(builder);",
         "this.helper = changedValue(builder.build());");
   }
@@ -3671,5 +3695,29 @@ class BuilderProcessorTest {
     // Compilation should have a warning about the ignored generic setter
     assertThat(compilation)
         .hadWarningContaining("Field 'value' has field-specific generics, so it will be ignored");
+  }
+
+  @Test
+  void packageName_GeneratesBuilderIntoConfiguredPackage() {
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            @SimpleBuilder(options = @SimpleBuilder.Options(packageName = "com.example.generated"))
+            public class Person {
+              private String name;
+              public Person() {}
+              public String getName() { return name; }
+              public void setName(String name) { this.name = name; }
+            }
+            """);
+
+    Compilation compilation = ProcessorTestUtils.createCompiler().compile(source);
+
+    assertThat(compilation).succeededWithoutWarnings();
+    String generated = loadGeneratedSource(compilation, "PersonBuilder");
+    ProcessorAsserts.assertContaining(
+        generated, "package com.example.generated;", "import test.Person;");
   }
 }

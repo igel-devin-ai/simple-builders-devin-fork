@@ -57,9 +57,11 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
  *   <li><b>Conditional Logic:</b> generateConditionalHelper (default: true)
  *   <li><b>Access Control:</b> builderAccess, builderConstructorAccess, methodAccess (default:
  *       PUBLIC)
- *   <li><b>Collection Helpers:</b> generateVarArgsHelpers, usingArrayListBuilder,
- *       usingArrayListBuilderWithElementBuilders, usingHashSetBuilder,
+ *   <li><b>Collection Helpers:</b> generateVarArgsHelpers, generateUpdateHelpers,
+ *       usingArrayListBuilder, usingArrayListBuilderWithElementBuilders, usingHashSetBuilder,
  *       usingHashSetBuilderWithElementBuilders, usingHashMapBuilder (all default: true)
+ *   <li><b>Builder Scoping:</b> builderGenerationPackages, builderUsagePackages, builderUsageSuffix
+ *       (default: empty)
  *   <li><b>Integration:</b> generateWithInterface (default: true)
  *   <li><b>Documentation:</b> generateJavaDoc (default: true)
  * </ul>
@@ -330,6 +332,26 @@ public @interface SimpleBuilder {
      * Compiler option: -Asimplebuilder.generateStringFormatHelpers
      */
     OptionState generateStringFormatHelpers() default OptionState.UNSET;
+
+    /**
+     * Generate update helper methods for all fields. The generated method has the parameter type
+     * {@code UnaryOperator<T>} and transforms the current field value using the supplied operator.
+     *
+     * <p>Example:
+     *
+     * <pre>{@code
+     * PersonDto person = PersonDtoBuilder.create()
+     *     .name("  bob ")
+     *     .nameUpdate(String::trim)
+     *     .quantity(10)
+     *     .quantityUpdate(Math::abs)
+     *     .build();
+     * }</pre>
+     *
+     * <p>Default: ENABLED <br>
+     * Compiler option: -Asimplebuilder.generateUpdateHelpers
+     */
+    OptionState generateUpdateHelpers() default OptionState.UNSET;
 
     /**
      * Generate add2FieldName helper methods for List and Set fields. <br>
@@ -668,6 +690,25 @@ public @interface SimpleBuilder {
     String jacksonModulePackage() default "";
 
     /**
+     * The package generated builder classes are placed in. <br>
+     * Useful to collect builders in a central package or to generate a builder for a type whose
+     * package is not suitable, e.g. a third-party package.
+     *
+     * <p>Example: {@code "com.example.generated"}
+     *
+     * <p>Only members of the target type that are accessible from the configured package are used
+     * for builder generation - package-private and protected constructors, setters and getters are
+     * then not reachable and are treated as if absent.
+     *
+     * <p>Default: "" (empty - the package of the annotated type, resp. of the element carrying
+     * {@code @SimpleBuilderFor}) <br>
+     * Annotation-only: a global value would collapse all generated builders into a single package.
+     *
+     * @return the package generated builders are placed in
+     */
+    String packageName() default "";
+
+    /**
      * Generate Javadoc comments on the generated builder class and its members. <br>
      * When disabled, no class, field, constructor or method Javadoc is emitted, producing smaller
      * generated files.
@@ -678,6 +719,91 @@ public @interface SimpleBuilder {
      * @return the option state for generating Javadoc
      */
     OptionState generateJavaDoc() default OptionState.UNSET;
+
+    // === Builder Scoping ===
+    /**
+     * Comma-separated list of packages for which builders are generated. <br>
+     * Subpackages are included automatically and matching ignores case. When non-empty, builder
+     * generation is restricted to DTOs whose package equals or is a subpackage of a listed package.
+     * Types in this scope are trusted to have their builder generated in the same compilation and
+     * may be referenced without a type-existence search; they are automatically usable as helpers
+     * and do not need to be listed in {@link #builderUsagePackages()}.
+     *
+     * <p>On a single class this is mainly useful to <i>opt back in</i>: annotation options take
+     * precedence over the compiler option, so a type can include its own package even when the
+     * global scope excludes it. Set on a {@link Template} annotation or a base class ({@code
+     * SimpleBuilder} is {@code @Inherited}), it instead filters which inheriting types get a
+     * builder. To exclude a single type, prefer {@link Ignore4BuilderGeneration}.
+     *
+     * <p>Example: {@code "com.example.dto, com.example.shared"}
+     *
+     * <p>Default: "" (empty - builders are generated for all {@code @SimpleBuilder} annotated DTOs,
+     * no type search) <br>
+     * Compiler option: -Asimplebuilder.builderGenerationPackages
+     *
+     * @return the packages for which builders are generated
+     */
+    String builderGenerationPackages() default "";
+
+    /**
+     * Comma-separated list of packages whose builders may be used as helper methods for other DTOs.
+     * <br>
+     * Subpackages are included automatically and matching ignores case. The processor constructs
+     * the candidate builder name using {@link #builderUsageSuffix()} (or {@link #builderSuffix()}
+     * if not configured) and verifies that a class with that name exists on the classpath or was
+     * generated in the current processing round. This allows referencing builders generated with
+     * custom template annotations or different suffixes. If the builder type cannot be resolved,
+     * the field falls back to a plain setter.
+     *
+     * <p>Packages in {@link #builderGenerationPackages()} are automatically part of the usage scope
+     * and never need to be repeated here. When this option is empty, builders from any package may
+     * be referenced; once set, only packages listed here (and generation-scope types) may provide
+     * builder helpers.
+     *
+     * <p>Example: {@code "com.example.library, com.example.external"}
+     *
+     * <p>Default: "" (empty - all types may be referenced as builders; the builder type is not
+     * verified to exist on the classpath, preserving backward-compatible behavior) <br>
+     * Compiler option: -Asimplebuilder.builderUsagePackages
+     *
+     * @return the packages whose builders may be used as helpers
+     */
+    String builderUsagePackages() default "";
+
+    /**
+     * Reuse builders that were not generated by this processor: classpath builders discovered
+     * through {@link #builderUsagePackages()} or builders anchored inside the referenced type
+     * itself (a nested {@code Person.Builder} or a {@code Person.builder()} factory method). <br>
+     * When disabled, only builders generated in the current processing round qualify and every
+     * other referenced type falls back to a plain setter - opting out of false-positive detections
+     * on types that coincidentally look like builders.
+     *
+     * <p>Default: ENABLED <br>
+     * Compiler option: -Asimplebuilder.usingExistingBuilders
+     *
+     * @return the option state for reusing existing builders
+     */
+    OptionState usingExistingBuilders() default OptionState.UNSET;
+
+    /**
+     * Prefill a reused builder that offers no value-accepting creation path by calling one of its
+     * field functions per readable property of the referenced type: the generated builder emits a
+     * private {@code prefill<Builder>(T value)} method that obtains an empty instance and calls the
+     * field function matching each property (fluent {@code name(v)}, JavaBeans {@code setName(v)},
+     * or a detected convention like {@code withName(v)}). Properties without a matching function
+     * stay unset; the convention is trusted once it covers the majority of the readable properties.
+     * <br>
+     * When disabled, such builders still resolve but helpers that would silently drop state are
+     * skipped. Only consulted when {@link #usingExistingBuilders()} is enabled; the analysis
+     * (property enumeration plus method scan per referenced type) is a separate option because it
+     * adds compile cost. {@link SimpleMinimalBuilder} deactivates this option.
+     *
+     * <p>Default: ENABLED <br>
+     * Compiler option: -Asimplebuilder.usingFieldFunctionPrefill
+     *
+     * @return the option state for prefilling builders through field functions
+     */
+    OptionState usingFieldFunctionPrefill() default OptionState.UNSET;
 
     // === Naming ===
     /**
@@ -701,6 +827,35 @@ public @interface SimpleBuilder {
      * @return the suffix for the builder class name
      */
     String builderSuffix() default "Builder";
+
+    /**
+     * Suffix to append to the DTO name when looking up a builder from the usage scope. <br>
+     * The processor constructs the candidate builder name using this suffix and verifies that a
+     * class with that name exists on the classpath. If empty, the value of {@link #builderSuffix()}
+     * is used. This allows referencing builders that were generated with a different suffix (e.g.
+     * by another module using "Factory" as suffix) without changing the suffix used for own builder
+     * generation.
+     *
+     * <p>Example:
+     *
+     * <pre>{@code
+     * @SimpleBuilder(options = @SimpleBuilder.Options(
+     *     builderSuffix = "Builder",
+     *     builderUsageSuffix = "Factory"
+     * ))
+     * public class OwnerDto {
+     *     // Own builder: OwnerDtoBuilder
+     *     // Referenced builders from usage scope: looked up as *Factory
+     * }
+     * }</pre>
+     *
+     * Default: "" (empty - falls back to {@link #builderSuffix()}) <br>
+     * Compiler option: -Asimplebuilder.builderUsageSuffix
+     *
+     * @return the suffix for usage-scope builder class names, or empty to use {@link
+     *     #builderSuffix()}
+     */
+    String builderUsageSuffix() default "";
 
     /**
      * Suffix to append to setter method names in the generated builder. <br>

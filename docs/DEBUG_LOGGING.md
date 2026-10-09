@@ -11,7 +11,9 @@ The Simple Builders annotation processor supports conditional debug logging that
 
 ## Enabling Debug Logging
 
-Debug logging uses `Diagnostic.Kind.OTHER` but is only activated when explicitly enabled via the compiler argument `-Averbose=true`.
+Debug logging uses `Diagnostic.Kind.OTHER` but is only activated when explicitly enabled via the compiler argument `-Averbose=true` or the Maven system property `-Dsimplebuilder.verbose=true`.
+
+When Maven runs javac in-process, `mvn clean compile -Dsimplebuilder.verbose=true` works without an `-Averbose=${simplebuilder.verbose}` mapping in `pom.xml`, and the `-D` value overrides any `-A` mapping from the build file. Gradle also supports `-Dsimplebuilder.verbose=true` (or `systemProp.simplebuilder.verbose=true` in `gradle.properties`) with in-process compilation; use the `-A` mapping for forked compilation and IDE builds. Gradle does not track the property as a task input, so run `clean` or `--rerun-tasks` after changing it.
 
 ### Option 1: Via Maven Property (Recommended)
 
@@ -89,7 +91,10 @@ When debug logging is enabled, you'll see detailed output with visual separators
 
 ```
 [INFO] simple-builders: PROCESSING ROUND START
-[INFO] [DEBUG] simple-builders: Processing round started. Found 3 annotated elements.
+[INFO] [DEBUG] simple-builders: Processing round started.
+[INFO] [DEBUG] simple-builders: Found 3 annotated elements.
+[INFO] [DEBUG] simple-builders: Found 0 type(s) for generation with @SimpleBuilderFor.
+[INFO] [DEBUG] simple-builders: 3 of 3 annotated element(s) are inside the builderGenerationPackages scope.
 [INFO] [DEBUG] Processing element: PersonDto
 [INFO] [DEBUG] ├─ Extracting builder definition from: org.example.PersonDto
 [INFO] [DEBUG] │  ├─ Builder will be generated as: org.example.PersonDtoBuilder
@@ -105,6 +110,7 @@ When debug logging is enabled, you'll see detailed output with visual separators
 [INFO] [DEBUG] │  │  └─ Fields added: 2 fields
 [INFO] [DEBUG] │  ├─ Adding Methods for 4 candidates
 [INFO] [DEBUG] │  │  └─ 4 Methods added
+[INFO] [DEBUG] │  ├─ Using JDT source formatting with Eclipse formatter profile 'eclipse-java-format.xml'.
 [INFO] [DEBUG] │  ├─ Writing builder class to file: org.example.PersonDtoBuilder
 [INFO] [DEBUG] │  └─ Successfully generated builder: PersonDtoBuilder
 [INFO] [DEBUG] Processing element: OrderDto
@@ -121,6 +127,11 @@ When debug logging is enabled, you'll see detailed output with visual separators
 [INFO] [DEBUG] ├─ Code generation for builder: CustomerDtoBuilder
 [INFO] [DEBUG] │  └─ Successfully generated builder: CustomerDtoBuilder
 [INFO]         simple-builders: Successfully generated 3 builder(s) in this processing round
+[INFO] simple-builders: PROCESSING ROUND START
+[INFO] [DEBUG] simple-builders: Processing round started.
+[INFO] [DEBUG] simple-builders: Found 0 annotated elements.
+[INFO] [DEBUG] simple-builders: Found 0 type(s) for generation with @SimpleBuilderFor.
+[INFO] [DEBUG] simple-builders: 0 of 0 annotated element(s) are inside the builderGenerationPackages scope.
 ```
 
 **Note**: Debug messages are prefixed with `[DEBUG]` and use `Diagnostic.Kind.OTHER` which appears as `[INFO]` in Maven output.

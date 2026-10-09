@@ -24,14 +24,24 @@
 
 package org.javahelpers.simple.builders.processor.processing;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import org.apache.commons.lang3.StringUtils;
+import org.javahelpers.simple.builders.core.enums.FormattingMode;
+import org.javahelpers.simple.builders.processor.analysis.BuilderScopeResolver;
+import org.javahelpers.simple.builders.processor.classgen.roaster.RoasterSourceFormatter;
 import org.javahelpers.simple.builders.processor.generators.registry.GeneratorRegistry;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
 import org.javahelpers.simple.builders.processor.model.type.TypeName;
@@ -53,8 +63,10 @@ public final class ProcessingContext {
   private final BuilderConfigurationReader configurationReader;
   private final ProcessingEnvironment processingEnv;
   private final PerformanceTracker performanceTracker;
+  private final String formatterProfile;
+  private final BuilderScopeResolver builderScopeResolver;
   private GeneratorRegistry generatorRegistry;
-  private BuilderConfiguration configurationForProcessingTarget;
+  private ProcessingTarget processingTarget;
 
   /**
    * Creates a new processing context.
@@ -78,20 +90,24 @@ public final class ProcessingContext {
     boolean perfTrackingEnabled =
         argReader.readBooleanValue(CompilerArgumentsEnum.PERFORMANCE_TRACKING);
     String perfOutputFile = argReader.readValue(CompilerArgumentsEnum.PERFORMANCE_OUTPUT_FILE);
+    this.formatterProfile =
+        StringUtils.trimToNull(argReader.readValue(CompilerArgumentsEnum.FORMATTER_PROFILE));
     this.performanceTracker =
         perfTrackingEnabled
             ? new ActivePerformanceTracker(perfOutputFile)
             : new NoOpPerformanceTracker();
+    this.builderScopeResolver = new BuilderScopeResolver(this);
     // GeneratorRegistry will be lazily initialized on first access
   }
 
   /**
-   * Initializes the configuration for the current processing target.
+   * Initializes the per-target state ({@link ProcessingTarget}) for the type whose builder is
+   * currently being generated. Called once per target before extraction starts.
    *
-   * @param config the builder configuration for the target being processed
+   * @param processingTarget the resolved configuration and builder package of the current target
    */
-  public void initConfigurationForProcessingTarget(BuilderConfiguration config) {
-    this.configurationForProcessingTarget = config;
+  public void initProcessingTarget(ProcessingTarget processingTarget) {
+    this.processingTarget = processingTarget;
   }
 
   /**
@@ -100,7 +116,51 @@ public final class ProcessingContext {
    * @return the builder configuration for the target being processed
    */
   public BuilderConfiguration getConfiguration() {
-    return this.configurationForProcessingTarget;
+    return this.processingTarget.configuration();
+  }
+
+  /**
+   * Gets the package the builder of the current processing target is generated in.
+   *
+   * @return the qualified package name of the generated builder
+   */
+  public String getBuilderPackageName() {
+    return this.processingTarget.builderPackage();
+  }
+
+  /**
+   * Checks whether a member (constructor, method) is accessible from the package the generated
+   * builder is written to.
+   *
+   * <p>Public members are always accessible. Private members are never accessible - the generated
+   * builder is a separate top-level class. Package-private and protected members are only
+   * accessible when the member's declaring package equals the builder package (protected access
+   * through inheritance does not apply, as the builder does not extend the target type).
+   *
+   * @param member the member to check
+   * @return {@code true} if generated code in the builder package may call the member
+   */
+  public boolean isMemberAccessibleFromBuilderPackage(Element member) {
+    if (member.getModifiers().contains(Modifier.PUBLIC)) {
+      return true;
+    }
+    if (member.getModifiers().contains(Modifier.PRIVATE)) {
+      return false;
+    }
+    return getPackageName(member).equals(getBuilderPackageName());
+  }
+
+  /**
+   * Returns the annotation values of an annotation mirror, including default values.
+   *
+   * @param annotationMirror the annotation mirror to read
+   * @return the annotation's element values keyed by their method element
+   */
+  public Map<ExecutableElement, AnnotationValue> getElementValuesWithDefaults(
+      AnnotationMirror annotationMirror) {
+    Map<ExecutableElement, AnnotationValue> elementValues = new HashMap<>();
+    elementUtils.getElementValuesWithDefaults(annotationMirror).forEach(elementValues::put);
+    return elementValues;
   }
 
   /**
@@ -141,6 +201,46 @@ public final class ProcessingContext {
   }
 
   /**
+   * Starts a new performance tracking phase. The phase name is passed to {@link
+   * #endPerformancePhase(String)} for recording.
+   */
+  public void startPerformancePhase() {
+    performanceTracker.startPhase();
+  }
+
+  /**
+   * Ends the current performance tracking phase and records its duration under the given name.
+   *
+   * @param phase the phase name to record
+   */
+  public void endPerformancePhase(String phase) {
+    performanceTracker.endPhase(phase);
+  }
+
+  /**
+   * Creates a {@link RoasterSourceFormatter} for the given formatting mode, applying the configured
+   * Eclipse formatter profile when one is set.
+   *
+   * @param mode the formatting mode
+   * @return a new formatter instance
+   */
+  public RoasterSourceFormatter createSourceFormatter(FormattingMode mode) {
+    return new RoasterSourceFormatter(logger, mode, formatterProfile);
+  }
+
+  /**
+   * Get the builder scope resolver for deciding whether a builder may be referenced.
+   *
+   * <p>The resolver is keyed off the current target configuration and is recomputed when the target
+   * configuration changes.
+   *
+   * @return the builder scope resolver
+   */
+  public BuilderScopeResolver getBuilderScopeResolver() {
+    return builderScopeResolver;
+  }
+
+  /**
    * Get the TypeElement for a given qualified class name.
    *
    * @param qualifiedName the canonical class name (e.g., "java.lang.String")
@@ -171,6 +271,16 @@ public final class ProcessingContext {
    */
   public PackageElement getPackageOf(Element element) {
     return elementUtils.getPackageOf(element);
+  }
+
+  /**
+   * Get the package element for a qualified package name.
+   *
+   * @param name the qualified package name
+   * @return the package element, or null if no such package is visible to the compilation
+   */
+  public PackageElement getPackageElement(String name) {
+    return elementUtils.getPackageElement(name);
   }
 
   /**

@@ -8,15 +8,18 @@ Simple-builders supports fine-grained configuration through the `@SimpleBuilder.
 - [Annotation Configuration](#annotation-configuration)
 - [Template Annotations](#template-annotations)
 - [Excluding Types from Builder Generation](#excluding-types-from-builder-generation)
+- [Generating Builders for External Types](#generating-builders-for-external-types)
 - [Compiler Options](#compiler-options)
   - [Maven Configuration](#maven-configuration)
   - [Gradle Configuration](#gradle-configuration)
   - [IntelliJ IDEA Configuration](#intellij-idea-configuration)
+  - [Command Line (-D)](#command-line--d)
 - [Configuration Options](#configuration-options)
   - [Field Setter Generation](#field-setter-generation)
   - [Conditional Logic](#conditional-logic)
   - [Access Control](#access-control)
   - [Collection Helpers](#collection-helpers)
+  - [Builder Scoping](#builder-scoping)
   - [Component Filtering](#component-filtering)
   - [Integration](#integration)
   - [Documentation](#documentation)
@@ -102,6 +105,7 @@ Create reusable configuration presets with custom template annotations. The buil
     generateConditionalHelper = OptionState.DISABLED,
     generateVarArgsHelpers = OptionState.DISABLED,
     generateStringFormatHelpers = OptionState.DISABLED,
+    generateUpdateHelpers = OptionState.DISABLED,
     generateAddToCollectionHelpers = OptionState.DISABLED,
     generateUnboxedOptional = OptionState.DISABLED,
     copyTypeAnnotations = OptionState.DISABLED,
@@ -166,6 +170,51 @@ public class IgnoredDto extends ParentDto {
 
 A type marked with `@Ignore4BuilderGeneration` is treated as having **no builder available**. Other builders that reference it will fall back to plain setters instead of emitting nested-builder consumers. The annotation is intentionally **not** `@Inherited`, so it only suppresses the exact type it is placed on and does not cascade to further subclasses.
 
+## Generating Builders for External Types
+
+`@SimpleBuilder` has to be placed on the type itself, which is not possible for types you cannot modify - for example classes or records from third-party libraries. `@SimpleBuilderFor` covers this case: declare it on the package itself in `package-info.java` (or on a dedicated provider class in your own code) and list the types a builder is generated for.
+
+```java
+// package-info.java - generates ExternalUserFactory and ExternalOrderFactory into this package
+@SimpleBuilderFor(
+    value = {ExternalUser.class, ExternalOrder.class},
+    options = @SimpleBuilder.Options(builderSuffix = "Factory"))
+package com.example;
+
+import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+import org.javahelpers.simple.builders.core.annotations.SimpleBuilderFor;
+```
+
+The generated builders are placed in the annotated package - or in the package of the provider class when a class is annotated instead. `options` reuses `@SimpleBuilder.Options` and is optional - compiler defaults apply when omitted.
+
+`sourcePackages` lists whole packages to scan instead of naming types one by one: every top-level constructible type declared in a listed package gets a builder, combined with the types of `value` (an explicit `value` entry wins over the same type found by scanning; a `sourcePackages`-only declaration without `value` is valid). It names the packages the types come *from* - not to be confused with `options.packageName`, the package builders are generated *into*:
+
+```java
+// Generates a builder for every top-level class and record in com.thirdparty.users
+@SimpleBuilderFor(
+    sourcePackages = "com.thirdparty.users",
+    options = @SimpleBuilder.Options(packageName = "com.example.generated"))
+public class ExternalBuildersProvider {
+}
+```
+
+Interfaces, abstract classes, enums and annotation types are skipped (a debug log lists each skip), and package scanning only sees *top-level* types - nested types keep requiring an explicit `value` entry. Only packages visible to the compilation can be resolved: an unresolvable package name produces a warning and is skipped. Types a package contributes are ordered by qualified name, so the generated set is deterministic.
+
+The target type must be constructible through accessible Java APIs from the builder's package: it needs a visible type and an accessible constructor, otherwise generation fails with a compile-time diagnostic. The target type's own annotations are not consulted - the explicit declaration wins, so `@Ignore4BuilderGeneration` on the target does not suppress generation either. `@SimpleBuilderFor` is not `@Inherited`, and the provider class or package itself never gets a builder.
+
+`@SimpleBuilderFor` is `@Repeatable`: several declarations may be placed on the same holder or `package-info.java` when the listed types need different options - for example a different `packageName` per declaration:
+
+```java
+@SimpleBuilderFor(
+    value = ExternalUser.class,
+    options = @SimpleBuilder.Options(packageName = "com.example.users"))
+@SimpleBuilderFor(
+    value = ExternalOrder.class,
+    options = @SimpleBuilder.Options(packageName = "com.example.orders"))
+public class ExternalBuildersProvider {
+}
+```
+
 ## Compiler Options
 
 Set project-wide defaults via compiler options. These apply to all builders unless overridden by annotations.
@@ -220,6 +269,13 @@ compileJava {
    ```
    -Asimplebuilder.generateFieldSupplier=true -Asimplebuilder.builderAccess=PUBLIC
    ```
+
+### Command Line (-D)
+
+Maven and Gradle accept the options as JVM system properties without a build-file change, for example `mvn compile -Dsimplebuilder.generateJavaDoc=DISABLED` or `gradle compileJava -Dsimplebuilder.generateJavaDoc=DISABLED`.
+The precedence is `@SimpleBuilder.Options` > `-D` system property > `-A` compiler argument > default.
+The system property wins so you can override options configured in the build file from the command line without editing it.
+This relies on javac running in the build tool's JVM (the default for Maven and Gradle); use the `-A` form for forked compilation (`<fork>true</fork>` / `options.fork = true`) and IDE builds. Gradle also accepts `systemProp.simplebuilder.<option>=...` in `gradle.properties`; note that Gradle does not track the property as a task input, so run `clean` or `--rerun-tasks` after changing it.
 
 ## Configuration Options
 
@@ -468,6 +524,35 @@ BookDto book = BookDtoBuilder.create()
 
 ---
 
+#### `generateUpdateHelpers`
+
+**Default**: `ENABLED` | **Compiler Option**: `-Asimplebuilder.generateUpdateHelpers=ENABLED|DISABLED`
+
+Generates `xyzUpdate(UnaryOperator<T>)` methods for every builder field. The update helper transforms the
+current value and returns the builder for continued fluent chaining.
+
+```java
+PersonDto person = PersonDtoBuilder.create()
+    .name("  bob ")
+    .nameUpdate(String::trim)
+    .quantity(10)
+    .quantityUpdate(Math::abs)
+    .build();
+```
+
+The field must be set before its update helper is called. Otherwise, the update helper throws
+`IllegalStateException`. Update helpers also work with `With` copy-and-modify operations because
+values copied from an existing instance count as set.
+
+A `null` result is stored as-is and validated by `build()` like any other value.
+
+If a DTO field already has a setter with the same signature as a generated update helper, the setter
+wins and the update helper is omitted with a conflict warning.
+
+**When DISABLED**: No update methods are generated.
+
+---
+
 #### `generateAddToCollectionHelpers`
 
 **Default**: `ENABLED` | **Compiler Option**: `-Asimplebuilder.generateAddToCollectionHelpers=ENABLED|DISABLED`
@@ -656,6 +741,107 @@ public TeamDtoBuilder uniqueMembers(Consumer<HashSetBuilderWithElementBuilders<P
 Generates methods using `HashMapBuilder` for fluent Map construction.
 
 ---
+
+### Builder Scoping
+
+#### `builderGenerationPackages`
+
+**Default**: `""` (empty, unchanged behavior) | **Compiler Option**:
+`-Asimplebuilder.builderGenerationPackages=package1,package2`
+
+Restricts builder generation to annotated DTOs in the listed packages. Packages are
+comma-separated, each listed package includes all of its subpackages, and matching ignores
+case. Types in the generation scope are trusted to have their builders generated in the
+current compilation, so references to their builders do not require a type search.
+
+This option is an allowlist for whole packages: once set, builders are generated only inside
+the listed packages and every other package is excluded implicitly. Excluding a single
+package while generating everywhere else is not expressible; to exclude a single class,
+use `@Ignore4BuilderGeneration` instead. The scope also applies to types that carry
+`@SimpleBuilder` only through inheritance or a template annotation.
+
+#### `builderUsagePackages`
+
+**Default**: `""` (empty, unchanged behavior) | **Compiler Option**:
+`-Asimplebuilder.builderUsagePackages=package1,package2`
+
+Controls which packages may provide builders as nested builder helpers. Packages are
+comma-separated, each listed package includes all of its subpackages, and matching ignores
+case.
+
+Before constructing a candidate name, the processor checks the referenced type
+itself for an anchored builder — the type's own declaration wins over the
+same-package candidate below. Accessible nested types satisfying the contract
+are checked first (e.g. `Person.PersonBuilder` or `Person.Builder`), then a
+static parameterless factory on the type — `builder()` preferred — whose return
+type must be accessible and declare a no-arg `build()` method (Lombok/Immutables
+style). The factory itself is the empty-instantiation path; the prefilled path is
+the builder's own contract path, a static `builder(T)`-style method, an
+instance method on the value like `toBuilder()`, or — with
+`usingFieldFunctionPrefill` enabled — prefilling by field functions.
+
+The processor constructs the candidate builder name using `builderUsageSuffix`
+(or `builderSuffix` if not configured) and verifies the builder contract: a way
+to create an empty builder (a no-arg constructor or a static parameterless
+factory like `create()`), a way to create one prefilled with the value (a
+constructor accepting the referenced type or a static factory like `create(T)`
+or `of(T)`), and a no-arg `build()` method returning it — each accessible from
+the generated builder's package. Generated code calls a factory instead of
+`new` when the builder offers one. With `usingFieldFunctionPrefill` enabled and
+no prefilled path found, the builder is tried against field-function prefilling:
+the generated builder emits a private static `prefill<Builder>` method that
+prefills each readable property having a matching field function (`name(v)`,
+`setName(v)`, or a detected convention like `withName(v)`); the convention is
+trusted once it covers the majority of the properties, uncovered ones stay
+unset. With less coverage or the option disabled, the builder still resolves,
+but helpers that would silently drop state (builder consumers) are skipped and
+a debug note is logged. Any class with the expected name and a
+matching contract qualifies, allowing references to builders generated with
+custom template annotations, external tools, or different suffixes. If the
+candidate builder cannot be found, the field falls back to a plain setter.
+
+Packages listed in `builderGenerationPackages` are automatically included in the usage
+scope — their builders are generated in the same compilation and don't need to be listed
+here.
+
+When `builderUsagePackages` is empty, builders from any package may be referenced (the
+behavior before scoping existed). When set, only packages listed in `builderUsagePackages`
+(and generation-scope types) may provide builder helpers — types outside both scopes fall
+back to a plain setter.
+
+The `example` module contains a runnable demo in package
+`org.javahelpers.simple.builders.example.scoping` ([`ScopedOwnerDto.java`](../example/src/main/java/org/javahelpers/simple/builders/example/scoping/ScopedOwnerDto.java)).
+It demonstrates a generation-scope builder consumer, a usage-scope missing-builder fallback, and
+an out-of-scope plain setter in [`ScopedOwnerDtoBuilder.java`](../example/generated-example-builder/org/javahelpers/simple/builders/example/scoping/ScopedOwnerDtoBuilder.java).
+
+#### `usingExistingBuilders`
+
+**Default**: `ENABLED` | **Compiler Option**: `-Asimplebuilder.usingExistingBuilders=DISABLED`
+
+Controls whether builders that were not generated by this processor may be
+reused — both the classpath lookup described above (usage scope, in-type
+anchors like `Person.builder()` or a nested `Person.Builder`) and any other
+existing builder satisfying the contract. When disabled, only builders
+generated in the current processing round qualify and every other referenced
+type falls back to a plain setter, opting out of false-positive detections on
+types that coincidentally look like builders. `@SimpleMinimalBuilder` disables
+this option.
+
+#### `usingFieldFunctionPrefill`
+
+**Default**: `ENABLED` | **Compiler Option**: `-Asimplebuilder.usingFieldFunctionPrefill=DISABLED`
+
+Prefills a reused builder that offers no value-accepting creation path by
+calling one field function per readable property of the referenced type: the
+generated builder emits a private static `prefill<Builder>(T value)` method
+that obtains an empty instance and calls the field function matching each
+property. The naming convention is detected on the builder — fluent `name(v)`
+and JavaBeans `setName(v)` first, then any other camel-case prefix shared by
+several methods (e.g. `withName(v)`); a convention is trusted once it covers
+the majority of the properties, matched param-type-exact, void- or
+fluent-returning. Only consulted when `usingExistingBuilders` is enabled; the
+per-type analysis (property enumeration plus method scan) is a separate option
+because it adds compile cost. `@SimpleMinimalBuilder` disables this option.
 
 ### Component Filtering
 
@@ -904,6 +1090,70 @@ public class PersonDto { }
 
 ---
 
+#### `builderUsageSuffix`
+
+**Default**: `""` (empty — falls back to `builderSuffix`) | **Compiler Option**:
+`-Asimplebuilder.builderUsageSuffix=CustomSuffix`
+
+Customizes the suffix used when looking up builders from the usage scope. The processor
+constructs the candidate builder name as `referencedType.getSimpleName() + builderUsageSuffix`.
+If empty, `builderSuffix` is used instead. This allows referencing builders that were generated
+with a different suffix (e.g. by another module using `"Factory"` as suffix) without changing
+the suffix used for own builder generation.
+
+The candidate class must provide a way to create an empty builder (a no-arg
+constructor or a static parameterless factory like `create()`), a way to create
+one prefilled with the value (a constructor accepting the referenced type or a
+static factory like `create(T)` or `of(T)`), and a no-arg `build()` method
+returning it — each accessible from the generated builder's package. Generated
+code calls a factory instead of `new` when the builder offers one. The contract
+check is annotation-agnostic, so builders generated with custom template
+annotations or external tools are supported. If the candidate class does not
+exist or does not satisfy this contract, the field falls back to a plain setter.
+
+**Example**:
+```java
+@SimpleBuilder.Options(
+    builderSuffix = "Builder",       // own builders: *Builder
+    builderUsageSuffix = "Factory"   // usage-scope builders: *Factory
+)
+public class OwnerDto {
+    private ExternalDto external;
+}
+
+// Own builder: OwnerDtoBuilder
+// External builder looked up as: ExternalDtoFactory (not ExternalDtoBuilder)
+```
+
+---
+
+#### `packageName`
+
+**Default**: `""` (empty — the package of the annotated type, resp. of the element carrying
+`@SimpleBuilderFor`) | **Annotation only** — a global `-Asimplebuilder.packageName` is
+deliberately not supported: it would collapse all generated builders into a single package.
+
+Places generated builder classes into the given package instead of the default package.
+Useful to collect builders in a central package, or to keep a third-party target's builder
+in your own namespace when using `@SimpleBuilderFor`.
+
+Only members of the target type that are accessible from the configured package are used for
+builder generation — package-private and protected constructors, setters and getters are
+then not reachable and are treated as if absent. The value must be a valid Java package
+name; an invalid value produces a compile-time diagnostic.
+
+**Example**:
+```java
+@SimpleBuilderFor(
+    value = ExternalUser.class,
+    options = @SimpleBuilder.Options(packageName = "com.example.generated"))
+public class ExternalBuilders { }
+
+// Generated class: com.example.generated.ExternalUserBuilder
+```
+
+---
+
 #### `setterSuffix`
 
 **Default**: `""` (empty) | **Compiler Option**: `-Asimplebuilder.setterSuffix=customPrefix`
@@ -944,7 +1194,7 @@ processing. A summary report is logged to the compiler output at the end of proc
 
 **When enabled**: A hierarchical performance report is printed to the compiler log, including:
 - Total processing time and average time per class
-- Phase breakdown (Configuration Resolution, Builder Definition Extraction, DTO Mapping, Code Generation)
+- Phase breakdown (Element Collection, Configuration Resolution, Builder Definition Extraction, DTO Mapping, Code Generation)
 - Top 20 slowest classes with field and collection counts
 - Top 5 slowest MethodGenerators and BuilderEnhancers
 
@@ -1044,6 +1294,24 @@ Per-annotation override:
 public class PersonDto { ... }
 ```
 
+#### `formatterProfile`
+
+**Default**: `eclipse-java-format.xml` (bundled) | **Compiler Option**: `-Asimplebuilder.formatterProfile=path/to/profile.xml`
+
+> **Note**: This is a **processor-level option** only. It cannot be set per-annotation via
+> `@SimpleBuilder.Options`.
+
+Specifies an external Eclipse formatter profile for JDT formatting. This option only affects [`JDT` formatting](#formattingmode); it is ignored for `LIGHTWEIGHT` and `NONE`. A file system path is tried first, then a classpath resource. If neither can be loaded, a warning is logged and the bundled `eclipse-java-format.xml` profile is used.
+
+**Example**:
+```bash
+# Maven
+mvn compile -Dsimplebuilder.formatterProfile=config/eclipse-formatter.xml
+
+# Or via compiler arg
+-Asimplebuilder.formatterProfile=config/eclipse-formatter.xml
+```
+
 ## Examples
 
 ### Minimal Builder
@@ -1133,6 +1401,7 @@ The built-in `@SimpleMinimalBuilder` is the simplest way to get a lightweight bu
     generateConditionalHelper = OptionState.DISABLED,
     generateVarArgsHelpers = OptionState.DISABLED,
     generateStringFormatHelpers = OptionState.DISABLED,
+    generateUpdateHelpers = OptionState.DISABLED,
     generateAddToCollectionHelpers = OptionState.DISABLED,
     generateUnboxedOptional = OptionState.DISABLED,
     copyTypeAnnotations = OptionState.DISABLED,
@@ -1264,7 +1533,7 @@ Or in compiler options:
 
 ### Compiler Options Not Working
 
-1. **Check option names**: Ensure you're using the full option name (e.g., `-Asimplebuilder.generateFieldSupplier`)
+1. **Check option names**: Ensure you're using the full option name (e.g., `-Asimplebuilder.generateFieldSupplier`); the same name also works as a JVM system property (`-Dsimplebuilder.<option>`), which takes precedence over `-A`
 2. **Verify processor is running**: Ensure annotation processor is configured correctly
 3. **Check IDE configuration**: Some IDEs need special configuration for compiler options
 4. **Clean and rebuild**: Run `mvn clean compile` to ensure fresh build
@@ -1396,6 +1665,7 @@ methodAccess = AccessModifier.PRIVATE
 # Helper Methods
 -Asimplebuilder.generateVarArgsHelpers=ENABLED|DISABLED
 -Asimplebuilder.generateStringFormatHelpers=ENABLED|DISABLED
+-Asimplebuilder.generateUpdateHelpers=ENABLED|DISABLED
 -Asimplebuilder.generateAddToCollectionHelpers=ENABLED|DISABLED
 -Asimplebuilder.generateUnboxedOptional=ENABLED|DISABLED
 -Asimplebuilder.copyTypeAnnotations=ENABLED|DISABLED
@@ -1409,6 +1679,10 @@ methodAccess = AccessModifier.PRIVATE
 
 # Component Filtering
 -Asimplebuilder.deactivateGenerationComponents=pattern1,pattern2,...
+
+# Builder Scoping
+-Asimplebuilder.builderGenerationPackages=package1,package2
+-Asimplebuilder.builderUsagePackages=package1,package2
 
 # Integration & Annotations
 -Asimplebuilder.generateWithInterface=ENABLED|DISABLED
@@ -1438,6 +1712,7 @@ methodAccess = AccessModifier.PRIVATE
 
 # Performance Optimization
 -Asimplebuilder.formattingMode=JDT|LIGHTWEIGHT|NONE
+-Asimplebuilder.formatterProfile=path/to/profile.xml
 ```
 
 ### Complete Options Example
@@ -1461,6 +1736,7 @@ methodAccess = AccessModifier.PRIVATE
     // Helper Methods
     generateVarArgsHelpers = OptionState.ENABLED,
     generateStringFormatHelpers = OptionState.ENABLED,
+    generateUpdateHelpers = OptionState.ENABLED,
     generateUnboxedOptional = OptionState.ENABLED,
     
     // Collection Helpers
@@ -1469,6 +1745,10 @@ methodAccess = AccessModifier.PRIVATE
     usingHashSetBuilder = OptionState.ENABLED,
     usingHashSetBuilderWithElementBuilders = OptionState.ENABLED,
     usingHashMapBuilder = OptionState.ENABLED,
+
+    // Builder Scoping
+    builderGenerationPackages = "com.example.dto",
+    builderUsagePackages = "com.example.library",
     
     // Integration & Annotations
     generateWithInterface = OptionState.ENABLED,

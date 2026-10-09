@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import javax.annotation.processing.Generated;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.simple.builders.core.annotations.BuilderImplementation;
@@ -33,8 +34,10 @@ import org.javahelpers.simple.builders.core.util.TrackedValue;
  *     .name("Hello %s", "World")
  *     .name(() -> "example value")
  *     .name(sb -> sb.append("text"))
+ *     .nameUpdate(String::trim)
  *     .birthdate(LocalDate.now())
  *     .birthdate(() -> LocalDate.now())
+ *     .birthdateUpdate(value -> value.plusDays(1))
  *     .mannschaft(new MannschaftDto())
  *     .mannschaft(MannschaftDto::new)
  *     .mannschaft(mannschaftDtoBuilder -> mannschaftDtoBuilder)
@@ -42,9 +45,10 @@ import org.javahelpers.simple.builders.core.util.TrackedValue;
  *     .nickNames(() -> List.of("example value"))
  *     .nickNames(t -> t.add("example value"))
  *     .nickNames("example value", "example value")
+ *     .nickNamesUpdate(list -> list.stream().sorted().toList())
  *     .add2NickNames("example value")
- *     .nickNames2("example value")
- *     .nickNames2(() -> "example value")
+ *     .nickNames2(new String[]{"example value"})
+ *     .nickNames2(() -> new String[]{"example value"})
  *     .nickNames2("example value")
  *     .build();
  * }</pre>
@@ -108,28 +112,21 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
   }
 
   /**
-   * Adds a single element to <code>nickNames</code>.
+   * Sets the value for <code>birthdate</code> by invoking the provided supplier.
    * <p>
-   * Generated from setter {@link PersonDto#setNickNames(List) setNickNames(List<String> nickNames)}
+   * Generated from setter {@link PersonDto#setBirthdate(LocalDate) setBirthdate(LocalDate birthdate)}
    * 
    * <h4>Example:</h4>
    * 
    * <pre>{@code
-   * builder.add2NickNames("example value");
+   * builder.birthdate(() -> LocalDate.now());
    * }</pre>
    * 
-   * @param element the element to add
+   * @param birthdateSupplier supplier for birthdate
    * @return current instance of builder
    */
-  public PersonDtoBuilder add2NickNames(String element) {
-    List<String> newCollection;
-    if (this.nickNames.isSet()) {
-      newCollection = new ArrayList<>(this.nickNames.value());
-    } else {
-      newCollection = new ArrayList<>();
-    }
-    newCollection.add(element);
-    this.nickNames = changedValue(newCollection);
+  public PersonDtoBuilder birthdate(Supplier<LocalDate> birthdateSupplier) {
+    this.birthdate = changedValue(birthdateSupplier.get());
     return this;
   }
 
@@ -153,40 +150,28 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
   }
 
   /**
-   * Sets the value for <code>birthdate</code> by invoking the provided supplier.
+   * Updates the current value of <code>birthdate</code> in place by applying the given operator, instead of reading it
+   * out, changing it and setting it again. Useful for adjustments relative to the current value, e.g. trimming,
+   * upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify flow. The
+   * value must have been set before (directly or via an existing instance).
    * <p>
    * Generated from setter {@link PersonDto#setBirthdate(LocalDate) setBirthdate(LocalDate birthdate)}
    * 
    * <h4>Example:</h4>
    * 
    * <pre>{@code
-   * builder.birthdate(() -> LocalDate.now());
+   * builder.birthdate(LocalDate.now()).birthdateUpdate(value -> value.plusDays(1));
    * }</pre>
    * 
-   * @param birthdateSupplier supplier for birthdate
+   * @param birthdateUpdater operator applied to the current value; its result becomes the new value
    * @return current instance of builder
+   * @throws IllegalStateException if <code>birthdate</code> has not been set yet
    */
-  public PersonDtoBuilder birthdate(Supplier<LocalDate> birthdateSupplier) {
-    this.birthdate = changedValue(birthdateSupplier.get());
-    return this;
-  }
-
-  /**
-   * Sets the value for <code>mannschaft</code>.
-   * <p>
-   * Generated from setter {@link PersonDto#setMannschaft(MannschaftDto) setMannschaft(MannschaftDto mannschaft)}
-   * 
-   * <h4>Example:</h4>
-   * 
-   * <pre>{@code
-   * builder.mannschaft(new MannschaftDto());
-   * }</pre>
-   * 
-   * @param mannschaft mannschaft
-   * @return current instance of builder
-   */
-  public PersonDtoBuilder mannschaft(MannschaftDto mannschaft) {
-    this.mannschaft = changedValue(mannschaft);
+  public PersonDtoBuilder birthdateUpdate(UnaryOperator<LocalDate> birthdateUpdater) {
+    if (!this.birthdate.isSet()) {
+      throw new IllegalStateException("Cannot update 'birthdate' before it is set");
+    }
+    this.birthdate = changedValue(birthdateUpdater.apply(this.birthdate.value()));
     return this;
   }
 
@@ -207,7 +192,7 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
   public PersonDtoBuilder mannschaft(Consumer<MannschaftDtoBuilder> mannschaftBuilderConsumer) {
     MannschaftDtoBuilder builder = this.mannschaft.isSet()
         ? new MannschaftDtoBuilder(this.mannschaft.value())
-        : new MannschaftDtoBuilder();
+        : MannschaftDtoBuilder.create();
     mannschaftBuilderConsumer.accept(builder);
     this.mannschaft = changedValue(builder.build());
     return this;
@@ -233,21 +218,42 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
   }
 
   /**
-   * Sets the value for <code>name</code>.
+   * Sets the value for <code>mannschaft</code>.
    * <p>
-   * Generated from parameter in constructor {@link PersonDto#PersonDto(String) PersonDto(String name)}
+   * Generated from setter {@link PersonDto#setMannschaft(MannschaftDto) setMannschaft(MannschaftDto mannschaft)}
    * 
    * <h4>Example:</h4>
    * 
    * <pre>{@code
-   * builder.name("example value");
+   * builder.mannschaft(new MannschaftDto());
    * }</pre>
    * 
-   * @param name name
+   * @param mannschaft mannschaft
    * @return current instance of builder
    */
-  public PersonDtoBuilder name(String name) {
-    this.name = changedValue(name);
+  public PersonDtoBuilder mannschaft(MannschaftDto mannschaft) {
+    this.mannschaft = changedValue(mannschaft);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>mannschaft</code> in place by applying the given operator, instead of reading it
+   * out, changing it and setting it again. Useful for adjustments relative to the current value, e.g. trimming,
+   * upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify flow. The
+   * value must have been set before (directly or via an existing instance). For changing multiple values of a nested
+   * DTO, prefer the builder-consumer helper {@link #mannschaft(Consumer)}.
+   * <p>
+   * Generated from setter {@link PersonDto#setMannschaft(MannschaftDto) setMannschaft(MannschaftDto mannschaft)}
+   * 
+   * @param mannschaftUpdater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>mannschaft</code> has not been set yet
+   */
+  public PersonDtoBuilder mannschaftUpdate(UnaryOperator<MannschaftDto> mannschaftUpdater) {
+    if (!this.mannschaft.isSet()) {
+      throw new IllegalStateException("Cannot update 'mannschaft' before it is set");
+    }
+    this.mannschaft = changedValue(mannschaftUpdater.apply(this.mannschaft.value()));
     return this;
   }
 
@@ -313,6 +319,77 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
   }
 
   /**
+   * Sets the value for <code>name</code>.
+   * <p>
+   * Generated from parameter in constructor {@link PersonDto#PersonDto(String) PersonDto(String name)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.name("example value");
+   * }</pre>
+   * 
+   * @param name name
+   * @return current instance of builder
+   */
+  public PersonDtoBuilder name(String name) {
+    this.name = changedValue(name);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>name</code> in place by applying the given operator, instead of reading it out,
+   * changing it and setting it again. Useful for adjustments relative to the current value, e.g. trimming,
+   * upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify flow. The
+   * value must have been set before (directly or via an existing instance).
+   * <p>
+   * Generated from parameter in constructor {@link PersonDto#PersonDto(String) PersonDto(String name)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.name("example value").nameUpdate(String::trim);
+   * }</pre>
+   * 
+   * @param nameUpdater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>name</code> has not been set yet
+   */
+  public PersonDtoBuilder nameUpdate(UnaryOperator<String> nameUpdater) {
+    if (!this.name.isSet()) {
+      throw new IllegalStateException("Cannot update 'name' before it is set");
+    }
+    this.name = changedValue(nameUpdater.apply(this.name.value()));
+    return this;
+  }
+
+  /**
+   * Adds a single element to <code>nickNames</code>.
+   * <p>
+   * Generated from setter {@link PersonDto#setNickNames(List) setNickNames(List<String> nickNames)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.add2NickNames("example value");
+   * }</pre>
+   * 
+   * @param element the element to add
+   * @return current instance of builder
+   */
+  public PersonDtoBuilder add2NickNames(String element) {
+    List<String> newCollection;
+    if (this.nickNames.isSet()) {
+      newCollection = new ArrayList<>(this.nickNames.value());
+    } else {
+      newCollection = new ArrayList<>();
+    }
+    newCollection.add(element);
+    this.nickNames = changedValue(newCollection);
+    return this;
+  }
+
+  /**
    * Sets the value for <code>nickNames</code>.
    * <p>
    * Generated from setter {@link PersonDto#setNickNames(List) setNickNames(List<String> nickNames)}
@@ -328,25 +405,6 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
    */
   public PersonDtoBuilder nickNames(String... nickNames) {
     this.nickNames = changedValue(List.of(nickNames));
-    return this;
-  }
-
-  /**
-   * Sets the value for <code>nickNames</code>.
-   * <p>
-   * Generated from setter {@link PersonDto#setNickNames(List) setNickNames(List<String> nickNames)}
-   * 
-   * <h4>Example:</h4>
-   * 
-   * <pre>{@code
-   * builder.nickNames(List.of("example value"));
-   * }</pre>
-   * 
-   * @param nickNames nickNames
-   * @return current instance of builder
-   */
-  public PersonDtoBuilder nickNames(List<String> nickNames) {
-    this.nickNames = changedValue(nickNames);
     return this;
   }
 
@@ -393,21 +451,47 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
   }
 
   /**
-   * Sets the value for <code>nickNames2</code>.
+   * Sets the value for <code>nickNames</code>.
    * <p>
-   * Generated from setter {@link PersonDto#setNickNames2(String) setNickNames2(String nickNames2)}
+   * Generated from setter {@link PersonDto#setNickNames(List) setNickNames(List<String> nickNames)}
    * 
    * <h4>Example:</h4>
    * 
    * <pre>{@code
-   * builder.nickNames2("example value");
+   * builder.nickNames(List.of("example value"));
    * }</pre>
    * 
-   * @param nickNames2 nickNames2
+   * @param nickNames nickNames
    * @return current instance of builder
    */
-  public PersonDtoBuilder nickNames2(String... nickNames2) {
-    this.nickNames2 = changedValue(nickNames2);
+  public PersonDtoBuilder nickNames(List<String> nickNames) {
+    this.nickNames = changedValue(nickNames);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>nickNames</code> in place by applying the given operator, instead of reading it
+   * out, changing it and setting it again. Useful for adjustments relative to the current value, e.g. trimming,
+   * upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify flow. The
+   * value must have been set before (directly or via an existing instance).
+   * <p>
+   * Generated from setter {@link PersonDto#setNickNames(List) setNickNames(List<String> nickNames)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.nickNames(List.of("example value")).nickNamesUpdate(list -> list.stream().sorted().toList());
+   * }</pre>
+   * 
+   * @param nickNamesUpdater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>nickNames</code> has not been set yet
+   */
+  public PersonDtoBuilder nickNamesUpdate(UnaryOperator<List<String>> nickNamesUpdater) {
+    if (!this.nickNames.isSet()) {
+      throw new IllegalStateException("Cannot update 'nickNames' before it is set");
+    }
+    this.nickNames = changedValue(nickNamesUpdater.apply(this.nickNames.value()));
     return this;
   }
 
@@ -458,7 +542,7 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
    * <h4>Example:</h4>
    * 
    * <pre>{@code
-   * builder.nickNames2(() -> "example value");
+   * builder.nickNames2(() -> new String[]{"example value"});
    * }</pre>
    * 
    * @param nickNames2Supplier supplier for nickNames2
@@ -466,6 +550,45 @@ public class PersonDtoBuilder implements IBuilderBase<PersonDto> {
    */
   public PersonDtoBuilder nickNames2(Supplier<String[]> nickNames2Supplier) {
     this.nickNames2 = changedValue(nickNames2Supplier.get());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>nickNames2</code>.
+   * <p>
+   * Generated from setter {@link PersonDto#setNickNames2(String) setNickNames2(String nickNames2)}
+   * 
+   * <h4>Example:</h4>
+   * 
+   * <pre>{@code
+   * builder.nickNames2(new String[]{"example value"});
+   * }</pre>
+   * 
+   * @param nickNames2 nickNames2
+   * @return current instance of builder
+   */
+  public PersonDtoBuilder nickNames2(String... nickNames2) {
+    this.nickNames2 = changedValue(nickNames2);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>nickNames2</code> in place by applying the given operator, instead of reading it
+   * out, changing it and setting it again. Useful for adjustments relative to the current value, e.g. trimming,
+   * upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify flow. The
+   * value must have been set before (directly or via an existing instance).
+   * <p>
+   * Generated from setter {@link PersonDto#setNickNames2(String) setNickNames2(String nickNames2)}
+   * 
+   * @param nickNames2Updater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>nickNames2</code> has not been set yet
+   */
+  public PersonDtoBuilder nickNames2Update(UnaryOperator<String[]> nickNames2Updater) {
+    if (!this.nickNames2.isSet()) {
+      throw new IllegalStateException("Cannot update 'nickNames2' before it is set");
+    }
+    this.nickNames2 = changedValue(nickNames2Updater.apply(this.nickNames2.value()));
     return this;
   }
 
