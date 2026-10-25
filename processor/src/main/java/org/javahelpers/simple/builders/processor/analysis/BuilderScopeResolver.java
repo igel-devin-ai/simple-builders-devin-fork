@@ -38,16 +38,16 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import org.apache.commons.lang3.StringUtils;
+import org.javahelpers.codegen.analysis.GeneratedTypes;
+import org.javahelpers.codegen.analysis.JavaLangAnalyser;
+import org.javahelpers.codegen.analysis.JavaLangMapper;
+import org.javahelpers.codegen.model.core.PackageScopes;
+import org.javahelpers.codegen.model.type.TypeInstantiation;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
-import org.javahelpers.simple.codegen.analysis.GeneratedTypes;
-import org.javahelpers.simple.codegen.analysis.JavaLangAnalyser;
-import org.javahelpers.simple.codegen.analysis.JavaLangMapper;
-import org.javahelpers.simple.codegen.model.core.PackageScopes;
-import org.javahelpers.simple.codegen.model.type.TypeInstantiation;
-import org.javahelpers.simple.codegen.model.type.TypeName;
 
 /**
  * Central resolver that decides whether a builder may be referenced for a given type.

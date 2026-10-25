@@ -31,16 +31,16 @@ import static org.javahelpers.simple.builders.processor.generators.util.MethodGe
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameList;
+import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.generators.util.JavadocConstants;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
-import org.javahelpers.simple.codegen.model.javadoc.JavadocDto;
-import org.javahelpers.simple.codegen.model.method.MethodParameterDto;
-import org.javahelpers.simple.codegen.model.type.TypeName;
-import org.javahelpers.simple.codegen.model.type.TypeNameList;
-import org.javahelpers.simple.codegen.model.type.TypeNameSet;
 
 /**
  * Generates add2FieldName helper methods for List and Set fields.

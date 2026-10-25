@@ -24,12 +24,12 @@
 
 package org.javahelpers.simple.builders.processor.processing;
 
-import static org.javahelpers.simple.codegen.GenerationPhases.*;
+import static org.javahelpers.codegen.GenerationPhases.*;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.javahelpers.simple.codegen.logging.PhaseHierarchy;
+import org.javahelpers.codegen.logging.PhaseHierarchy;
 
 /**
  * Phase names of the builder processing pipeline, reported through {@code

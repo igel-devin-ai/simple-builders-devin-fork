@@ -24,10 +24,10 @@
 
 package org.javahelpers.simple.builders.processor.generators.field;
 
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.addExampleChainFragmentTemplate;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.createFieldConsumerWithBuilder;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.createFieldConsumerWithElementBuilders;
-import static org.javahelpers.simple.codegen.analysis.JavaLangMapper.map2TypeName;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +35,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.simple.builders.core.builders.ArrayListBuilder;
 import org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
@@ -42,9 +45,6 @@ import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
-import org.javahelpers.simple.codegen.model.type.TypeName;
-import org.javahelpers.simple.codegen.model.type.TypeNameGeneric;
-import org.javahelpers.simple.codegen.model.type.TypeNameList;
 
 /**
  * Generates Consumer-based methods for List fields with collection builder support.

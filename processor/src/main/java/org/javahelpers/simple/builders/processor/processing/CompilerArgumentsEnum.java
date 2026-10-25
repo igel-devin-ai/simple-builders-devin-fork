@@ -25,12 +25,12 @@
 package org.javahelpers.simple.builders.processor.processing;
 
 import java.util.function.BiConsumer;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.OptionState;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.processing.CompilerOption;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration.Builder;
-import org.javahelpers.simple.codegen.enums.AccessModifier;
-import org.javahelpers.simple.codegen.enums.OptionState;
-import org.javahelpers.simple.codegen.logging.ProcessingLogger;
-import org.javahelpers.simple.codegen.processing.CompilerOption;
 
 /**
  * Enumeration of all builder configuration compiler arguments.

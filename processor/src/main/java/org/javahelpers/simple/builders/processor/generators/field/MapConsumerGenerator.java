@@ -24,12 +24,15 @@
 
 package org.javahelpers.simple.builders.processor.generators.field;
 
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.*;
-import static org.javahelpers.simple.codegen.analysis.JavaLangMapper.map2TypeName;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.simple.builders.core.builders.HashMapBuilder;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
@@ -37,9 +40,6 @@ import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
-import org.javahelpers.simple.codegen.model.type.TypeName;
-import org.javahelpers.simple.codegen.model.type.TypeNameGeneric;
-import org.javahelpers.simple.codegen.model.type.TypeNameMap;
 
 /**
  * Generates Consumer-based methods for Map fields with map builder support.

@@ -56,6 +56,19 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import org.javahelpers.codegen.ClassCodeGenerator;
+import org.javahelpers.codegen.CodeGenerationException;
+import org.javahelpers.codegen.GenerationEnvironment;
+import org.javahelpers.codegen.analysis.JavaLangAnalyser;
+import org.javahelpers.codegen.analysis.JavaLangMapper;
+import org.javahelpers.codegen.logging.PerformanceTracker;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameList;
+import org.javahelpers.codegen.model.type.TypeNameMap;
+import org.javahelpers.codegen.model.type.TypeNameSet;
+import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
 import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilder.Template;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilderFor;
@@ -72,19 +85,6 @@ import org.javahelpers.simple.builders.processor.processing.CompilerArgumentsEnu
 import org.javahelpers.simple.builders.processor.processing.CompilerArgumentsReader;
 import org.javahelpers.simple.builders.processor.processing.ProcessingTarget;
 import org.javahelpers.simple.builders.processor.processing.SourceFormatterResolver;
-import org.javahelpers.simple.codegen.ClassCodeGenerator;
-import org.javahelpers.simple.codegen.CodeGenerationException;
-import org.javahelpers.simple.codegen.GenerationEnvironment;
-import org.javahelpers.simple.codegen.analysis.JavaLangAnalyser;
-import org.javahelpers.simple.codegen.analysis.JavaLangMapper;
-import org.javahelpers.simple.codegen.logging.PerformanceTracker;
-import org.javahelpers.simple.codegen.logging.ProcessingLogger;
-import org.javahelpers.simple.codegen.model.core.GenerationTargetClassDto;
-import org.javahelpers.simple.codegen.model.type.TypeName;
-import org.javahelpers.simple.codegen.model.type.TypeNameList;
-import org.javahelpers.simple.codegen.model.type.TypeNameMap;
-import org.javahelpers.simple.codegen.model.type.TypeNameSet;
-import org.javahelpers.simple.codegen.roaster.RoasterCodeGenerator;
 
 /**
  * BuilderProcessor is an annotation processor for execution in generate-sources phase. The

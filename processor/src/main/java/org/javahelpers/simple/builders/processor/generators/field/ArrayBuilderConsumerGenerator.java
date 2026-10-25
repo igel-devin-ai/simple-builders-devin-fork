@@ -24,22 +24,22 @@
 
 package org.javahelpers.simple.builders.processor.generators.field;
 
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.*;
-import static org.javahelpers.simple.codegen.analysis.JavaLangMapper.map2TypeName;
 
 import java.util.List;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.simple.builders.core.builders.ArrayListBuilder;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.generators.util.JavadocConstants;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
-import org.javahelpers.simple.codegen.model.javadoc.JavadocDto;
-import org.javahelpers.simple.codegen.model.method.MethodParameterDto;
-import org.javahelpers.simple.codegen.model.type.TypeName;
-import org.javahelpers.simple.codegen.model.type.TypeNameArray;
-import org.javahelpers.simple.codegen.model.type.TypeNameGeneric;
-import org.javahelpers.simple.codegen.model.type.TypeNamePrimitive;
 
 /**
  * Generates ArrayListBuilder consumer methods for array fields.

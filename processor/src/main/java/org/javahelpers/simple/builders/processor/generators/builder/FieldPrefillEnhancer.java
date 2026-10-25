@@ -24,14 +24,14 @@
 package org.javahelpers.simple.builders.processor.generators.builder;
 
 import java.util.Optional;
+import org.javahelpers.codegen.model.type.TypeInstantiation;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.generators.BuilderEnhancer;
 import org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
-import org.javahelpers.simple.codegen.model.type.TypeInstantiation;
-import org.javahelpers.simple.codegen.model.type.TypeName;
 
 /**
  * Enhancer that adds the private prefilling methods backing {@link TypeInstantiation.PrefillCall}

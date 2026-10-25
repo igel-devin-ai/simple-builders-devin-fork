@@ -28,14 +28,14 @@ import java.util.Optional;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.processing.AnnotationProcessingContext;
+import org.javahelpers.codegen.processing.AnnotationProcessingOptions;
 import org.javahelpers.simple.builders.processor.analysis.BuilderScopeResolver;
 import org.javahelpers.simple.builders.processor.generators.registry.GeneratorRegistry;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
-import org.javahelpers.simple.codegen.logging.ProcessingLogger;
-import org.javahelpers.simple.codegen.model.type.TypeName;
-import org.javahelpers.simple.codegen.processing.AnnotationProcessingContext;
-import org.javahelpers.simple.codegen.processing.AnnotationProcessingOptions;
 
 /**
  * Context object that wraps Elements, Types, and logging utilities from annotation processing,

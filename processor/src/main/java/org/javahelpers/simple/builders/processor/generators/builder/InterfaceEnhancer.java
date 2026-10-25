@@ -23,12 +23,12 @@
  */
 package org.javahelpers.simple.builders.processor.generators.builder;
 
+import org.javahelpers.codegen.model.annotation.InterfaceName;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.generators.BuilderEnhancer;
 import org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
-import org.javahelpers.simple.codegen.model.annotation.InterfaceName;
-import org.javahelpers.simple.codegen.model.type.TypeName;
 
 /**
  * Enhancer that adds the IBuilderBase interface to generated builder classes.

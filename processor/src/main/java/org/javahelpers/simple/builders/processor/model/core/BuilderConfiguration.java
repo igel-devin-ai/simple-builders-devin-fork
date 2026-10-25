@@ -24,17 +24,17 @@
 
 package org.javahelpers.simple.builders.processor.model.core;
 
-import static org.javahelpers.simple.codegen.enums.AccessModifier.*;
-import static org.javahelpers.simple.codegen.enums.OptionState.*;
+import static org.javahelpers.codegen.enums.AccessModifier.*;
+import static org.javahelpers.codegen.enums.OptionState.*;
 
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.javahelpers.simple.codegen.enums.AccessModifier;
-import org.javahelpers.simple.codegen.enums.FormattingMode;
-import org.javahelpers.simple.codegen.enums.OptionState;
-import org.javahelpers.simple.codegen.model.core.PackageScopes;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.FormattingMode;
+import org.javahelpers.codegen.enums.OptionState;
+import org.javahelpers.codegen.model.core.PackageScopes;
 
 /**
  * Configuration for builder generation. Combines annotation values with compiler options. Priority:

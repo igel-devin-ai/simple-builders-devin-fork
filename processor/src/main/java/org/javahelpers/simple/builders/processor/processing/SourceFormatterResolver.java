@@ -27,10 +27,10 @@ package org.javahelpers.simple.builders.processor.processing;
 import java.util.EnumMap;
 import javax.annotation.processing.ProcessingEnvironment;
 import org.apache.commons.lang3.StringUtils;
-import org.javahelpers.simple.codegen.SourceFormatter;
-import org.javahelpers.simple.codegen.enums.FormattingMode;
-import org.javahelpers.simple.codegen.logging.ProcessingLogger;
-import org.javahelpers.simple.codegen.roaster.RoasterSourceFormatter;
+import org.javahelpers.codegen.SourceFormatter;
+import org.javahelpers.codegen.enums.FormattingMode;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.roaster.RoasterSourceFormatter;
 
 /**
  * Resolves the {@link SourceFormatter} for a formatting mode, applying the Eclipse formatter
