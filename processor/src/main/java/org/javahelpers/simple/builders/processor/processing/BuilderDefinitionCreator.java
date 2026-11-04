@@ -833,6 +833,8 @@ public class BuilderDefinitionCreator {
     field.setFieldNameInBuilder(
         fieldNameInBuilder); // Use renamed field name for builder field storage
     field.setOriginalFieldName(fieldName);
+    // Framework annotations configure generation and are not copied onto generated code.
+    fieldType.getAnnotations().removeIf(BuilderDefinitionCreator::isBuilderFrameworkAnnotation);
     field.setFieldType(fieldType);
 
     // Store original javadoc description for reuse in builder method javadocs
@@ -863,7 +865,6 @@ public class BuilderDefinitionCreator {
     // annotations — they configure generation and are not copied onto generated code.
     List<AnnotationDto> annotations = FieldAnnotationExtractor.extractAnnotations(param, context);
     annotations.removeIf(BuilderDefinitionCreator::isBuilderFrameworkAnnotation);
-    fieldType.getAnnotations().removeIf(BuilderDefinitionCreator::isBuilderFrameworkAnnotation);
 
     // Annotations could be assigned to Type or Parameter.
     // To avoid duplication in generated code, we need to remove the duplications here.
