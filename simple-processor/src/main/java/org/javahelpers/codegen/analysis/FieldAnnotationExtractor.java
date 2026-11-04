@@ -167,7 +167,7 @@ public final class FieldAnnotationExtractor {
     String annotationQualifiedName = annotationType.getQualifiedName().toString();
 
     // Filter out annotations that should not be copied to generated code
-    if (shouldSkipAnnotation(annotationQualifiedName, context)) {
+    if (shouldSkipAnnotation(annotationQualifiedName)) {
       context.debug("    -> Skipping annotation: %s", annotationQualifiedName);
       return Optional.empty();
     }
@@ -177,9 +177,8 @@ public final class FieldAnnotationExtractor {
 
   /**
    * Extracts a single annotation from an AnnotationMirror without applying {@link
-   * #shouldSkipAnnotation(String, TypeMappingContext)} filters. Used by {@link
-   * #extractDeprecatedAnnotation} which needs to detect @Deprecated even though @Deprecated is
-   * filtered from parameter annotations.
+   * #shouldSkipAnnotation(String)} filters. Used by {@link #extractDeprecatedAnnotation} which
+   * needs to detect @Deprecated even though @Deprecated is filtered from parameter annotations.
    *
    * @param mirror the annotation mirror to process
    * @param context processing context
@@ -290,9 +289,8 @@ public final class FieldAnnotationExtractor {
    * @param qualifiedName the fully qualified name of the annotation
    * @return true if the annotation should be skipped, false otherwise
    */
-  private static boolean shouldSkipAnnotation(String qualifiedName, TypeMappingContext context) {
-    return ANNOTATION_FILTERS.stream().anyMatch(filter -> filter.test(qualifiedName))
-        || context.shouldSkipAnnotation(qualifiedName);
+  private static boolean shouldSkipAnnotation(String qualifiedName) {
+    return ANNOTATION_FILTERS.stream().anyMatch(filter -> filter.test(qualifiedName));
   }
 
   /**

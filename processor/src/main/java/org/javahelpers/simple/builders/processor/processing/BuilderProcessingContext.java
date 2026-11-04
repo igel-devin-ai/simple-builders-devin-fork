@@ -158,17 +158,6 @@ public final class BuilderProcessingContext extends AnnotationProcessingContext 
   /**
    * {@inheritDoc}
    *
-   * <p>Skips the simple-builders framework annotations — they configure generation and are not
-   * copied onto generated code.
-   */
-  @Override
-  public boolean shouldSkipAnnotation(String qualifiedName) {
-    return qualifiedName.startsWith("org.javahelpers.simple.builders.");
-  }
-
-  /**
-   * {@inheritDoc}
-   *
    * <p>Delegated to the builder scope resolver.
    */
   @Override

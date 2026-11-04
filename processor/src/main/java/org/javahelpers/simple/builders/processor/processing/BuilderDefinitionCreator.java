@@ -425,6 +425,21 @@ public class BuilderDefinitionCreator {
   }
 
   /**
+   * Whether an annotation belongs to the simple-builders framework itself (e.g. {@code @Default},
+   * {@code @Ignore4BuilderGeneration}) and therefore must not be copied onto generated code.
+   *
+   * @param annotation the annotation DTO
+   * @return {@code true} if the annotation is a framework annotation
+   */
+  private static boolean isBuilderFrameworkAnnotation(AnnotationDto annotation) {
+    return annotation.getAnnotationType() != null
+        && annotation
+            .getAnnotationType()
+            .getFullQualifiedName()
+            .startsWith("org.javahelpers.simple.builders.");
+  }
+
+  /**
    * Converts a BuilderFieldDto to a ClassFieldDto for rendering.
    *
    * @param field the field DTO to convert
@@ -844,8 +859,11 @@ public class BuilderDefinitionCreator {
                 new GetterInfoDto(
                     g.getSimpleName().toString(), g.getAnnotation(Deprecated.class) != null)));
 
-    // Extract annotations from the field parameter
+    // Extract annotations from the field parameter and exclude the framework's own
+    // annotations — they configure generation and are not copied onto generated code.
     List<AnnotationDto> annotations = FieldAnnotationExtractor.extractAnnotations(param, context);
+    annotations.removeIf(BuilderDefinitionCreator::isBuilderFrameworkAnnotation);
+    fieldType.getAnnotations().removeIf(BuilderDefinitionCreator::isBuilderFrameworkAnnotation);
 
     // Annotations could be assigned to Type or Parameter.
     // To avoid duplication in generated code, we need to remove the duplications here.
