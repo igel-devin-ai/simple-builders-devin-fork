@@ -29,8 +29,7 @@ package org.javahelpers.codegen.processing;
  * strict/fail-fast reporting and verbose diagnostics.
  *
  * <p>Framework defaults for new processors: strict enabled, verbose disabled (the javac {@code
- * -verbose} flag enables verbose output too). Domains may deviate — simple-builders keeps strict
- * opt-in.
+ * -verbose} flag enables verbose output too). Domains may deviate (e.g. keep strict opt-in).
  */
 public interface CodegenConfiguration {
 

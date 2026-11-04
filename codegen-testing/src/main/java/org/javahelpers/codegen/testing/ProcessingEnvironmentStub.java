@@ -121,8 +121,8 @@ public final class ProcessingEnvironmentStub {
    *
    * <pre>{@code
    * ProcessingEnvironment env = ProcessingEnvironmentStub.builder()
-   *     .put("simplebuilder.builderSuffix", "Builder")
-   *     .put("simplebuilder.generateFieldSupplier", "true")
+   *     .put("mydomain.suffix", "Target")
+   *     .put("mydomain.generateFieldSupplier", "true")
    *     .build();
    * }</pre>
    */

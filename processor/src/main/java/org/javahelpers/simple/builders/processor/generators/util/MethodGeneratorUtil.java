@@ -309,7 +309,7 @@ public final class MethodGeneratorUtil {
     methodDto.addParameter(parameter);
     StringBuilder code = new StringBuilder();
     code.append("$builderType:T builder = ")
-        .append(prefillCall.funcForEmptyBuilder().instantiationCode("$builderType:T", ""))
+        .append(prefillCall.funcForEmptyInstance().instantiationCode("$builderType:T", ""))
         .append(";\n");
     for (TypeInstantiation.PrefillCall.Field prefilledField : prefillCall.prefilledFields()) {
       code.append("builder.")

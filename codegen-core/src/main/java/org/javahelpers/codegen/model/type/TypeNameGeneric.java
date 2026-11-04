@@ -39,7 +39,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  *   <li>{@code Optional<Person>} -&gt; outer: {@code java.util.Optional}, inner: {@code Person}
  * </ul>
  *
- * This class is used throughout the processor to model parameterized Java types in a uniform way.
+ * This class is used throughout the codegen pipeline to model parameterized Java types in a uniform
+ * way.
  */
 public class TypeNameGeneric extends TypeName {
   private final List<TypeName> innerTypeArguments;

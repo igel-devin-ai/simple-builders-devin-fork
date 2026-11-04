@@ -75,7 +75,7 @@ import org.jboss.forge.roaster.model.source.MethodSource;
 import org.jboss.forge.roaster.model.source.ParameterSource;
 import org.jboss.forge.roaster.model.source.TypeVariableSource;
 
-/** Roaster-based code generator for builder source files. */
+/** Roaster-based code generator for generated source files. */
 public class RoasterCodeGenerator implements ClassCodeGenerator {
   /** Processing environment for accessing filer and element utilities. */
   private final GenerationEnvironment environment;
@@ -292,11 +292,11 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
    * invalid output (duplicate method signatures).
    *
    * <p>This is a generation-level check that operates on {@link MethodDto} (rendering-side DTO)
-   * which no longer carries field-origin metadata. Builder-specific conflict resolution with
-   * field-origin logging is performed earlier in {@link
-   * org.javahelpers.simple.builders.processor.processing.BuilderDefinitionCreator#resolveMethodConflicts}.
+   * which no longer carries field-origin metadata. Domain-specific conflict resolution with
+   * field-origin logging is expected to happen earlier, before the rendering DTOs reach this
+   * generator.
    *
-   * <p>Since conflicts should already be resolved by the builder-specific step, this safety net
+   * <p>Since conflicts should already be resolved by the domain-specific step, this safety net
    * simply keeps the first occurrence for any remaining duplicate signatures and reports it as a
    * warning (an error in strict mode).
    */
@@ -578,7 +578,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       String message = ex.getMessage();
       String errorMessage =
           """
-          Unable to create builder class '%s': %s.
+          Unable to create target class '%s': %s.
           Check the build environment and ensure all necessary directories are accessible.
           """
               .formatted(

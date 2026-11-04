@@ -25,18 +25,19 @@
 /**
  * Package org.javahelpers.codegen.model.core
  *
- * <p>Core model classes for the simple-builders processor.
+ * <p>Core model classes for code generation.
  *
  * <p>This package contains the fundamental data transfer objects (DTOs) that represent the main
- * building blocks of the builder generation process:
+ * building blocks of the generation process:
  *
  * <ul>
- *   <li>{@link BuilderConfiguration} - Configuration for builder generation
- *   <li>{@link BuilderDefinitionDto} - Complete definition of a builder to be generated
- *   <li>{@link BuilderFieldDto} - Field definition with metadata for generation
+ *   <li>{@link GenerationTargetClassDto} - Complete definition of a target class to be generated
+ *   <li>{@link ClassFieldDto} - Field definition with metadata for generation
+ *   <li>{@link DeprecationInfoDto} - Deprecation metadata propagated onto generated types
+ *   <li>{@link PackageScopes} - Package scoping rules for generated types
  * </ul>
  *
- * <p>These classes form the core data model that flows through the entire processor pipeline from
- * analysis to code generation.
+ * <p>These classes form the core data model that flows through the codegen pipeline from analysis
+ * to code generation.
  */
 package org.javahelpers.codegen.model.core;

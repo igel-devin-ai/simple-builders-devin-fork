@@ -191,8 +191,8 @@ public class JavadocDto {
    * <p>Examples:
    *
    * <pre>{@code
-   * addReturn("current instance of builder")           // No formatting
-   * addReturn("builder for {@code %s}", className)     // With formatting
+   * addReturn("current instance")                   // No formatting
+   * addReturn("type for {@code %s}", className)        // With formatting
    * }</pre>
    *
    * @param descriptionFormat the format string for the return description

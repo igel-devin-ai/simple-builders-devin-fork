@@ -25,7 +25,7 @@
 package org.javahelpers.codegen.enums;
 
 /**
- * Represents the three-state configuration for builder options.
+ * Represents the three-state configuration for generation options.
  *
  * <p>This enum allows distinguishing between:
  *
@@ -40,7 +40,7 @@ package org.javahelpers.codegen.enums;
  * <p>Example:
  *
  * <pre>{@code
- * // Global config via compiler option: -Asimplebuilder.generateFieldSupplier=false
+ * // Global config via compiler option: -Amydomain.generateFieldSupplier=false
  *
  * // Per-class override to enable:
  * @SimpleBuilder.Options(generateFieldSupplier = OptionState.ENABLED)

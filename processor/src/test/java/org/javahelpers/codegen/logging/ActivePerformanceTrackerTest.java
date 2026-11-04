@@ -171,7 +171,7 @@ class ActivePerformanceTrackerTest {
         simple-builders: Top <n> slowest MethodGenerators:
         simple-builders:   <n>. MyGenerator - <n>s (<n> calls, <n>ms/call)
         simple-builders:
-        simple-builders: Top <n> slowest BuilderEnhancers:
+        simple-builders: Top <n> slowest enhancers:
         simple-builders:   <n>. MyEnhancer - <n>s (<n> calls, <n>ms/call)\
         """,
         actual);
@@ -237,7 +237,7 @@ class ActivePerformanceTrackerTest {
     ProcessingLogger logger = capturing.logger();
     tracker.generateReport(logger);
 
-    assertTrue(capturing.messages().stream().anyMatch(m -> m.contains("BuilderEnhancers")));
+    assertTrue(capturing.messages().stream().anyMatch(m -> m.contains("slowest enhancers")));
     assertTrue(capturing.messages().stream().anyMatch(m -> m.contains("MyEnhancer")));
   }
 
@@ -455,7 +455,7 @@ class ActivePerformanceTrackerTest {
     assertTrue(
         capturing.messages().stream().anyMatch(m -> m.contains("Total classes processed: 0")));
     assertFalse(capturing.messages().stream().anyMatch(m -> m.contains("MethodGenerators")));
-    assertFalse(capturing.messages().stream().anyMatch(m -> m.contains("BuilderEnhancers")));
+    assertFalse(capturing.messages().stream().anyMatch(m -> m.contains("slowest enhancers")));
   }
 
   @Test

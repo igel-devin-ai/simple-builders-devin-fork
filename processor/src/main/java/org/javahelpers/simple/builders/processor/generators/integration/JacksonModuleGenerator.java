@@ -179,7 +179,7 @@ public class JacksonModuleGenerator {
       classDef.addNestedType(createMixinInterface(entry));
       // The builder type appears as a literal in the @JsonDeserialize(builder = ...) member
       // and therefore must be imported explicitly.
-      classDef.addImport(entry.builderType());
+      classDef.addImport(entry.generatedType());
     }
 
     classDef.addConstructor(createConstructor(entries));
@@ -195,7 +195,7 @@ public class JacksonModuleGenerator {
 
     AnnotationDto jsonDeserialize = new AnnotationDto();
     jsonDeserialize.setAnnotationType(JSON_DESERIALIZE_TYPE);
-    jsonDeserialize.addMember("builder", entry.builderType().getClassName() + ".class");
+    jsonDeserialize.addMember("builder", entry.generatedType().getClassName() + ".class");
     mixin.addAnnotation(jsonDeserialize);
 
     return mixin;

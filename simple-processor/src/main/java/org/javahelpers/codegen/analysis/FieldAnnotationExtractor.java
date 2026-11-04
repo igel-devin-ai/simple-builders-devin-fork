@@ -48,28 +48,26 @@ public final class FieldAnnotationExtractor {
   private static final String DEPRECATED_FQN = "java.lang.Deprecated";
 
   /**
-   * List of predicates that determine which annotations should be skipped (not copied to the
-   * builder). Each predicate receives the fully qualified annotation name and returns true if the
+   * List of predicates that determine which annotations should be skipped (not copied to generated
+   * code). Each predicate receives the fully qualified annotation name and returns true if the
    * annotation should be filtered out.
    *
    * <p>To add a new filter, simply add a new predicate to this list with a descriptive comment.
    */
   private static final java.util.List<java.util.function.Predicate<String>> ANNOTATION_FILTERS =
       java.util.List.of(
-          // Skip SimpleBuilder framework annotations
-          name -> name.startsWith("org.javahelpers.simple.builders."),
           // Skip code generation metadata annotations
           name -> name.equals("javax.annotation.Generated"),
           name -> name.equals("javax.annotation.processing.Generated"),
-          // Skip compiler-only annotations not relevant for builder parameters
+          // Skip compiler-only annotations not relevant for generated parameters
           name -> name.equals("java.lang.SuppressWarnings"),
-          // Skip @Deprecated on parameters — deprecation is propagated to the builder method
-          // itself via DeprecationInfoDto, not to the builder method's parameter (which is a
+          // Skip @Deprecated on parameters — deprecation is propagated to the generated method
+          // itself via DeprecationInfoDto, not to the generated method's parameter (which is a
           // new declaration, not the original deprecated source parameter)
           name -> name.equals(DEPRECATED_FQN),
           // Skip @Valid annotation for cascading validation (jakarta.validation.Valid /
           // javax.validation.Valid) - only meaningful on fields or method return types, not on
-          // builder method parameters where individual values are set
+          // generated method parameters where individual values are set
           name -> name.equals("jakarta.validation.Valid"),
           name -> name.equals("javax.validation.Valid"));
 
@@ -102,7 +100,7 @@ public final class FieldAnnotationExtractor {
       }
       if (DEPRECATED_FQN.equals(annotationType.getQualifiedName().toString())) {
         // Extract the @Deprecated annotation directly, WITHOUT applying ANNOTATION_FILTERS.
-        // The filters are for annotations copied to builder parameters; deprecation detection
+        // The filters are for annotations copied to generated parameters; deprecation detection
         // must always see @Deprecated regardless of whether it is copied to parameters.
         return extractAnnotationWithoutFiltering(mirror, context);
       }
@@ -112,11 +110,11 @@ public final class FieldAnnotationExtractor {
 
   /**
    * Extracts annotations from a field parameter. Filters out annotations that should not be copied
-   * to the builder.
+   * to generated code.
    *
    * @param param the parameter element containing annotations
    * @param context processing context
-   * @return list of annotations to be copied to the builder field
+   * @return list of annotations to be copied to the generated field
    */
   public static List<AnnotationDto> extractAnnotations(
       VariableElement param, TypeMappingContext context) {
@@ -132,11 +130,11 @@ public final class FieldAnnotationExtractor {
 
   /**
    * Extracts annotations from a type mirror. Filters out annotations that should not be copied to
-   * the builder.
+   * generated code.
    *
    * @param typeMirror the type mirror containing annotations
    * @param context processing context
-   * @return list of annotations to be copied to the builder field
+   * @return list of annotations to be copied to the generated field
    */
   public static List<AnnotationDto> extractAnnotations(
       javax.lang.model.type.TypeMirror typeMirror, TypeMappingContext context) {
@@ -152,7 +150,7 @@ public final class FieldAnnotationExtractor {
 
   /**
    * Extracts a single annotation from an AnnotationMirror. Filters out annotations that should not
-   * be copied to the builder.
+   * be copied to generated code.
    *
    * @param mirror the annotation mirror to process
    * @param context processing context
@@ -168,8 +166,8 @@ public final class FieldAnnotationExtractor {
 
     String annotationQualifiedName = annotationType.getQualifiedName().toString();
 
-    // Filter out annotations that should not be copied to the builder
-    if (shouldSkipAnnotation(annotationQualifiedName)) {
+    // Filter out annotations that should not be copied to generated code
+    if (shouldSkipAnnotation(annotationQualifiedName, context)) {
       context.debug("    -> Skipping annotation: %s", annotationQualifiedName);
       return Optional.empty();
     }
@@ -179,8 +177,9 @@ public final class FieldAnnotationExtractor {
 
   /**
    * Extracts a single annotation from an AnnotationMirror without applying {@link
-   * #shouldSkipAnnotation} filters. Used by {@link #extractDeprecatedAnnotation} which needs to
-   * detect @Deprecated even though @Deprecated is filtered from parameter annotations.
+   * #shouldSkipAnnotation(String, TypeMappingContext)} filters. Used by {@link
+   * #extractDeprecatedAnnotation} which needs to detect @Deprecated even though @Deprecated is
+   * filtered from parameter annotations.
    *
    * @param mirror the annotation mirror to process
    * @param context processing context
@@ -286,13 +285,14 @@ public final class FieldAnnotationExtractor {
   }
 
   /**
-   * Determines if an annotation should be skipped (not copied to the builder).
+   * Determines if an annotation should be skipped (not copied to generated code).
    *
    * @param qualifiedName the fully qualified name of the annotation
    * @return true if the annotation should be skipped, false otherwise
    */
-  private static boolean shouldSkipAnnotation(String qualifiedName) {
-    return ANNOTATION_FILTERS.stream().anyMatch(filter -> filter.test(qualifiedName));
+  private static boolean shouldSkipAnnotation(String qualifiedName, TypeMappingContext context) {
+    return ANNOTATION_FILTERS.stream().anyMatch(filter -> filter.test(qualifiedName))
+        || context.shouldSkipAnnotation(qualifiedName);
   }
 
   /**
@@ -327,9 +327,9 @@ public final class FieldAnnotationExtractor {
    * matches one of the provided names, regardless of package.
    *
    * <p>For example, if {@code annotationNames} contains {@code "Default"} and {@code
-   * "DefaultValue"}, this will detect annotations from any package (e.g. {@code
-   * org.javahelpers.simple.builders.core.annotations.Default}, {@code jakarta.ws.rs.DefaultValue})
-   * as long as they have a {@code String value()} member.
+   * "DefaultValue"}, this will detect annotations from any package (e.g. a domain's own {@code
+   * Default} annotation or {@code jakarta.ws.rs.DefaultValue}) as long as they have a {@code String
+   * value()} member.
    *
    * @param element the element to check for annotations
    * @param annotationNames the set of annotation simple names to look for

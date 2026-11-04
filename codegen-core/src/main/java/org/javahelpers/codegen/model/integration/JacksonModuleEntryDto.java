@@ -27,9 +27,9 @@ package org.javahelpers.codegen.model.integration;
 import org.javahelpers.codegen.model.type.TypeName;
 
 /**
- * Represents an entry for a Jackson module registration. Maps a DTO type to its builder type.
+ * Represents an entry for a Jackson module registration. Maps a DTO type to its generated type.
  *
  * @param dtoType the TypeName of the DTO
- * @param builderType the TypeName of the builder
+ * @param generatedType the TypeName of the generated type
  */
-public record JacksonModuleEntryDto(TypeName dtoType, TypeName builderType) {}
+public record JacksonModuleEntryDto(TypeName dtoType, TypeName generatedType) {}

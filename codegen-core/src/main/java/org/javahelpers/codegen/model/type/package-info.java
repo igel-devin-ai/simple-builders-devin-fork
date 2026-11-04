@@ -25,7 +25,7 @@
 /**
  * Package org.javahelpers.codegen.model.type
  *
- * <p>Type model classes for the simple-builders processor.
+ * <p>Type model classes for code generation.
  *
  * <p>This package contains classes that represent Java types and their properties, providing a
  * comprehensive type system for the processor. It includes representations for primitive types,

@@ -34,9 +34,13 @@ The project is organized as a multi-module Maven project:
 ```
 simple-builders/
 ├── core/              # Core annotations and runtime utilities
-├── processor/         # Annotation processor (compile-time code generation)
-├── example/          # Example usage and integration tests
-└── pom.xml           # Parent POM
+├── codegen-core/      # Reusable code generation model, enums and utilities
+├── codegen-roaster/   # Roaster-based code generator backend
+├── simple-processor/  # Generic annotation-processing layer (driver, analysis, logging)
+├── codegen-testing/   # Shared compile-testing utilities
+├── processor/         # Simple-builder domain: annotations-to-builder generation
+├── example/           # Example usage and integration tests
+└── pom.xml            # Parent POM
 ```
 
 ### Module Dependencies

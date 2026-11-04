@@ -156,8 +156,7 @@ public class MethodDto {
   /**
    * Adding a further parameter of method.
    *
-   * @param paramDto parameter to be added of type {@code
-   *     rg.javahelpers.simple.builders.internal.dtos.MethodParameterDto}
+   * @param paramDto parameter to be added
    */
   public void addParameter(MethodParameterDto paramDto) {
     this.parameters.add(paramDto);
@@ -166,8 +165,7 @@ public class MethodDto {
   /**
    * Getting a list of parameters of method.
    *
-   * @return List of parameters of type {@code
-   *     rg.javahelpers.simple.builders.internal.dtos.MethodParameterDto}
+   * @return List of parameters
    */
   public List<MethodParameterDto> getParameters() {
     return parameters;

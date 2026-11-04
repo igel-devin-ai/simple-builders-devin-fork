@@ -275,7 +275,7 @@ public final class ActivePerformanceTracker implements PerformanceTracker {
   }
 
   /**
-   * Reports the top 5 slowest BuilderEnhancers to the logger.
+   * Reports the top 5 slowest enhancers to the logger.
    *
    * @param logger the processing logger to output the report
    */
@@ -286,7 +286,7 @@ public final class ActivePerformanceTracker implements PerformanceTracker {
     if (enhLimit <= 0) {
       return;
     }
-    logger.info("Top %d slowest BuilderEnhancers:", enhLimit);
+    logger.info("Top %d slowest enhancers:", enhLimit);
     for (int i = 0; i < enhLimit; i++) {
       Map.Entry<String, Long> entry = topEnhancers.get(i);
       double seconds = entry.getValue() / 1_000_000_000.0;

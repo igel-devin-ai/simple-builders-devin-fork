@@ -52,7 +52,7 @@ import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
 
-/** Helper functions to create simple builder types from java.lang types. */
+/** Helper functions to create codegen {@link TypeName}s from java.lang types. */
 public final class JavaLangMapper {
   /** Private constructor to prevent instantiation of utility class. */
   private JavaLangMapper() {
@@ -126,7 +126,7 @@ public final class JavaLangMapper {
 
   /**
    * Maps a {@code TypeElement} to its {@code TypeName} holding package and simple name only,
-   * without resolving builder or constructor information.
+   * without resolving target or constructor information.
    *
    * @param typeElement the TypeElement to map
    * @param context the type mapping context
@@ -143,7 +143,7 @@ public final class JavaLangMapper {
   }
 
   /**
-   * Maps a {@code TypeElement} to a simple-builder {@code TypeName}.
+   * Maps a {@code TypeElement} to a codegen {@code TypeName}.
    *
    * @param typeElement the TypeElement to map
    * @param context the type mapping context
@@ -212,7 +212,7 @@ public final class JavaLangMapper {
   }
 
   /**
-   * Maps a list of {@code TypeMirror} to a list of simple-builder {@code TypeName}s using {@link
+   * Maps a list of {@code TypeMirror} to a list of codegen {@code TypeName}s using {@link
    * #extractType(TypeMirror, TypeMappingContext)}.
    */
   private static List<TypeName> extractTypeForList(

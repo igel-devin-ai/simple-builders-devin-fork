@@ -35,7 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 /**
- * Immutable set of package scopes used for builder generation and usage restrictions.
+ * Immutable set of package scopes used for generation and usage restrictions.
  *
  * <p>A package is in scope when it equals a configured scope or is a subpackage of one; matching
  * ignores case. An empty scope set is "unscoped" and matches nothing — whether that means "no

@@ -25,7 +25,7 @@
 /**
  * Package org.javahelpers.codegen.model.integration
  *
- * <p>Integration model classes for the simple-builders processor.
+ * <p>Integration model classes for code generation.
  *
  * <p>This package contains classes that represent integration-specific data, providing the model
  * layer for framework integrations. These classes support integration with external frameworks,

@@ -137,6 +137,18 @@ public interface TypeMappingContext {
   boolean shouldCopyTypeAnnotations();
 
   /**
+   * Whether an annotation is skipped when annotations are copied onto generated types. Domains use
+   * this to exclude their own framework annotations — those configure generation and do not belong
+   * on the generated code.
+   *
+   * @param qualifiedName the fully qualified annotation name
+   * @return {@code true} if the annotation is skipped
+   */
+  default boolean shouldSkipAnnotation(String qualifiedName) {
+    return false;
+  }
+
+  /**
    * Resolves the generated type for the given type element.
    *
    * @param typeElement the type element to resolve

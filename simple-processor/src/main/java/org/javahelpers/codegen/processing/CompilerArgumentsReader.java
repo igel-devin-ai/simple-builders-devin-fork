@@ -71,10 +71,10 @@ public class CompilerArgumentsReader {
    * @return the value of the compiler argument, or null if not set
    */
   public static String readValue(CompilerOption argument, Map<String, String> options) {
-    // Try the -D JVM system property first (e.g., -Dsimplebuilder.verbose)
+    // Try the -D JVM system property first (e.g., -Dexample.verbose)
     String value = System.getProperty(argument.getCompilerArgument());
 
-    // Then the -A compiler argument (e.g., -Asimplebuilder.verbose)
+    // Then the -A compiler argument (e.g., -Aexample.verbose)
     if (value == null) {
       value = options.get(argument.getCompilerArgument());
     }

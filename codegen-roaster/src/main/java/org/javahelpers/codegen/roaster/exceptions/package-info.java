@@ -23,7 +23,7 @@
  */
 
 /**
- * Package org.javahelpers.codegen.roaster.roaster.exceptions
+ * Package org.javahelpers.codegen.roaster.exceptions
  *
  * <p>Roaster-specific exception classes.
  *

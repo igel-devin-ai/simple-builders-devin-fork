@@ -71,7 +71,7 @@ public interface PerformanceTracker {
   void endGenerator(String generatorName);
 
   /**
-   * Starts tracking an individual builder enhancer invocation.
+   * Starts tracking an individual enhancer invocation.
    *
    * <p>The enhancer name is passed to {@link #endEnhancer(String)} for recording; this method only
    * records the start timestamp.
@@ -79,9 +79,9 @@ public interface PerformanceTracker {
   void startEnhancer();
 
   /**
-   * Ends tracking an individual builder enhancer invocation.
+   * Ends tracking an individual enhancer invocation.
    *
-   * @param enhancerName the simple class name of the builder enhancer that was started
+   * @param enhancerName the simple class name of the enhancer that was started
    */
   void endEnhancer(String enhancerName);
 

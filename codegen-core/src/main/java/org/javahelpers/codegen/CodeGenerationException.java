@@ -25,8 +25,8 @@
 /**
  * Failure of a {@link ClassCodeGenerator} to produce or write generated source code.
  *
- * <p>The exception type of the code generation layer: it intentionally knows nothing about
- * builders. Callers generating builders translate it into their domain exception.
+ * <p>The exception type of the code generation layer: it intentionally knows nothing about the
+ * consuming domain. Callers translate it into their domain exception.
  */
 package org.javahelpers.codegen;
 

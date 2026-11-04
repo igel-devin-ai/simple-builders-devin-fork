@@ -25,12 +25,12 @@
 package org.javahelpers.codegen.enums;
 
 /**
- * Enum representing the formatting mode for generated builder source files.
+ * Enum representing the formatting mode for generated source files.
  *
  * <p>This enum controls how the raw source code produced by Roaster's {@code toUnformattedString()}
  * is post-processed before being written to disk.
  *
- * <p>Compiler option: {@code -Asimplebuilder.formattingMode=JDT|LIGHTWEIGHT|NONE}
+ * <p>Compiler option: {@code -Amydomain.formattingMode=JDT|LIGHTWEIGHT|NONE}
  */
 public enum FormattingMode {
 

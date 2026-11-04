@@ -25,11 +25,11 @@
 /**
  * Package org.javahelpers.codegen.analysis
  *
- * <p>Analysis components for the simple-builders processor.
+ * <p>Analysis components for code generation.
  *
  * <p>This package contains classes that analyze and process source code elements, forming the
  * foundation of the source code analysis pipeline. These components extract essential information
- * from annotated DTOs for builder generation.
+ * from annotated elements for code generation.
  *
  * <p>Key responsibilities include annotation extraction, Java language element analysis, type
  * resolution, and mapping between source code structures and internal DTOs.

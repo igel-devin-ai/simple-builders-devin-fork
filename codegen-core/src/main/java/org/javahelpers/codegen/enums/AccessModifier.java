@@ -25,13 +25,13 @@
 package org.javahelpers.codegen.enums;
 
 /**
- * Enum representing Java access modifiers for generated builder classes and methods.
+ * Enum representing Java access modifiers for generated classes and their members.
  *
- * <p>This enum is used to control the visibility of generated builders and their methods through
- * the {@link org.javahelpers.simple.builders.core.annotations.SimpleBuilder.Options} annotation.
+ * <p>This enum is used to control the visibility of generated types and their members — a domain's
+ * annotation or configuration selects the modifier.
  *
- * <p>Note: PROTECTED is intentionally not included as builders follow the Builder pattern, not
- * inheritance, and should not be extended.
+ * <p>Note: PROTECTED is intentionally not included as generated types are not designed for
+ * inheritance.
  */
 public enum AccessModifier {
 

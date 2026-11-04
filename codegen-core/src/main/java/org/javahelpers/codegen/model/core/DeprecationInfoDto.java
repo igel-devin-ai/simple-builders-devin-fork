@@ -32,22 +32,20 @@ import org.javahelpers.codegen.model.annotation.AnnotationDto;
 /**
  * Encapsulates deprecation metadata detected from source DTO property elements.
  *
- * <p>This DTO is used during builder definition generation to carry deprecation information from
+ * <p>This DTO is used during target definition analysis to carry deprecation information from
  * source elements (constructor parameter, record component, backing field, setter method) to the
- * point where generated builder methods are annotated. It is an analysis-side DTO and is not
- * directly used for class generation — the actual rendering uses the existing {@link
- * org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto#getAnnotations()
- * annotations list} and {@link org.javahelpers.codegen.model.javadoc.JavadocDto javadoc} on the
- * rendering DTOs.
+ * point where generated methods are annotated. It is an analysis-side DTO and is not directly used
+ * for class generation — the actual rendering uses the annotations list and {@link
+ * org.javahelpers.codegen.model.javadoc.JavadocDto javadoc} on the domain's rendering DTOs.
  *
  * <p>The {@link #deprecatedAnnotation} preserves {@code @Deprecated(since = ..., forRemoval = ...)}
  * attributes. The {@link #deprecatedJavaDoc} carries the {@code @deprecated} Javadoc tag text.
  *
  * <p>Note: getter method deprecation is not stored here. A deprecated getter means "don't call this
- * accessor directly anymore", but the builder does not expose a get-API — only the from-instance
+ * accessor directly anymore", but a generated type may not expose a get-API — e.g. a from-instance
  * constructor calls the getter internally, which is covered by the class-level
- * {@code @SuppressWarnings}. The setter, however, IS a propagation source because the builder's
- * fluent methods replace the setter as the write API for the property.
+ * {@code @SuppressWarnings}. The setter, however, IS a propagation source because the generated
+ * type's fluent methods replace the setter as the write API for the property.
  *
  * @param deprecatedAnnotation the {@code @Deprecated} annotation DTO preserving {@code since} and
  *     {@code forRemoval} attributes, or {@code null} if not deprecated

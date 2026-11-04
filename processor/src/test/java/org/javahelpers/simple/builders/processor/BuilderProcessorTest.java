@@ -3637,7 +3637,7 @@ class BuilderProcessorTest {
     assertThat(compilation).succeeded();
     assertThat(compilation)
         .hadWarningContaining(
-            "Failed to generate target - Unable to create builder class 'test.OrderDtoFactory': Attempt to recreate a file for type test.OrderDtoFactory.");
+            "Failed to generate target - Unable to create target class 'test.OrderDtoFactory': Attempt to recreate a file for type test.OrderDtoFactory.");
 
     // Verify that a builder was generated
     String generatedCode = loadGeneratedSource(compilation, "OrderDtoFactory");
