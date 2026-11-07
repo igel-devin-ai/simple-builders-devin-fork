@@ -105,6 +105,7 @@ public class MessagerProcessingLogger extends SinkProcessingLogger {
    * @param format the format string
    * @param args arguments referenced by the format specifiers in the format string
    */
+  @Override
   public void error(Element e, String format, Object... args) {
     messager.printMessage(Diagnostic.Kind.ERROR, String.format(prefixed(format), args), e);
   }
@@ -116,6 +117,7 @@ public class MessagerProcessingLogger extends SinkProcessingLogger {
    * @param format the format string
    * @param args arguments referenced by the format specifiers in the format string
    */
+  @Override
   public void warning(Element e, String format, Object... args) {
     String message = String.format(format, args);
     if (verbose) {
