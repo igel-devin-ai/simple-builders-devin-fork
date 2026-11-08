@@ -261,7 +261,7 @@ public final class BuilderScopeResolver {
     // builderUsageSuffix (which falls back to builderSuffix if not configured) and verify
     // the builder contract.
     String suffix = context.getConfiguration().getBuilderUsageSuffix();
-    TypeName candidate = JavaLangMapper.createBuilderTypeName(referencedType, context, suffix);
+    TypeName candidate = JavaLangMapper.createDerivedTypeName(referencedType, context, suffix);
     return resolveByBuilderContract(candidate, referencedType, referencedTypeName);
   }
 
@@ -349,7 +349,7 @@ public final class BuilderScopeResolver {
       return Optional.empty();
     }
     List<ExecutableElement> fieldFunctions =
-        JavaLangAnalyser.findFieldFunctions(builderElement, context);
+        JavaLangAnalyser.findSingleParameterMethods(builderElement, context);
     ConventionCoverage best =
         candidatePrefixes(properties, fieldFunctions).stream()
             .map(

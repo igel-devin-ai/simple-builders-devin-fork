@@ -82,14 +82,15 @@ public final class JavaLangAnalyser {
   }
 
   /**
-   * Gets all methods of a class, including inherited methods, excluding methods from {@code
-   * java.lang.Object}.
+   * Finds all setter-pattern methods of a class (including inherited), excluding methods from
+   * {@code java.lang.Object}. A setter is a single-parameter method whose name starts with {@code
+   * set} followed by an uppercase letter.
    *
-   * @param context the processing context
    * @param typeElement the type element to get methods from
-   * @return filtered list excluding Object class methods
+   * @param context the processing context
+   * @return filtered and sorted list of setter methods
    */
-  public static List<ExecutableElement> findAllPossibleSettersOfClass(
+  public static List<ExecutableElement> findSetterMethods(
       TypeElement typeElement, AnnotationProcessingContext context) {
     return ElementFilter.methodsIn(context.getAllMembers(typeElement)).stream()
         .filter(mth -> isNoMethodOfObjectClass(mth, context))
@@ -197,8 +198,8 @@ public final class JavaLangAnalyser {
   }
 
   /**
-   * Check if the class (TypeElement) has an empty constructor accessible from the package the
-   * builder is generated into.
+   * Checks whether the type has an empty (no-arg) constructor accessible from the package generated
+   * code is written to.
    *
    * @param typeElement the type element to check
    * @param context processing context
@@ -538,15 +539,15 @@ public final class JavaLangAnalyser {
   }
 
   /**
-   * Finds the builder's field functions: accessible non-static single-parameter methods that are
-   * not members of {@link Object}. These are the candidates a naming convention may use to prefill
-   * the builder property by property.
+   * Finds accessible non-static single-parameter methods of a type, excluding methods from {@link
+   * Object}. These are the candidate mutator methods a naming convention may use to populate a
+   * generated type property by property.
    *
-   * @param type the builder type to inspect
+   * @param type the type to inspect
    * @param context the processing context, used to access all members
-   * @return the field functions in declaration order
+   * @return the mutator methods in declaration order
    */
-  public static List<ExecutableElement> findFieldFunctions(
+  public static List<ExecutableElement> findSingleParameterMethods(
       TypeElement type, AnnotationProcessingContext context) {
     return ElementFilter.methodsIn(context.getAllMembers(type)).stream()
         .filter(JavaLangAnalyser::isNotStatic)
@@ -575,20 +576,20 @@ public final class JavaLangAnalyser {
   }
 
   /**
-   * Checks whether the given type has a constructor accepting the expected type. This is part of
-   * the builder contract used when the field already has a value that is passed to the builder.
+   * Checks whether the given type has a constructor accepting the expected type. Useful for
+   * determining if a generated type can be instantiated from an existing value.
    *
-   * @param builderType the candidate builder type element to check
+   * @param type the candidate type element to check
    * @param expectedType the type the constructor must accept
    * @param context the processing context, used to access all members
    * @return {@code true} if the type declares or inherits a matching constructor
    */
   public static boolean hasConstructorAccepting(
-      TypeElement builderType, TypeName expectedType, AnnotationProcessingContext context) {
-    if (builderType == null) {
+      TypeElement type, TypeName expectedType, AnnotationProcessingContext context) {
+    if (type == null) {
       return false;
     }
-    return ElementFilter.constructorsIn(context.getAllMembers(builderType)).stream()
+    return ElementFilter.constructorsIn(context.getAllMembers(type)).stream()
         .filter(context::isAccessibleFromGeneratedPackage)
         .anyMatch(constructor -> hasParameters(constructor, List.of(expectedType)));
   }
@@ -654,8 +655,8 @@ public final class JavaLangAnalyser {
    * Extracts the text following the {@code @deprecated} Javadoc tag. Continuation lines are
    * supported until the next Javadoc tag (starting with '@') or an empty line.
    *
-   * <p>This is used to propagate the migration hint from a deprecated DTO member to the generated
-   * builder members.
+   * <p>This is used to propagate the migration hint from a deprecated source member to generated
+   * code members.
    *
    * @param javaDoc the full raw Javadoc as returned by {@code Elements.getDocComment(...)} , or
    *     {@code null}
@@ -887,10 +888,10 @@ public final class JavaLangAnalyser {
   }
 
   /**
-   * Determines which constructor to use for builder initialization. Prioritizes constructors
-   * annotated with the given constructor annotation. If none is annotated, selects the constructor
-   * with the highest number of parameters. Returns empty if no constructor has parameters (i.e.,
-   * only default constructor or none found).
+   * Finds the primary constructor of a type: the one to use when generated code must instantiate
+   * it. Prioritizes constructors annotated with the given marker annotation. If none is annotated,
+   * selects the constructor with the highest number of parameters. Returns empty if no constructor
+   * has parameters (i.e., only default constructor or none found).
    *
    * @param annotatedType the type element to search for constructors
    * @param constructorAnnotation the marker annotation selecting a constructor explicitly; may be
@@ -898,7 +899,7 @@ public final class JavaLangAnalyser {
    * @param context the processing context providing access to elements and types utilities
    * @return Optional containing the selected constructor, or empty if none suitable
    */
-  public static Optional<ExecutableElement> findConstructorForBuilder(
+  public static Optional<ExecutableElement> findPrimaryConstructor(
       TypeElement annotatedType,
       Class<? extends Annotation> constructorAnnotation,
       AnnotationProcessingContext context) {
@@ -929,8 +930,8 @@ public final class JavaLangAnalyser {
 
   /**
    * Checks whether the given type has at least one constructor that is accessible from the package
-   * the generated builder is written to. A type without an accessible constructor cannot be
-   * instantiated by generated code.
+   * generated code is written to. A type without an accessible constructor cannot be instantiated
+   * by generated code.
    *
    * @param typeElement the type element to check
    * @param context the processing context providing access to elements and types utilities

@@ -182,14 +182,16 @@ public final class JavaLangMapper {
   }
 
   /**
-   * Creates a TypeName for the builder of a given TypeElement using an explicit suffix.
+   * Creates a derived TypeName by appending a suffix to the simple name of the given TypeElement,
+   * placed in the same package. Useful for generating companion types such as builders, serializers
+   * or mappers from an annotated source type.
    *
-   * @param typeElement the type element to create builder name for
+   * @param typeElement the type element to derive the name from
    * @param context the type mapping context
-   * @param suffix the builder class name suffix to append
-   * @return the TypeName for the builder
+   * @param suffix the class name suffix to append (e.g. "Builder", "Serializer")
+   * @return the derived TypeName
    */
-  public static TypeName createBuilderTypeName(
+  public static TypeName createDerivedTypeName(
       TypeElement typeElement, TypeMappingContext context, String suffix) {
     String builderClassName = typeElement.getSimpleName().toString() + suffix;
     String packageName = context.getPackageName(typeElement);

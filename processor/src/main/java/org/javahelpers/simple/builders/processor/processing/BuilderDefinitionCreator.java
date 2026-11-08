@@ -505,7 +505,7 @@ public class BuilderDefinitionCreator {
       Map<String, BuilderFieldDto> fieldNameRegistry) {
     List<BuilderFieldDto> constructorFields = new LinkedList<>();
     Optional<ExecutableElement> constructorOpt =
-        findConstructorForBuilder(annotatedType, SimpleBuilderConstructor.class, context);
+        findPrimaryConstructor(annotatedType, SimpleBuilderConstructor.class, context);
     if (constructorOpt.isPresent()) {
       ExecutableElement ctor = constructorOpt.get();
       context.debugStartOperation(
@@ -552,7 +552,7 @@ public class BuilderDefinitionCreator {
             .map(BuilderFieldDto::getFieldNameInBuilder)
             .collect(toSet());
 
-    List<ExecutableElement> methods = findAllPossibleSettersOfClass(annotatedType, context);
+    List<ExecutableElement> methods = findSetterMethods(annotatedType, context);
     int processedCount = 0;
     int addedCount = 0;
     int skippedCount = 0;
@@ -1205,7 +1205,7 @@ public class BuilderDefinitionCreator {
    */
   private static boolean isConstructorDeprecated(
       TypeElement annotatedType, BuilderProcessingContext context) {
-    return JavaLangAnalyser.findConstructorForBuilder(
+    return JavaLangAnalyser.findPrimaryConstructor(
             annotatedType, SimpleBuilderConstructor.class, context)
         .filter(ctor -> ctor.getAnnotation(Deprecated.class) != null)
         .isPresent();

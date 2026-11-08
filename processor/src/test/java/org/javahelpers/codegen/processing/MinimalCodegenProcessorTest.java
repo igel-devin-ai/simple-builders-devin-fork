@@ -132,7 +132,7 @@ public class MinimalCodegenProcessorTest {
           new MinimalTargetDefinition(
               JavaLangMapper.mapToTypeName(target, ctx),
               builderName(target, ctx),
-              JavaLangAnalyser.findAllPossibleSettersOfClass(target, ctx)));
+              JavaLangAnalyser.findSetterMethods(target, ctx)));
     }
 
     @Override
