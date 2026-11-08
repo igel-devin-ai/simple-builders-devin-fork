@@ -60,6 +60,7 @@ public class SourceFormatterResolver implements FormatterResolver {
    * @param mode the formatting mode
    * @return a cached or new formatter instance
    */
+  @Override
   public SourceFormatter resolve(FormattingMode mode) {
     return formatterCache.computeIfAbsent(
         mode, m -> new RoasterSourceFormatter(logger, m, formatterProfile));
