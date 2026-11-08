@@ -71,13 +71,12 @@ public class StringValidationGenerator implements MethodGenerator {
         String fieldInBuilder = field.getFieldNameInBuilder();
         String methodName = "validate" + StringUtils.capitalize(fieldInDto);
         
-        String methodBody = String.format(
-            "if (!%s.isSet() || %s.value().trim().isEmpty()) {\n" +
-            "    throw new IllegalArgumentException(\"%s cannot be null or empty\");\n" +
-            "}\n" +
-            "return this;",
-            fieldInBuilder, fieldInBuilder, StringUtils.capitalize(fieldInDto)
-        );
+        String methodBody = """
+            if (!%s.isSet() || %s.value().trim().isEmpty()) {
+                throw new IllegalArgumentException("%s cannot be null or empty");
+            }
+            return this;""".formatted(
+                fieldInBuilder, fieldInBuilder, StringUtils.capitalize(fieldInDto));
 
         BuilderMethodDto validationMethod = new BuilderMethodDto(methodName, builderType);
         validationMethod.setCode(methodBody);
