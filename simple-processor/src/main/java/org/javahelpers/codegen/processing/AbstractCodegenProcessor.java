@@ -25,6 +25,7 @@
 package org.javahelpers.codegen.processing;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,16 +37,17 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import org.javahelpers.codegen.ClassCodeGenerator;
 import org.javahelpers.codegen.CodeGenerationException;
-import org.javahelpers.codegen.FormatterResolver;
 import org.javahelpers.codegen.GenerationEnvironment;
+import org.javahelpers.codegen.SourceFormatter;
 import org.javahelpers.codegen.analysis.JavaLangMapper;
+import org.javahelpers.codegen.enums.FormattingMode;
 import org.javahelpers.codegen.logging.PerformanceTracker;
 import org.javahelpers.codegen.logging.ProcessingLogger;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.processing.logging.MessagerProcessingLogger;
 import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
-import org.javahelpers.codegen.roaster.SourceFormatterResolver;
+import org.javahelpers.codegen.roaster.RoasterSourceFormatter;
 
 /**
  * Driver of a generic annotation-processing pipeline: the framework owns the processing lifecycle,
@@ -72,7 +74,7 @@ import org.javahelpers.codegen.roaster.SourceFormatterResolver;
  *     target  = mapToTargetSpecification(def, cfg, ctx)  (per def)      [implement]
  *   loop 2 — generation:                                                [framework]
  *     for each target:
- *       existsGuard → engine.generate(target, formatterResolver.resolve(target.mode))  [framework]
+ *       existsGuard → engine.generate(target, formatterFor(target.mode))            [framework]
  *     onTaskGenerated(generation, ctx)                              [default: no-op]
  *   endRound(ctx)                                                       [default: no-op]
  *   last round: onProcessingOver(ctx)                                   [default: no-op]
@@ -99,8 +101,10 @@ public abstract class AbstractCodegenProcessor<
   protected ProcessingLogger logger;
 
   private final CodegenProcessorConfiguration processorConfiguration;
+  private final EnumMap<FormattingMode, SourceFormatter> formatterCache =
+      new EnumMap<>(FormattingMode.class);
   private ClassCodeGenerator codeGenerator;
-  private FormatterResolver formatterResolver;
+  private String formatterProfile;
   private boolean supportedJdk = true;
   private boolean processedOnce;
 
@@ -121,7 +125,7 @@ public abstract class AbstractCodegenProcessor<
     this.logger = createLogger(processingEnv, reader);
     this.context = createContext(processingEnv, reader, logger);
     this.codeGenerator = createGenerator(processingEnv, logger, context);
-    this.formatterResolver = createFormatterResolver(reader, logger);
+    this.formatterProfile = optionRegistry().formatterProfile(reader);
 
     this.supportedJdk = verifySupportedJdk();
   }
@@ -317,7 +321,7 @@ public abstract class AbstractCodegenProcessor<
   protected final void generateTarget(GenerationTargetClassDto target)
       throws CodeGenerationException {
     assertTargetDoesNotExist(target);
-    codeGenerator.generateClass(target, formatterResolver.resolve(target.getFormattingMode()));
+    codeGenerator.generateClass(target, formatterFor(target.getFormattingMode()));
   }
 
   /**
@@ -411,16 +415,20 @@ public abstract class AbstractCodegenProcessor<
   }
 
   /**
-   * Creates the source formatter resolver for the configured profile — the profile name comes from
-   * the processor's declared options.
+   * Creates the source formatter for a formatting mode — the profile name comes from the
+   * processor's declared options. Default: the Roaster backend's {@link RoasterSourceFormatter};
+   * override to plug in a different formatter.
    *
-   * @param reader the compiler arguments reader
-   * @param logger the processing logger
-   * @return the formatter resolver
+   * @param mode the target's formatting mode
+   * @param formatterProfile the configured Eclipse formatter profile location, or {@code null}
+   * @return the source formatter for the mode
    */
-  protected FormatterResolver createFormatterResolver(
-      CompilerArgumentsReader reader, ProcessingLogger logger) {
-    return new SourceFormatterResolver(logger, optionRegistry().formatterProfile(reader));
+  protected SourceFormatter createFormatter(FormattingMode mode, String formatterProfile) {
+    return new RoasterSourceFormatter(logger, mode, formatterProfile);
+  }
+
+  private SourceFormatter formatterFor(FormattingMode mode) {
+    return formatterCache.computeIfAbsent(mode, m -> createFormatter(m, formatterProfile));
   }
 
   private ElementCollector elementCollector() {

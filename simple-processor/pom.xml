@@ -96,7 +96,7 @@
       <artifactId>codegen-core</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- Default backend wired by the driver's createGenerator/createFormatterResolver
+    <!-- Default backend wired by the driver's createGenerator/createFormatter
          defaults; a drop-in mechanism replaces the direct link later -->
     <dependency>
       <groupId>io.github.java-helpers.codegen</groupId>

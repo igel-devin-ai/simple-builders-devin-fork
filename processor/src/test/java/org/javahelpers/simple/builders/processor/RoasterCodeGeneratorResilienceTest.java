@@ -43,7 +43,7 @@ import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.processing.AnnotationProcessingEnvironment;
 import org.javahelpers.codegen.processing.logging.MessagerProcessingLogger;
 import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
-import org.javahelpers.codegen.roaster.SourceFormatterResolver;
+import org.javahelpers.codegen.roaster.RoasterSourceFormatter;
 import org.javahelpers.codegen.roaster.exceptions.RoasterMapperException;
 import org.javahelpers.codegen.testing.CapturingProcessingLogger;
 import org.javahelpers.codegen.testing.ProcessingEnvironmentStub;
@@ -93,8 +93,7 @@ class RoasterCodeGeneratorResilienceTest {
             new AnnotationProcessingEnvironment(
                 env, logger, context.getPerformanceTracker(), context::reportBasedOnStrictMode));
 
-    SourceFormatter formatter =
-        new SourceFormatterResolver(logger, null).resolve(FormattingMode.NONE);
+    SourceFormatter formatter = new RoasterSourceFormatter(logger, FormattingMode.NONE);
     CodeGenerationException thrown =
         assertThrows(
             CodeGenerationException.class, () -> generator.generateClass(classDef, formatter));
@@ -129,8 +128,7 @@ class RoasterCodeGeneratorResilienceTest {
                 context.getPerformanceTracker(),
                 context::reportBasedOnStrictMode));
 
-    SourceFormatter formatter =
-        new SourceFormatterResolver(capturing.logger(), null).resolve(FormattingMode.NONE);
+    SourceFormatter formatter = new RoasterSourceFormatter(capturing.logger(), FormattingMode.NONE);
     // generation itself succeeds; only the file-write step fails on the stub's null filer
     assertThrows(NullPointerException.class, () -> generator.generateClass(classDef, formatter));
     capturing.assertMessage(

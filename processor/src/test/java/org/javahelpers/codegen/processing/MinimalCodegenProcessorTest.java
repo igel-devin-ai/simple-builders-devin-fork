@@ -40,7 +40,6 @@ import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.javahelpers.codegen.ClassCodeGenerator;
-import org.javahelpers.codegen.FormatterResolver;
 import org.javahelpers.codegen.analysis.JavaLangAnalyser;
 import org.javahelpers.codegen.analysis.JavaLangMapper;
 import org.javahelpers.codegen.enums.AccessModifier;
@@ -60,7 +59,6 @@ import org.javahelpers.codegen.processing.CompilerArgumentsReader;
 import org.javahelpers.codegen.processing.ElementCollector;
 import org.javahelpers.codegen.processing.ElementGroups;
 import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
-import org.javahelpers.codegen.roaster.SourceFormatterResolver;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -118,12 +116,6 @@ public class MinimalCodegenProcessorTest {
         ProcessingLogger logger,
         AnnotationProcessingContext ctx) {
       return new RoasterCodeGenerator(generationEnvironment(processingEnv, logger, ctx));
-    }
-
-    @Override
-    protected FormatterResolver createFormatterResolver(
-        CompilerArgumentsReader reader, ProcessingLogger logger) {
-      return new SourceFormatterResolver(logger, optionRegistry().formatterProfile(reader));
     }
 
     @Override
