@@ -25,10 +25,12 @@
 package org.javahelpers.simple.builders.example;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /** Maps {@link PersonDto} using the generated {@code PersonDtoBuilder} discovered by MapStruct. */
 @Mapper
 public interface PersonDtoMapper {
 
+  @Mapping(target = "nickNames2", ignore = true)
   PersonDto copy(PersonDto source);
 }
