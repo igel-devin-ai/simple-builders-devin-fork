@@ -551,6 +551,7 @@ public record BuilderConfiguration(
       return this;
     }
 
+    @Override
     public String toString() {
       return builder.toString();
     }

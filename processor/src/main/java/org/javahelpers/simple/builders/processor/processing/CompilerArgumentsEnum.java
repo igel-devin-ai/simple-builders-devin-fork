@@ -296,6 +296,7 @@ public enum CompilerArgumentsEnum implements CompilerOption {
    *
    * @return The option name
    */
+  @Override
   public String getOptionName() {
     return optionName;
   }
@@ -307,6 +308,7 @@ public enum CompilerArgumentsEnum implements CompilerOption {
    *
    * @return The full compiler argument
    */
+  @Override
   public String getCompilerArgument() {
     return OPTION_PREFIX + optionName;
   }
