@@ -39,7 +39,6 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.javahelpers.codegen.ClassCodeGenerator;
 import org.javahelpers.codegen.analysis.JavaLangAnalyser;
 import org.javahelpers.codegen.analysis.JavaLangMapper;
 import org.javahelpers.codegen.enums.AccessModifier;
@@ -49,7 +48,6 @@ import org.javahelpers.codegen.model.core.ClassFieldDto;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.type.TypeName;
-import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -99,14 +97,6 @@ public class MinimalCodegenProcessorTest {
         CompilerArgumentsReader reader,
         ProcessingLogger logger) {
       return new AnnotationProcessingContext(logger, processingEnv);
-    }
-
-    @Override
-    protected ClassCodeGenerator createGenerator(
-        ProcessingEnvironment processingEnv,
-        ProcessingLogger logger,
-        AnnotationProcessingContext ctx) {
-      return new RoasterCodeGenerator(generationEnvironment(processingEnv, logger, ctx));
     }
 
     @Override

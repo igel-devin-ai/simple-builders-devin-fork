@@ -25,7 +25,6 @@
 package org.javahelpers.codegen.processing;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -35,19 +34,15 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
-import org.javahelpers.codegen.ClassCodeGenerator;
 import org.javahelpers.codegen.CodeGenerationException;
-import org.javahelpers.codegen.GenerationEnvironment;
-import org.javahelpers.codegen.SourceFormatter;
+import org.javahelpers.codegen.CodegenBackend;
+
 import org.javahelpers.codegen.analysis.JavaLangMapper;
-import org.javahelpers.codegen.enums.FormattingMode;
 import org.javahelpers.codegen.logging.PerformanceTracker;
 import org.javahelpers.codegen.logging.ProcessingLogger;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.processing.logging.MessagerProcessingLogger;
-import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
-import org.javahelpers.codegen.roaster.RoasterSourceFormatter;
 
 /**
  * Driver of a generic annotation-processing pipeline: the framework owns the processing lifecycle,
@@ -101,10 +96,7 @@ public abstract class AbstractCodegenProcessor<
   protected ProcessingLogger logger;
 
   private final CodegenProcessorConfiguration processorConfiguration;
-  private final EnumMap<FormattingMode, SourceFormatter> formatterCache =
-      new EnumMap<>(FormattingMode.class);
-  private ClassCodeGenerator codeGenerator;
-  private String formatterProfile;
+  private CodegenBackend backend;
   private boolean supportedJdk = true;
   private boolean processedOnce;
 
@@ -124,8 +116,14 @@ public abstract class AbstractCodegenProcessor<
     CompilerArgumentsReader reader = new CompilerArgumentsReader(processingEnv);
     this.logger = createLogger(processingEnv, reader);
     this.context = createContext(processingEnv, reader, logger);
-    this.codeGenerator = createGenerator(processingEnv, logger, context);
-    this.formatterProfile = optionRegistry().formatterProfile(reader);
+    String formatterProfile = optionRegistry().formatterProfile(reader);
+    this.backend =
+        CodegenBackendResolver.resolve(
+            processingEnv,
+            logger,
+            context.getPerformanceTracker(),
+            context::reportBasedOnStrictMode,
+            formatterProfile);
 
     this.supportedJdk = verifySupportedJdk();
   }
@@ -321,7 +319,7 @@ public abstract class AbstractCodegenProcessor<
   protected final void generateTarget(GenerationTargetClassDto target)
       throws CodeGenerationException {
     assertTargetDoesNotExist(target);
-    codeGenerator.generateClass(target, formatterFor(target.getFormattingMode()));
+    backend.generator().generateClass(target, backend.formatterFor(target.getFormattingMode()));
   }
 
   /**
@@ -383,53 +381,6 @@ public abstract class AbstractCodegenProcessor<
    */
   protected abstract C createContext(
       ProcessingEnvironment processingEnv, CompilerArgumentsReader reader, ProcessingLogger logger);
-
-  /**
-   * Creates the code generation engine — the {@link ClassCodeGenerator} backend port the domain
-   * wires over {@link #generationEnvironment}. Default: the Roaster backend; override to plug in a
-   * different engine.
-   *
-   * @param processingEnv the processing environment
-   * @param logger the processing logger
-   * @param context the processing context
-   * @return the domain's code generation engine
-   */
-  protected ClassCodeGenerator createGenerator(
-      ProcessingEnvironment processingEnv, ProcessingLogger logger, C context) {
-    return new RoasterCodeGenerator(generationEnvironment(processingEnv, logger, context));
-  }
-
-  /**
-   * The {@link GenerationEnvironment} the engine runs against — processing environment, logger,
-   * performance tracker and the strict-mode reporter, wired from the context the driver created.
-   *
-   * @param processingEnv the processing environment
-   * @param logger the processing logger
-   * @param context the processing context
-   * @return the generation environment for the engine's constructor
-   */
-  protected GenerationEnvironment generationEnvironment(
-      ProcessingEnvironment processingEnv, ProcessingLogger logger, C context) {
-    return new AnnotationProcessingEnvironment(
-        processingEnv, logger, context.getPerformanceTracker(), context::reportBasedOnStrictMode);
-  }
-
-  /**
-   * Creates the source formatter for a formatting mode — the profile name comes from the
-   * processor's declared options. Default: the Roaster backend's {@link RoasterSourceFormatter};
-   * override to plug in a different formatter.
-   *
-   * @param mode the target's formatting mode
-   * @param formatterProfile the configured Eclipse formatter profile location, or {@code null}
-   * @return the source formatter for the mode
-   */
-  protected SourceFormatter createFormatter(FormattingMode mode, String formatterProfile) {
-    return new RoasterSourceFormatter(logger, mode, formatterProfile);
-  }
-
-  private SourceFormatter formatterFor(FormattingMode mode) {
-    return formatterCache.computeIfAbsent(mode, m -> createFormatter(m, formatterProfile));
-  }
 
   private ElementCollector elementCollector() {
     return processorConfiguration.elementCollector();
