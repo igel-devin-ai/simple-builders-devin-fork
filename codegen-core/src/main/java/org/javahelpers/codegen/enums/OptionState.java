@@ -43,7 +43,7 @@ package org.javahelpers.codegen.enums;
  * // Global config via compiler option: -Amydomain.generateFieldSupplier=false
  *
  * // Per-class override to enable:
- * @SimpleBuilder.Options(generateFieldSupplier = OptionState.ENABLED)
+ * @MyAnnotation.Options(generateFieldSupplier = OptionState.ENABLED)
  * public class MyDto { }
  * }</pre>
  */

@@ -28,8 +28,8 @@ package org.javahelpers.codegen.processing;
  * A compiler option that can be read from the annotation processing environment.
  *
  * <p>An option has a bare option name (e.g. {@code "verbose"}) and a prefixed compiler argument
- * name (e.g. {@code "simplebuilder.verbose"}) which is looked up as {@code -A} compiler argument
- * and as {@code -D} JVM system property.
+ * name (e.g. {@code "mydomain.verbose"}) which is looked up as {@code -A} compiler argument and as
+ * {@code -D} JVM system property.
  */
 public interface CompilerOption {
 
@@ -41,7 +41,7 @@ public interface CompilerOption {
   String getOptionName();
 
   /**
-   * Returns the prefixed compiler argument name (e.g. {@code "simplebuilder.verbose"}).
+   * Returns the prefixed compiler argument name (e.g. {@code "mydomain.verbose"}).
    *
    * @return the compiler argument name
    */
