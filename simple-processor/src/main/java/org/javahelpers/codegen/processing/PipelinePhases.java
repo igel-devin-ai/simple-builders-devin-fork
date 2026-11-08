@@ -32,7 +32,7 @@ import java.util.Map;
 import org.javahelpers.codegen.logging.PhaseHierarchy;
 
 /**
- * Phase names of the builder processing pipeline, reported through {@code
+ * Phase names of the code-generation processing pipeline, reported through {@code
  * PerformanceTracker.endPhase}, plus the phase hierarchy an {@code ActivePerformanceTracker} needs
  * to render its report.
  */

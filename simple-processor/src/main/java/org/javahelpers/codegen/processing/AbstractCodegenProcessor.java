@@ -36,7 +36,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import org.javahelpers.codegen.CodeGenerationException;
 import org.javahelpers.codegen.CodegenBackend;
-
 import org.javahelpers.codegen.analysis.JavaLangMapper;
 import org.javahelpers.codegen.logging.PerformanceTracker;
 import org.javahelpers.codegen.logging.ProcessingLogger;

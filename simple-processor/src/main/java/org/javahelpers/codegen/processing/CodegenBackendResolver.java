@@ -35,9 +35,9 @@ import org.javahelpers.codegen.roaster.RoasterBackend;
  * Resolves the {@link CodegenBackend} to use for code generation. Currently returns the Roaster
  * backend directly.
  *
- * <p>In a future iteration (see
- * <a href="https://github.com/java-helpers/simple-builders/issues/366">#366</a>) this resolver
- * will probe the classpath and select the best available backend in priority order: Roaster (if
+ * <p>In a future iteration (see <a
+ * href="https://github.com/java-helpers/simple-builders/issues/366">#366</a>) this resolver will
+ * probe the classpath and select the best available backend in priority order: Roaster (if
  * available) → JavaPoet (if available) → built-in lightweight fallback.
  */
 final class CodegenBackendResolver {

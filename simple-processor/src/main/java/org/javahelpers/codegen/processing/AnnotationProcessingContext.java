@@ -52,7 +52,7 @@ import org.javahelpers.codegen.model.type.TypeName;
  * {@link Types}, logging and performance tracking, providing domain-agnostic helpers for type and
  * element operations.
  *
- * <p>Builder-specific state lives in {@link BuilderProcessingContext}, which extends this base.
+ * <p>Domain-specific state lives in subclasses that extend this base.
  */
 public class AnnotationProcessingContext implements TypeMappingContext {
 
@@ -411,8 +411,8 @@ public class AnnotationProcessingContext implements TypeMappingContext {
   }
 
   /**
-   * Logs a debug message with a formatted string. Only visible when enabled via -Averbose=true or
-   * -Asimplebuilder.verbose=true.
+   * Logs a debug message with a formatted string. Only visible when the domain's verbose option is
+   * enabled (e.g. {@code -Averbose=true} or the domain-prefixed variant).
    *
    * @param format the format string
    * @param args arguments referenced by the format specifiers in the format string

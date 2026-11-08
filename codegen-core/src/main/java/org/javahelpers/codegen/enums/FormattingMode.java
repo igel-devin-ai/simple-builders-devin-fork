@@ -27,8 +27,9 @@ package org.javahelpers.codegen.enums;
 /**
  * Enum representing the formatting mode for generated source files.
  *
- * <p>This enum controls how the raw source code produced by Roaster's {@code toUnformattedString()}
- * is post-processed before being written to disk.
+ * <p>This enum controls how the raw source code produced by the code generation backend is
+ * post-processed before being written to disk. The actual post-processing is performed by the
+ * {@link org.javahelpers.codegen.SourceFormatter} implementation supplied by the active backend.
  *
  * <p>Compiler option: {@code -Amydomain.formattingMode=JDT|LIGHTWEIGHT|NONE}
  */
@@ -45,7 +46,7 @@ public enum FormattingMode {
    */
   LIGHTWEIGHT("lightweight"),
 
-  /** No formatting at all. Returns raw Roaster output without any post-processing. */
+  /** No formatting at all. Returns the raw backend output without any post-processing. */
   NONE("none");
 
   private final String optionValue;
