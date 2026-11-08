@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.javahelpers.simple.builders.processor.processing;
+package org.javahelpers.codegen.processing;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNormalizedEquals;
@@ -49,15 +49,6 @@ import org.javahelpers.codegen.model.core.ClassFieldDto;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.type.TypeName;
-import org.javahelpers.codegen.processing.AbstractCodegenProcessor;
-import org.javahelpers.codegen.processing.AnnotationProcessingContext;
-import org.javahelpers.codegen.processing.CodegenConfiguration;
-import org.javahelpers.codegen.processing.CodegenDefinition;
-import org.javahelpers.codegen.processing.CodegenProcessorConfiguration;
-import org.javahelpers.codegen.processing.CodegenTask;
-import org.javahelpers.codegen.processing.CompilerArgumentsReader;
-import org.javahelpers.codegen.processing.ElementCollector;
-import org.javahelpers.codegen.processing.ElementGroups;
 import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
@@ -195,7 +186,7 @@ public class MinimalCodegenProcessorTest {
         ProcessorTestUtils.forSource(
             """
             package test;
-            import org.javahelpers.simple.builders.processor.processing.MinimalCodegenProcessorTest.GenerateBuilder;
+            import org.javahelpers.codegen.processing.MinimalCodegenProcessorTest.GenerateBuilder;
             @GenerateBuilder
             public class Person {
               private String name;
