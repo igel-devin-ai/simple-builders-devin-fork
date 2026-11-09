@@ -24,6 +24,7 @@
 package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
@@ -46,10 +47,6 @@ import org.junit.jupiter.api.Test;
  * @see <a href="https://github.com/java-helpers/simple-builders/issues/95">Issue #95</a>
  */
 class SealedTypesTest {
-
-  private static Compilation compile(JavaFileObject... sources) {
-    return ProcessorTestUtils.createCompiler().compile(sources);
-  }
 
   @Test
   void classImplementingSealedInterface_builderGenerated() {

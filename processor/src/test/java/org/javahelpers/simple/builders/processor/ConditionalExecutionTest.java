@@ -25,9 +25,8 @@
 package org.javahelpers.simple.builders.processor;
 
 import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
@@ -37,12 +36,6 @@ import org.junit.jupiter.api.Test;
 
 /** Tests for conditional execution feature in generated builders. */
 class ConditionalExecutionTest {
-
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation);
-    return compilation;
-  }
 
   @Test
   void conditionalMethod_generatedInBuilder() {
@@ -64,7 +57,7 @@ class ConditionalExecutionTest {
             }
             """);
 
-    Compilation compilation = compileSources(person);
+    Compilation compilation = compile(person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
@@ -125,7 +118,7 @@ class ConditionalExecutionTest {
             }
             """);
 
-    Compilation compilation = compileSources(user);
+    Compilation compilation = compile(user);
     String generatedCode = loadGeneratedSource(compilation, "UserBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
 
@@ -176,7 +169,7 @@ class ConditionalExecutionTest {
             }
             """);
 
-    Compilation compilation = compileSources(config);
+    Compilation compilation = compile(config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
@@ -225,7 +218,7 @@ class ConditionalExecutionTest {
             }
             """);
 
-    Compilation compilation = compileSources(settings);
+    Compilation compilation = compile(settings);
     String generatedCode = loadGeneratedSource(compilation, "SettingsBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "SettingsBuilder", generatedCode);
 

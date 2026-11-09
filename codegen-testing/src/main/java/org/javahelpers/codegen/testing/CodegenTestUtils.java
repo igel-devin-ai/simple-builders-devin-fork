@@ -27,6 +27,8 @@ package org.javahelpers.codegen.testing;
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -186,10 +188,21 @@ public final class CodegenTestUtils {
             .orElseThrow(
                 () ->
                     new AssertionError("Generated source file not found: " + generatedSimpleName));
+    return readSource(file);
+  }
+
+  /**
+   * Reads the content of a source file object, for example one returned by {@link
+   * Compilation#generatedSourceFile(String)}.
+   *
+   * @param file the file object to read
+   * @return the content of the file
+   */
+  public static String readSource(JavaFileObject file) {
     try {
       return file.getCharContent(true).toString();
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to read generated source for: " + generatedSimpleName, e);
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to read source: " + file.getName(), e);
     }
   }
 

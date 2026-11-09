@@ -25,6 +25,7 @@ package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertGenerationSucceeded;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
@@ -68,10 +69,6 @@ import org.junit.jupiter.api.Test;
  * </ul>
  */
 class MethodConflictResolutionTest {
-
-  private Compilation compile(JavaFileObject... files) {
-    return ProcessorTestUtils.createCompiler().compile(files);
-  }
 
   @Test
   void shouldHandleMultipleFieldsWithoutConflicts() {

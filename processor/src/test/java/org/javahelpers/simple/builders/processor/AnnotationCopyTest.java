@@ -25,10 +25,9 @@
 package org.javahelpers.simple.builders.processor;
 
 import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createMockAnnotation;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
@@ -38,12 +37,6 @@ import org.junit.jupiter.api.Test;
 
 /** Test that annotations from target class fields are copied to builder fields. */
 class AnnotationCopyTest {
-
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation);
-    return compilation;
-  }
 
   @Test
   void annotations_copiedToBuilderFields() {
@@ -86,7 +79,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, customAnnotation, person);
+    Compilation compilation = compile(notNullAnnotation, customAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
@@ -133,7 +126,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, positiveAnnotation, product);
+    Compilation compilation = compile(notNullAnnotation, positiveAnnotation, product);
     String generatedCode = loadGeneratedSource(compilation, "ProductBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
 
@@ -175,7 +168,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, person);
+    Compilation compilation = compile(notNullAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
@@ -290,8 +283,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation =
-        compileSources(priorityEnum, metadataAnnotation, complexAnnotation, task);
+    Compilation compilation = compile(priorityEnum, metadataAnnotation, complexAnnotation, task);
     String generatedCode = loadGeneratedSource(compilation, "TaskBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "TaskBuilder", generatedCode);
 
@@ -347,7 +339,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(service);
+    Compilation compilation = compile(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -394,7 +386,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(service);
+    Compilation compilation = compile(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -432,7 +424,7 @@ class AnnotationCopyTest {
             public record Book(@Deprecated String title, int pages) {}
             """);
 
-    Compilation compilation = compileSources(book);
+    Compilation compilation = compile(book);
     String generatedCode = loadGeneratedSource(compilation, "BookBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "BookBuilder", generatedCode);
 
@@ -496,7 +488,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(service);
+    Compilation compilation = compile(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -667,7 +659,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(myDto);
+    Compilation compilation = compile(myDto);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -717,7 +709,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(service);
+    Compilation compilation = compile(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -761,7 +753,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(service);
+    Compilation compilation = compile(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -798,7 +790,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(service);
+    Compilation compilation = compile(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -876,7 +868,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(dto, oldType);
+    Compilation compilation = compile(dto, oldType);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -946,7 +938,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(dto, itemDto);
+    Compilation compilation = compile(dto, itemDto);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
@@ -993,7 +985,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(frameworkAnnotation, entity);
+    Compilation compilation = compile(frameworkAnnotation, entity);
     String generatedCode = loadGeneratedSource(compilation, "EntityBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "EntityBuilder", generatedCode);
 
@@ -1037,7 +1029,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(validAnnotation, model);
+    Compilation compilation = compile(validAnnotation, model);
     String generatedCode = loadGeneratedSource(compilation, "ModelBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "ModelBuilder", generatedCode);
 
@@ -1081,7 +1073,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(generatedAnnotation, model);
+    Compilation compilation = compile(generatedAnnotation, model);
     String generatedCode = loadGeneratedSource(compilation, "ModelBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "ModelBuilder", generatedCode);
 
@@ -1125,7 +1117,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(arrayAnnotation, data);
+    Compilation compilation = compile(arrayAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
@@ -1167,7 +1159,7 @@ class AnnotationCopyTest {
             }
             """);
 
-    Compilation compilation = compileSources(rangeAnnotation, measurement);
+    Compilation compilation = compile(rangeAnnotation, measurement);
     String generatedCode = loadGeneratedSource(compilation, "MeasurementBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "MeasurementBuilder", generatedCode);
 
@@ -1230,8 +1222,7 @@ class AnnotationCopyTest {
             """);
 
     Compilation compilation =
-        compileSources(
-            createJakartaValidAnnotation(), createJakartaNotNullAnnotation(), address, person);
+        compile(createJakartaValidAnnotation(), createJakartaNotNullAnnotation(), address, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
@@ -1288,7 +1279,7 @@ class AnnotationCopyTest {
             """);
 
     Compilation compilation =
-        compileSources(
+        compile(
             createMockAnnotation(
                 "javax.validation",
                 "Valid",
@@ -1356,7 +1347,7 @@ class AnnotationCopyTest {
             """);
 
     Compilation compilation =
-        compileSources(
+        compile(
             createJakartaValidAnnotation(), createJakartaNotNullAnnotation(), department, employee);
     String generatedCode = loadGeneratedSource(compilation, "EmployeeBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "EmployeeBuilder", generatedCode);
@@ -1419,7 +1410,7 @@ class AnnotationCopyTest {
             """);
 
     Compilation compilation =
-        compileSources(
+        compile(
             createJakartaValidAnnotation(),
             createJakartaNotNullAnnotation(),
             createMockAnnotation(

@@ -25,6 +25,7 @@ package org.javahelpers.simple.builders.processor;
 
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertGenerationSucceeded;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
@@ -41,10 +42,6 @@ import org.junit.jupiter.api.Test;
  * List<Y>} should correctly extract Y as the List element type, not both X and Y.
  */
 class CustomCollectionTypeTest {
-
-  private static Compilation compile(JavaFileObject... sources) {
-    return ProcessorTestUtils.createCompiler().compile(sources);
-  }
 
   @Test
   void customListWithMultipleTypeParameters_shouldNotGenerateVarargsHelper() {

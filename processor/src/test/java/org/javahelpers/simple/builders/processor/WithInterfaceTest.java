@@ -25,9 +25,8 @@
 package org.javahelpers.simple.builders.processor;
 
 import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
@@ -37,12 +36,6 @@ import org.junit.jupiter.api.Test;
 
 /** Tests for With interface generation in builders. */
 class WithInterfaceTest {
-
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation); // Print diagnostics when verbose mode is enabled
-    return compilation;
-  }
 
   @Test
   void withInterface_generatedInBuilder() {
@@ -64,7 +57,7 @@ class WithInterfaceTest {
             }
             """);
 
-    Compilation compilation = compileSources(project);
+    Compilation compilation = compile(project);
     String generatedCode = loadGeneratedSource(compilation, "ProjectBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "ProjectBuilder", generatedCode);
 
@@ -138,7 +131,7 @@ class WithInterfaceTest {
             }
             """);
 
-    Compilation compilation = compileSources(user);
+    Compilation compilation = compile(user);
     String generatedCode = loadGeneratedSource(compilation, "UserBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
 
@@ -209,7 +202,7 @@ class WithInterfaceTest {
             }
             """);
 
-    Compilation compilation = compileSources(config);
+    Compilation compilation = compile(config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
     ProcessorAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
