@@ -28,8 +28,8 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
@@ -71,13 +71,12 @@ public class StringValidationGenerator implements MethodGenerator {
         String fieldInBuilder = field.getFieldNameInBuilder();
         String methodName = "validate" + StringUtils.capitalize(fieldInDto);
         
-        String methodBody = String.format(
-            "if (!%s.isSet() || %s.value().trim().isEmpty()) {\n" +
-            "    throw new IllegalArgumentException(\"%s cannot be null or empty\");\n" +
-            "}\n" +
-            "return this;",
-            fieldInBuilder, fieldInBuilder, StringUtils.capitalize(fieldInDto)
-        );
+        String methodBody = """
+            if (!%s.isSet() || %s.value().trim().isEmpty()) {
+                throw new IllegalArgumentException("%s cannot be null or empty");
+            }
+            return this;""".formatted(
+                fieldInBuilder, fieldInBuilder, StringUtils.capitalize(fieldInDto));
 
         BuilderMethodDto validationMethod = new BuilderMethodDto(methodName, builderType);
         validationMethod.setCode(methodBody);

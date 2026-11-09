@@ -24,7 +24,7 @@
 package org.javahelpers.codegen.processing;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.assertNormalizedEquals;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNormalizedEquals;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
@@ -39,17 +39,15 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.FormattingMode;
-import org.javahelpers.simple.builders.processor.analysis.JavaLangAnalyser;
-import org.javahelpers.simple.builders.processor.analysis.JavaLangMapper;
-import org.javahelpers.simple.builders.processor.model.core.ClassFieldDto;
-import org.javahelpers.simple.builders.processor.model.core.GenerationTargetClassDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.AnnotationProcessingContext;
-import org.javahelpers.simple.builders.processor.processing.CompilerArgumentsReader;
-import org.javahelpers.simple.builders.processor.processing.logging.ProcessingLogger;
+import org.javahelpers.codegen.analysis.JavaLangAnalyser;
+import org.javahelpers.codegen.analysis.JavaLangMapper;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.FormattingMode;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.model.core.ClassFieldDto;
+import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
+import org.javahelpers.codegen.model.method.MethodDto;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -124,7 +122,7 @@ public class MinimalCodegenProcessorTest {
           new MinimalTargetDefinition(
               JavaLangMapper.mapToTypeName(target, ctx),
               builderName(target, ctx),
-              JavaLangAnalyser.findAllPossibleSettersOfClass(target, ctx)));
+              JavaLangAnalyser.findSetterMethods(target, ctx)));
     }
 
     @Override

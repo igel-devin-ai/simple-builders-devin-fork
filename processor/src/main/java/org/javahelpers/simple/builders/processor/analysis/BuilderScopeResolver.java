@@ -38,12 +38,14 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import org.apache.commons.lang3.StringUtils;
+import org.javahelpers.codegen.analysis.JavaLangAnalyser;
+import org.javahelpers.codegen.analysis.JavaLangMapper;
+import org.javahelpers.codegen.model.core.PackageScopes;
+import org.javahelpers.codegen.model.type.TypeInstantiation;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
-import org.javahelpers.simple.builders.processor.model.core.PackageScopes;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
-import org.javahelpers.simple.builders.processor.model.type.TypeInstantiation;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
@@ -259,7 +261,7 @@ public final class BuilderScopeResolver {
     // builderUsageSuffix (which falls back to builderSuffix if not configured) and verify
     // the builder contract.
     String suffix = context.getConfiguration().getBuilderUsageSuffix();
-    TypeName candidate = JavaLangMapper.createBuilderTypeName(referencedType, context, suffix);
+    TypeName candidate = JavaLangMapper.createDerivedTypeName(referencedType, context, suffix);
     return resolveByBuilderContract(candidate, referencedType, referencedTypeName);
   }
 
@@ -347,7 +349,7 @@ public final class BuilderScopeResolver {
       return Optional.empty();
     }
     List<ExecutableElement> fieldFunctions =
-        JavaLangAnalyser.findFieldFunctions(builderElement, context);
+        JavaLangAnalyser.findSingleParameterMethods(builderElement, context);
     ConventionCoverage best =
         candidatePrefixes(properties, fieldFunctions).stream()
             .map(

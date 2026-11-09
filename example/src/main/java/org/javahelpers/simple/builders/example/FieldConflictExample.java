@@ -24,8 +24,6 @@
 
 package org.javahelpers.simple.builders.example;
 
-import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
-
 /**
  * Example DTO demonstrating field conflict resolution in Simple Builders.
  * 

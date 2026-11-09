@@ -34,15 +34,22 @@ The project is organized as a multi-module Maven project:
 ```
 simple-builders/
 ├── core/              # Core annotations and runtime utilities
-├── processor/         # Annotation processor (compile-time code generation)
-├── example/          # Example usage and integration tests
-└── pom.xml           # Parent POM
+├── codegen-core/      # Reusable code generation model, enums and utilities
+├── codegen-roaster/   # Roaster-based code generator backend
+├── simple-processor/  # Generic annotation-processing layer (driver, analysis, logging)
+├── codegen-testing/   # Shared compile-testing utilities
+├── processor/         # Simple-builder domain: annotations-to-builder generation
+├── example/           # Example usage and integration tests
+└── pom.xml            # Parent POM
 ```
 
 ### Module Dependencies
 
-**Important**: The `example` module depends on the `processor` module being installed in your local Maven repository. This is because:
-1. The annotation processor must be available at compile-time
+**Important**: The `example` module depends on the `processor` module **and its codegen
+dependencies** (`codegen-core`, `codegen-roaster`, `codegen-testing`, `simple-processor`) plus
+`example-custom-generator` being installed in your local Maven repository. This is because:
+1. `annotationProcessorPaths` resolves the processor and its transitive dependencies as
+   artifacts at compile-time — the reactor is not consulted when building `example` alone
 2. The example uses `@SimpleBuilder` annotations that trigger code generation
 3. Tests in example validate the generated builders
 
@@ -107,8 +114,11 @@ mvn test -pl processor
 If you're changing code in the `example` module, you **must** install the processor first:
 
 ```bash
-# Install processor (skip its tests for speed)
-mvn install -pl processor -DskipTests
+# Install processor plus its upstream modules (core, codegen-core,
+# codegen-roaster, codegen-testing, simple-processor — pulled in by -am).
+# example-custom-generator is named explicitly because nothing depends on it,
+# yet it sits on the example's annotationProcessorPaths.
+mvn install -pl processor,example-custom-generator -am -DskipTests
 
 # Then test example
 mvn test -pl example
@@ -176,7 +186,7 @@ If you encounter strange compilation errors in the `example` module:
 
 2. **Reinstall dependencies**:
    ```bash
-   mvn clean install -pl processor -DskipTests
+   mvn clean install -pl processor,example-custom-generator -am -DskipTests
    mvn compile -pl example
    ```
 
@@ -191,8 +201,8 @@ If you encounter strange compilation errors in the `example` module:
 If test classes can't find generated builders:
 
 ```bash
-# Ensure processor is installed
-mvn install -pl processor -DskipTests
+# Ensure processor and its dependencies are installed
+mvn install -pl processor,example-custom-generator -am -DskipTests
 
 # Clean and rebuild example
 mvn clean compile -pl example

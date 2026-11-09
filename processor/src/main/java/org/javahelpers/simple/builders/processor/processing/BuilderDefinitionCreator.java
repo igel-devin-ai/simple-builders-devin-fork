@@ -25,9 +25,9 @@
 package org.javahelpers.simple.builders.processor.processing;
 
 import static java.util.stream.Collectors.toSet;
-import static org.javahelpers.simple.builders.processor.analysis.JavaLangAnalyser.*;
-import static org.javahelpers.simple.builders.processor.analysis.JavaLangMapper.map2MethodParameter;
-import static org.javahelpers.simple.builders.processor.analysis.JavaLangMapper.map2TypeName;
+import static org.javahelpers.codegen.analysis.JavaLangAnalyser.*;
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2MethodParameter;
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.processing.AnnotationValidator.validateAnnotatedElement;
 
 import java.util.ArrayList;
@@ -45,27 +45,27 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.javahelpers.codegen.analysis.FieldAnnotationExtractor;
+import org.javahelpers.codegen.analysis.JavaLangAnalyser;
+import org.javahelpers.codegen.analysis.JavaLangMapper;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.core.ClassFieldDto;
+import org.javahelpers.codegen.model.core.DeprecationInfoDto;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.ConstructorDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilderConstructor;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
 import org.javahelpers.simple.builders.core.util.TrackedValue;
-import org.javahelpers.simple.builders.processor.analysis.FieldAnnotationExtractor;
-import org.javahelpers.simple.builders.processor.analysis.JavaLangAnalyser;
-import org.javahelpers.simple.builders.processor.analysis.JavaLangMapper;
 import org.javahelpers.simple.builders.processor.exceptions.BuilderException;
 import org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil;
-import org.javahelpers.simple.builders.processor.model.annotation.AnnotationDto;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
-import org.javahelpers.simple.builders.processor.model.core.ClassFieldDto;
-import org.javahelpers.simple.builders.processor.model.core.DeprecationInfoDto;
 import org.javahelpers.simple.builders.processor.model.core.GetterInfoDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.method.ConstructorDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodParameterDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
 
 /** Class for creating a specific BuilderDefinitionDto for an annotated DTO class. */
 public class BuilderDefinitionCreator {
@@ -316,9 +316,9 @@ public class BuilderDefinitionCreator {
    * their field/class method lists so they are never mapped to the rendering DTO.
    *
    * <p>A generic safety net in {@link
-   * org.javahelpers.simple.builders.processor.classgen.roaster.RoasterCodeGenerator#resolveMethodConflicts}
-   * handles any remaining duplicates (e.g., from enhancer methods added after this step) by keeping
-   * the first occurrence.
+   * org.javahelpers.codegen.roaster.RoasterCodeGenerator#resolveMethodConflicts} handles any
+   * remaining duplicates (e.g., from enhancer methods added after this step) by keeping the first
+   * occurrence.
    *
    * @param builderDto the builder definition containing all methods
    * @param context the processing context for logging
@@ -425,6 +425,46 @@ public class BuilderDefinitionCreator {
   }
 
   /**
+   * Fully qualified names of annotations the builder domain does not copy onto generated code:
+   *
+   * <ul>
+   *   <li>{@code @Deprecated} on parameters — deprecation is propagated to the generated method
+   *       itself via {@code DeprecationInfoDto}, not to the generated method's parameter (which is
+   *       a new declaration, not the original deprecated source parameter)
+   *   <li>{@code @Valid} cascading validation — only meaningful on fields or method return types,
+   *       not on generated method parameters where individual values are set
+   *   <li>{@code @Generated} markers — the generated code is annotated by the generator itself, not
+   *       by copying markers from the source
+   *   <li>{@code @SuppressWarnings} — compiler-only, not relevant on generated parameters
+   * </ul>
+   */
+  private static final java.util.Set<String> SKIPPED_COPIED_ANNOTATIONS =
+      java.util.Set.of(
+          "java.lang.Deprecated",
+          "jakarta.validation.Valid",
+          "javax.validation.Valid",
+          "javax.annotation.Generated",
+          "javax.annotation.processing.Generated",
+          "java.lang.SuppressWarnings");
+
+  /**
+   * Whether an annotation must not be copied onto generated code: either a simple-builders
+   * framework annotation (e.g. {@code @Default}, {@code @Ignore4BuilderGeneration}) — those
+   * configure generation — or one of {@link #SKIPPED_COPIED_ANNOTATIONS}.
+   *
+   * @param annotation the annotation DTO
+   * @return {@code true} if the annotation is skipped for the generated code
+   */
+  private static boolean isSkippedCopiedAnnotation(AnnotationDto annotation) {
+    if (annotation.getAnnotationType() == null) {
+      return false;
+    }
+    String qualifiedName = annotation.getAnnotationType().getFullQualifiedName();
+    return qualifiedName.startsWith("org.javahelpers.simple.builders.")
+        || SKIPPED_COPIED_ANNOTATIONS.contains(qualifiedName);
+  }
+
+  /**
    * Converts a BuilderFieldDto to a ClassFieldDto for rendering.
    *
    * @param field the field DTO to convert
@@ -490,7 +530,7 @@ public class BuilderDefinitionCreator {
       Map<String, BuilderFieldDto> fieldNameRegistry) {
     List<BuilderFieldDto> constructorFields = new LinkedList<>();
     Optional<ExecutableElement> constructorOpt =
-        findConstructorForBuilder(annotatedType, SimpleBuilderConstructor.class, context);
+        findPrimaryConstructor(annotatedType, SimpleBuilderConstructor.class, context);
     if (constructorOpt.isPresent()) {
       ExecutableElement ctor = constructorOpt.get();
       context.debugStartOperation(
@@ -537,7 +577,7 @@ public class BuilderDefinitionCreator {
             .map(BuilderFieldDto::getFieldNameInBuilder)
             .collect(toSet());
 
-    List<ExecutableElement> methods = findAllPossibleSettersOfClass(annotatedType, context);
+    List<ExecutableElement> methods = findSetterMethods(annotatedType, context);
     int processedCount = 0;
     int addedCount = 0;
     int skippedCount = 0;
@@ -818,6 +858,8 @@ public class BuilderDefinitionCreator {
     field.setFieldNameInBuilder(
         fieldNameInBuilder); // Use renamed field name for builder field storage
     field.setOriginalFieldName(fieldName);
+    // Framework annotations configure generation and are not copied onto generated code.
+    fieldType.getAnnotations().removeIf(BuilderDefinitionCreator::isSkippedCopiedAnnotation);
     field.setFieldType(fieldType);
 
     // Store original javadoc description for reuse in builder method javadocs
@@ -844,8 +886,10 @@ public class BuilderDefinitionCreator {
                 new GetterInfoDto(
                     g.getSimpleName().toString(), g.getAnnotation(Deprecated.class) != null)));
 
-    // Extract annotations from the field parameter
+    // Extract annotations from the field parameter and exclude the framework's own
+    // annotations — they configure generation and are not copied onto generated code.
     List<AnnotationDto> annotations = FieldAnnotationExtractor.extractAnnotations(param, context);
+    annotations.removeIf(BuilderDefinitionCreator::isSkippedCopiedAnnotation);
 
     // Annotations could be assigned to Type or Parameter.
     // To avoid duplication in generated code, we need to remove the duplications here.
@@ -1186,7 +1230,7 @@ public class BuilderDefinitionCreator {
    */
   private static boolean isConstructorDeprecated(
       TypeElement annotatedType, BuilderProcessingContext context) {
-    return JavaLangAnalyser.findConstructorForBuilder(
+    return JavaLangAnalyser.findPrimaryConstructor(
             annotatedType, SimpleBuilderConstructor.class, context)
         .filter(ctor -> ctor.getAnnotation(Deprecated.class) != null)
         .isPresent();
