@@ -48,6 +48,7 @@ import org.javahelpers.codegen.processing.CodegenTask;
 import org.javahelpers.codegen.processing.logging.MessagerProcessingLogger;
 import org.javahelpers.simple.builders.processor.analysis.BuilderScopeResolver;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
+import org.javahelpers.simple.builders.processor.model.type.PrefillCall;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
@@ -519,9 +520,8 @@ class BuilderScopeResolverTest {
     ResolvedBuilder resolved = ResolverProbeProcessor.usageWithoutAnnotation.get();
     assertEquals("lib.LibHelper.Builder", resolved.typeName().getFullQualifiedName());
     assertInstanceOf(TypeInstantiation.ConstructorCall.class, resolved.funcForEmptyBuilder());
-    TypeInstantiation.PrefillCall prefilled =
-        assertInstanceOf(
-            TypeInstantiation.PrefillCall.class, resolved.funcForPrefilledBuilder().get());
+    PrefillCall prefilled =
+        assertInstanceOf(PrefillCall.class, resolved.funcForPrefilledBuilder().get());
     assertEquals("", prefilled.methodPrefix());
     assertEquals("name", prefilled.prefilledFields().get(0).property());
     assertEquals("getName()", prefilled.prefilledFields().get(0).accessor());
@@ -605,9 +605,8 @@ class BuilderScopeResolverTest {
     ResolvedBuilder resolved = ResolverProbeProcessor.usageWithoutAnnotation.get();
     assertEquals("lib.AutoValue_LibHelper.Builder", resolved.typeName().getFullQualifiedName());
     assertInstanceOf(TypeInstantiation.NestedFactoryCall.class, resolved.funcForEmptyBuilder());
-    TypeInstantiation.PrefillCall prefilled =
-        assertInstanceOf(
-            TypeInstantiation.PrefillCall.class, resolved.funcForPrefilledBuilder().get());
+    PrefillCall prefilled =
+        assertInstanceOf(PrefillCall.class, resolved.funcForPrefilledBuilder().get());
     assertEquals("set", prefilled.methodPrefix());
     assertEquals("name", prefilled.prefilledFields().get(0).property());
   }
@@ -652,9 +651,8 @@ class BuilderScopeResolverTest {
     // Builder-framework style: several field functions share the camel-case prefix "with",
     // which is detected as the builder's convention
     ResolvedBuilder resolved = ResolverProbeProcessor.usageWithoutAnnotation.get();
-    TypeInstantiation.PrefillCall prefilled =
-        assertInstanceOf(
-            TypeInstantiation.PrefillCall.class, resolved.funcForPrefilledBuilder().get());
+    PrefillCall prefilled =
+        assertInstanceOf(PrefillCall.class, resolved.funcForPrefilledBuilder().get());
     assertEquals("with", prefilled.methodPrefix());
     assertEquals(2, prefilled.prefilledFields().size());
   }
@@ -688,9 +686,8 @@ class BuilderScopeResolverTest {
     assertThat(compilation).succeeded();
     // For a single-property type, one prefixed method is enough evidence for the convention
     ResolvedBuilder resolved = ResolverProbeProcessor.usageWithoutAnnotation.get();
-    TypeInstantiation.PrefillCall prefilled =
-        assertInstanceOf(
-            TypeInstantiation.PrefillCall.class, resolved.funcForPrefilledBuilder().get());
+    PrefillCall prefilled =
+        assertInstanceOf(PrefillCall.class, resolved.funcForPrefilledBuilder().get());
     assertEquals("put", prefilled.methodPrefix());
   }
 
@@ -719,9 +716,8 @@ class BuilderScopeResolverTest {
     assertThat(compilation).succeeded();
     // Record components count as readable properties via the name() accessor
     ResolvedBuilder resolved = ResolverProbeProcessor.usageWithoutAnnotation.get();
-    TypeInstantiation.PrefillCall prefilled =
-        assertInstanceOf(
-            TypeInstantiation.PrefillCall.class, resolved.funcForPrefilledBuilder().get());
+    PrefillCall prefilled =
+        assertInstanceOf(PrefillCall.class, resolved.funcForPrefilledBuilder().get());
     assertEquals("", prefilled.methodPrefix());
     assertEquals("name", prefilled.prefilledFields().get(0).property());
     assertEquals("name()", prefilled.prefilledFields().get(0).accessor());
@@ -758,9 +754,8 @@ class BuilderScopeResolverTest {
     assertThat(compilation).succeeded();
     // Accessible fields count as readable properties via direct name access
     ResolvedBuilder resolved = ResolverProbeProcessor.usageWithoutAnnotation.get();
-    TypeInstantiation.PrefillCall prefilled =
-        assertInstanceOf(
-            TypeInstantiation.PrefillCall.class, resolved.funcForPrefilledBuilder().get());
+    PrefillCall prefilled =
+        assertInstanceOf(PrefillCall.class, resolved.funcForPrefilledBuilder().get());
     assertEquals("", prefilled.methodPrefix());
     assertEquals("name", prefilled.prefilledFields().get(0).property());
     assertEquals("name", prefilled.prefilledFields().get(0).accessor());
@@ -840,9 +835,8 @@ class BuilderScopeResolverTest {
     // age has no field function but two of three properties are covered: the convention is
     // trusted and the covered fields are prefilled
     ResolvedBuilder resolved = ResolverProbeProcessor.usageWithoutAnnotation.get();
-    TypeInstantiation.PrefillCall prefilled =
-        assertInstanceOf(
-            TypeInstantiation.PrefillCall.class, resolved.funcForPrefilledBuilder().get());
+    PrefillCall prefilled =
+        assertInstanceOf(PrefillCall.class, resolved.funcForPrefilledBuilder().get());
     assertEquals(2, prefilled.prefilledFields().size());
     assertEquals("name", prefilled.prefilledFields().get(0).property());
     assertEquals("active", prefilled.prefilledFields().get(1).property());
