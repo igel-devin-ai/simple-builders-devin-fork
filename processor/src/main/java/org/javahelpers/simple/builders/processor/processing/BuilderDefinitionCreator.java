@@ -433,11 +433,19 @@ public class BuilderDefinitionCreator {
    *       a new declaration, not the original deprecated source parameter)
    *   <li>{@code @Valid} cascading validation — only meaningful on fields or method return types,
    *       not on generated method parameters where individual values are set
+   *   <li>{@code @Generated} markers — the generated code is annotated by the generator itself, not
+   *       by copying markers from the source
+   *   <li>{@code @SuppressWarnings} — compiler-only, not relevant on generated parameters
    * </ul>
    */
   private static final java.util.Set<String> SKIPPED_COPIED_ANNOTATIONS =
       java.util.Set.of(
-          "java.lang.Deprecated", "jakarta.validation.Valid", "javax.validation.Valid");
+          "java.lang.Deprecated",
+          "jakarta.validation.Valid",
+          "javax.validation.Valid",
+          "javax.annotation.Generated",
+          "javax.annotation.processing.Generated",
+          "java.lang.SuppressWarnings");
 
   /**
    * Whether an annotation must not be copied onto generated code: either a simple-builders

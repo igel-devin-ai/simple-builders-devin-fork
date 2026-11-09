@@ -47,21 +47,6 @@ public final class FieldAnnotationExtractor {
   /** Fully qualified name of {@link Deprecated}. */
   private static final String DEPRECATED_FQN = "java.lang.Deprecated";
 
-  /**
-   * List of predicates that determine which annotations should be skipped (not copied to generated
-   * code). Each predicate receives the fully qualified annotation name and returns true if the
-   * annotation should be filtered out.
-   *
-   * <p>To add a new filter, simply add a new predicate to this list with a descriptive comment.
-   */
-  private static final java.util.List<java.util.function.Predicate<String>> ANNOTATION_FILTERS =
-      java.util.List.of(
-          // Skip code generation metadata annotations
-          name -> name.equals("javax.annotation.Generated"),
-          name -> name.equals("javax.annotation.processing.Generated"),
-          // Skip compiler-only annotations not relevant for generated parameters
-          name -> name.equals("java.lang.SuppressWarnings"));
-
   private FieldAnnotationExtractor() {
     // Private constructor to prevent instantiation
   }
@@ -90,22 +75,18 @@ public final class FieldAnnotationExtractor {
         continue;
       }
       if (DEPRECATED_FQN.equals(annotationType.getQualifiedName().toString())) {
-        // Extract the @Deprecated annotation directly, WITHOUT applying ANNOTATION_FILTERS.
-        // The filters are for annotations copied to generated parameters; deprecation detection
-        // must always see @Deprecated regardless of whether it is copied to parameters.
-        return extractAnnotationWithoutFiltering(mirror, context);
+        return extractAnnotation(mirror, context);
       }
     }
     return Optional.empty();
   }
 
   /**
-   * Extracts annotations from a field parameter. Filters out annotations that should not be copied
-   * to generated code.
+   * Extracts all annotations from a field parameter.
    *
    * @param param the parameter element containing annotations
    * @param context processing context
-   * @return list of annotations to be copied to the generated field
+   * @return list of extracted annotations
    */
   public static List<AnnotationDto> extractAnnotations(
       VariableElement param, TypeMappingContext context) {
@@ -120,12 +101,11 @@ public final class FieldAnnotationExtractor {
   }
 
   /**
-   * Extracts annotations from a type mirror. Filters out annotations that should not be copied to
-   * generated code.
+   * Extracts all annotations from a type mirror.
    *
    * @param typeMirror the type mirror containing annotations
    * @param context processing context
-   * @return list of annotations to be copied to the generated field
+   * @return list of extracted annotations
    */
   public static List<AnnotationDto> extractAnnotations(
       javax.lang.model.type.TypeMirror typeMirror, TypeMappingContext context) {
@@ -140,42 +120,14 @@ public final class FieldAnnotationExtractor {
   }
 
   /**
-   * Extracts a single annotation from an AnnotationMirror. Filters out annotations that should not
-   * be copied to generated code.
+   * Extracts a single annotation from an AnnotationMirror.
    *
    * @param mirror the annotation mirror to process
    * @param context processing context
-   * @return Optional containing the extracted annotation, or empty if it should be skipped
+   * @return Optional containing the extracted annotation, or empty if the annotation type cannot be
+   *     resolved to a type element
    */
   private static Optional<AnnotationDto> extractAnnotation(
-      AnnotationMirror mirror, TypeMappingContext context) {
-    // Get the annotation type element
-    Element annotationElement = mirror.getAnnotationType().asElement();
-    if (!(annotationElement instanceof TypeElement annotationType)) {
-      return Optional.empty();
-    }
-
-    String annotationQualifiedName = annotationType.getQualifiedName().toString();
-
-    // Filter out annotations that should not be copied to generated code
-    if (shouldSkipAnnotation(annotationQualifiedName)) {
-      context.debug("    -> Skipping annotation: %s", annotationQualifiedName);
-      return Optional.empty();
-    }
-
-    return extractAnnotationWithoutFiltering(mirror, context);
-  }
-
-  /**
-   * Extracts a single annotation from an AnnotationMirror without applying {@link
-   * #shouldSkipAnnotation(String)} filters. Used by {@link #extractDeprecatedAnnotation} which
-   * needs to detect @Deprecated even though @Deprecated is filtered from parameter annotations.
-   *
-   * @param mirror the annotation mirror to process
-   * @param context processing context
-   * @return Optional containing the extracted annotation
-   */
-  private static Optional<AnnotationDto> extractAnnotationWithoutFiltering(
       AnnotationMirror mirror, TypeMappingContext context) {
     Element annotationElement = mirror.getAnnotationType().asElement();
     if (!(annotationElement instanceof TypeElement annotationType)) {
@@ -272,16 +224,6 @@ public final class FieldAnnotationExtractor {
     }
     sb.append("}");
     return sb.toString();
-  }
-
-  /**
-   * Determines if an annotation should be skipped (not copied to generated code).
-   *
-   * @param qualifiedName the fully qualified name of the annotation
-   * @return true if the annotation should be skipped, false otherwise
-   */
-  private static boolean shouldSkipAnnotation(String qualifiedName) {
-    return ANNOTATION_FILTERS.stream().anyMatch(filter -> filter.test(qualifiedName));
   }
 
   /**
