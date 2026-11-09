@@ -60,16 +60,7 @@ public final class FieldAnnotationExtractor {
           name -> name.equals("javax.annotation.Generated"),
           name -> name.equals("javax.annotation.processing.Generated"),
           // Skip compiler-only annotations not relevant for generated parameters
-          name -> name.equals("java.lang.SuppressWarnings"),
-          // Skip @Deprecated on parameters — deprecation is propagated to the generated method
-          // itself via DeprecationInfoDto, not to the generated method's parameter (which is a
-          // new declaration, not the original deprecated source parameter)
-          name -> name.equals(DEPRECATED_FQN),
-          // Skip @Valid annotation for cascading validation (jakarta.validation.Valid /
-          // javax.validation.Valid) - only meaningful on fields or method return types, not on
-          // generated method parameters where individual values are set
-          name -> name.equals("jakarta.validation.Valid"),
-          name -> name.equals("javax.validation.Valid"));
+          name -> name.equals("java.lang.SuppressWarnings"));
 
   private FieldAnnotationExtractor() {
     // Private constructor to prevent instantiation

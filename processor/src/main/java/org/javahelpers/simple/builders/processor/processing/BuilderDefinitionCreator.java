@@ -425,18 +425,35 @@ public class BuilderDefinitionCreator {
   }
 
   /**
-   * Whether an annotation belongs to the simple-builders framework itself (e.g. {@code @Default},
-   * {@code @Ignore4BuilderGeneration}) and therefore must not be copied onto generated code.
+   * Fully qualified names of annotations the builder domain does not copy onto generated code:
+   *
+   * <ul>
+   *   <li>{@code @Deprecated} on parameters — deprecation is propagated to the generated method
+   *       itself via {@code DeprecationInfoDto}, not to the generated method's parameter (which is
+   *       a new declaration, not the original deprecated source parameter)
+   *   <li>{@code @Valid} cascading validation — only meaningful on fields or method return types,
+   *       not on generated method parameters where individual values are set
+   * </ul>
+   */
+  private static final java.util.Set<String> SKIPPED_COPIED_ANNOTATIONS =
+      java.util.Set.of(
+          "java.lang.Deprecated", "jakarta.validation.Valid", "javax.validation.Valid");
+
+  /**
+   * Whether an annotation must not be copied onto generated code: either a simple-builders
+   * framework annotation (e.g. {@code @Default}, {@code @Ignore4BuilderGeneration}) — those
+   * configure generation — or one of {@link #SKIPPED_COPIED_ANNOTATIONS}.
    *
    * @param annotation the annotation DTO
-   * @return {@code true} if the annotation is a framework annotation
+   * @return {@code true} if the annotation is skipped for the generated code
    */
-  private static boolean isBuilderFrameworkAnnotation(AnnotationDto annotation) {
-    return annotation.getAnnotationType() != null
-        && annotation
-            .getAnnotationType()
-            .getFullQualifiedName()
-            .startsWith("org.javahelpers.simple.builders.");
+  private static boolean isSkippedCopiedAnnotation(AnnotationDto annotation) {
+    if (annotation.getAnnotationType() == null) {
+      return false;
+    }
+    String qualifiedName = annotation.getAnnotationType().getFullQualifiedName();
+    return qualifiedName.startsWith("org.javahelpers.simple.builders.")
+        || SKIPPED_COPIED_ANNOTATIONS.contains(qualifiedName);
   }
 
   /**
@@ -834,7 +851,7 @@ public class BuilderDefinitionCreator {
         fieldNameInBuilder); // Use renamed field name for builder field storage
     field.setOriginalFieldName(fieldName);
     // Framework annotations configure generation and are not copied onto generated code.
-    fieldType.getAnnotations().removeIf(BuilderDefinitionCreator::isBuilderFrameworkAnnotation);
+    fieldType.getAnnotations().removeIf(BuilderDefinitionCreator::isSkippedCopiedAnnotation);
     field.setFieldType(fieldType);
 
     // Store original javadoc description for reuse in builder method javadocs
@@ -864,7 +881,7 @@ public class BuilderDefinitionCreator {
     // Extract annotations from the field parameter and exclude the framework's own
     // annotations — they configure generation and are not copied onto generated code.
     List<AnnotationDto> annotations = FieldAnnotationExtractor.extractAnnotations(param, context);
-    annotations.removeIf(BuilderDefinitionCreator::isBuilderFrameworkAnnotation);
+    annotations.removeIf(BuilderDefinitionCreator::isSkippedCopiedAnnotation);
 
     // Annotations could be assigned to Type or Parameter.
     // To avoid duplication in generated code, we need to remove the duplications here.

@@ -26,28 +26,19 @@ package org.javahelpers.simple.builders.processor.testing;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
-import com.google.testing.compile.JavaFileObjects;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.annotation.processing.Processor;
 import javax.tools.JavaFileObject;
 import org.apache.commons.lang3.Strings;
+import org.javahelpers.codegen.testing.CodegenTestUtils;
 import org.javahelpers.simple.builders.processor.BuilderProcessor;
-import org.junit.jupiter.api.Assertions;
 
 /**
- * Utilities to simplify annotation-processor tests by reducing boilerplate for building sources,
- * compiling them, and retrieving generated files.
+ * Utilities to simplify simple-builders processor tests: builder-annotated source fixtures and a
+ * compiler preconfigured with {@link BuilderProcessor} and the domain's verbose option. The
+ * underlying compile-testing machinery lives in {@link CodegenTestUtils}.
  */
 public final class ProcessorTestUtils {
-
-  private static final Pattern PACKAGE_PATTERN =
-      Pattern.compile("(?m)^\\s*package\\s+([a-zA-Z_]\\w*(?:\\.[a-zA-Z_]\\w*)*)\\s*;");
-  private static final Pattern TOP_LEVEL_TYPE_PATTERN =
-      Pattern.compile(
-          "(?m)^[ \\t]*(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp)\\s+)*(?:@?interface|class|enum|record)\\s+([A-Za-z_]\\w*)\\b");
 
   private ProcessorTestUtils() {}
 
@@ -78,7 +69,7 @@ public final class ProcessorTestUtils {
    * @return a Compiler instance configured with the given processors and optional verbose output
    */
   public static Compiler createCompiler(Processor... processors) {
-    Compiler compiler = Compiler.javac().withProcessors(processors);
+    Compiler compiler = CodegenTestUtils.createCompiler(processors);
 
     // Check for verbose flag from Maven property
     if (isVerboseEnabled()) {
@@ -95,13 +86,7 @@ public final class ProcessorTestUtils {
    * @param text the text no warning message may contain
    */
   public static void assertNoWarningContaining(Compilation compilation, String text) {
-    String warnings =
-        compilation.warnings().stream()
-            .map(diagnostic -> diagnostic.getMessage(null))
-            .collect(Collectors.joining("\n"));
-    Assertions.assertFalse(
-        warnings.toLowerCase().contains(text.toLowerCase()),
-        "No warning containing '" + text + "' expected, got: " + warnings);
+    CodegenTestUtils.assertNoWarningContaining(compilation, text);
   }
 
   /**
@@ -125,34 +110,9 @@ public final class ProcessorTestUtils {
    * @param compilation the compilation result to print diagnostics from
    */
   public static void printDiagnosticsOnVerbose(Compilation compilation) {
-    if (!isVerboseEnabled()) {
-      return;
+    if (isVerboseEnabled()) {
+      CodegenTestUtils.printDiagnostics(compilation);
     }
-
-    System.out.println("\n========== Compilation Diagnostics ==========");
-
-    // Print notes (includes debug messages)
-    if (!compilation.notes().isEmpty()) {
-      System.out.println("--- NOTES ---");
-      compilation.notes().forEach(diag -> System.out.println(diag.getMessage(null)));
-    }
-
-    // Print warnings
-    if (!compilation.warnings().isEmpty()) {
-      System.out.println("\n--- WARNINGS ---");
-      compilation.warnings().forEach(diag -> System.out.println(diag.getMessage(null)));
-    }
-
-    // Print errors
-    if (!compilation.errors().isEmpty()) {
-      System.out.println("\n--- ERRORS ---");
-      compilation.errors().forEach(diag -> System.out.println(diag.getMessage(null)));
-    }
-
-    System.out.println("=============================================\n");
-
-    // Print generated source files
-    printGeneratedSourcesOnVerbose(compilation);
   }
 
   /**
@@ -164,115 +124,57 @@ public final class ProcessorTestUtils {
    * @param compilation the compilation result containing generated files
    */
   public static void printGeneratedSourcesOnVerbose(Compilation compilation) {
-    if (!isVerboseEnabled()) {
-      return;
+    if (isVerboseEnabled()) {
+      CodegenTestUtils.printGeneratedSources(compilation);
     }
-
-    var generatedFiles = compilation.generatedSourceFiles();
-    if (generatedFiles.isEmpty()) {
-      System.out.println("========== No Source Files Generated ==========\n");
-      return;
-    }
-
-    System.out.println("========== Generated Source Files ==========");
-    generatedFiles.forEach(
-        file -> {
-          try {
-            String fileName = file.getName();
-            String content = file.getCharContent(false).toString();
-            System.out.println("\n--- " + fileName + " ---");
-            System.out.println(content);
-            System.out.println("--- End of " + fileName + " ---");
-          } catch (Exception e) {
-            System.err.println("Failed to read generated file: " + e.getMessage());
-          }
-        });
-    System.out.println("=============================================\n");
   }
 
   /**
    * Creates a {@link JavaFileObject} for a simple class annotated with @SimpleBuilder. You pass the
    * inner body lines (fields/methods); imports and annotation are handled for you.
+   *
+   * @return JavaFileObject suitable for compilation testing
    */
   public static JavaFileObject simpleBuilderClass(
       String packageName, String className, List<String> bodyLines) {
-    String fqcn = packageName + "." + className;
     String[] lines = buildSourceLines(packageName, className, bodyLines);
-    return JavaFileObjects.forSourceLines(fqcn, lines);
+    String source = String.join("\n", lines);
+    String fqcn = packageName + "." + className;
+    return com.google.testing.compile.JavaFileObjects.forSourceString(fqcn, source);
   }
 
   /**
-   * Creates a {@link JavaFileObject} using a single body string (ideal for Java text blocks """ ...
-   * """). The body is placed inside the annotated class.
+   * Varargs overload for convenience.
+   *
+   * @return JavaFileObject suitable for compilation testing
    */
   public static JavaFileObject simpleBuilderClass(
-      String packageName, String className, String body) {
-    String fqcn = packageName + "." + className;
-    String source =
-        "package "
-            + packageName
-            + ";\n\n"
-            + "import "
-            + org.javahelpers.simple.builders.core.annotations.SimpleBuilder.class.getName()
-            + ";\n\n"
-            + "@SimpleBuilder\n"
-            + "public class "
-            + className
-            + " {\n"
-            + body
-            + (body.endsWith("\n") ? "" : "\n")
-            + "}\n";
-    return JavaFileObjects.forSourceString(fqcn, source);
+      String packageName, String className, String... bodyLines) {
+    return simpleBuilderClass(packageName, className, List.of(bodyLines));
   }
 
   /**
-   * Creates a {@link JavaFileObject} from a full Java source string by extracting the package name
-   * and the top-level type name.
+   * Creates a {@link JavaFileObject} from source text, deriving the fully qualified class name from
+   * the source's package and top-level type declaration.
    *
-   * <p>This is useful when you already have a complete source text block and want to avoid
-   * duplicating the fully qualified class name separately.
-   *
-   * @param source full Java source code (may or may not declare a package)
+   * @param source the Java source code
    * @return JavaFileObject suitable for compilation testing
    * @throws IllegalArgumentException if the top-level type name cannot be determined
    */
   public static JavaFileObject forSource(String source) {
-    String pkg = extractPackageName(source);
-    String type = extractTopLevelTypeName(source);
-    if (type == null || type.isBlank()) {
-      throw new IllegalArgumentException("Cannot determine top-level type name from source.");
-    }
-    String fqcn = (pkg == null || pkg.isBlank()) ? type : (pkg + "." + type);
-    return JavaFileObjects.forSourceString(fqcn, source);
-  }
-
-  private static String extractPackageName(String source) {
-    Matcher m = PACKAGE_PATTERN.matcher(source);
-    return m.find() ? m.group(1) : null;
-  }
-
-  private static String extractTopLevelTypeName(String source) {
-    Matcher m = TOP_LEVEL_TYPE_PATTERN.matcher(source);
-    return m.find() ? m.group(1) : null;
+    return CodegenTestUtils.forSource(source);
   }
 
   /**
    * Load the generated builder source code by simple name from the given compilation. No assertions
    * are performed here; callers should assert separately.
+   *
+   * @param compilation the compilation result containing generated files
+   * @param builderSimpleName the simple name of the generated builder
+   * @return the generated source text
    */
   public static String loadGeneratedSource(Compilation compilation, String builderSimpleName) {
-    JavaFileObject file =
-        compilation.generatedFiles().stream()
-            .filter(f -> f.getKind() == JavaFileObject.Kind.SOURCE)
-            .filter(f -> f.getName().endsWith(builderSimpleName + ".java"))
-            .findFirst()
-            .orElseThrow(
-                () -> new AssertionError("Generated source file not found: " + builderSimpleName));
-    try {
-      return file.getCharContent(true).toString();
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to read generated source for: " + builderSimpleName, e);
-    }
+    return CodegenTestUtils.loadGeneratedSource(compilation, builderSimpleName);
   }
 
   private static String[] buildSourceLines(
@@ -304,18 +206,6 @@ public final class ProcessorTestUtils {
   /**
    * Creates a mock annotation for testing without any members.
    *
-   * <p>Mock annotations are used instead of real dependencies because:
-   *
-   * <ul>
-   *   <li>Annotation processors work at compile-time and only see annotation metadata, not
-   *       implementations
-   *   <li>Avoids adding unnecessary runtime dependencies to the test classpath
-   *   <li>Ensures test isolation from external library versions
-   *   <li>Follows standard practice for annotation processor testing with Google Compile Testing
-   * </ul>
-   *
-   * <p>The processor only cares about the qualified name, not the actual implementation.
-   *
    * @param packageName the package name of the annotation (e.g., "jakarta.validation")
    * @param annotationName the simple name of the annotation (e.g., "Valid")
    * @param targets the annotation targets (e.g., "ElementType.FIELD, ElementType.PARAMETER")
@@ -323,23 +213,11 @@ public final class ProcessorTestUtils {
    */
   public static JavaFileObject createMockAnnotation(
       String packageName, String annotationName, String targets) {
-    return createMockAnnotation(packageName, annotationName, targets, "");
+    return CodegenTestUtils.createMockAnnotation(packageName, annotationName, targets);
   }
 
   /**
    * Creates a mock annotation for testing with optional members.
-   *
-   * <p>Mock annotations are used instead of real dependencies because:
-   *
-   * <ul>
-   *   <li>Annotation processors work at compile-time and only see annotation metadata, not
-   *       implementations
-   *   <li>Avoids adding unnecessary runtime dependencies to the test classpath
-   *   <li>Ensures test isolation from external library versions
-   *   <li>Follows standard practice for annotation processor testing with Google Compile Testing
-   * </ul>
-   *
-   * <p>The processor only cares about the qualified name, not the actual implementation.
    *
    * @param packageName the package name of the annotation (e.g., "jakarta.validation")
    * @param annotationName the simple name of the annotation (e.g., "Valid")
@@ -349,22 +227,6 @@ public final class ProcessorTestUtils {
    */
   public static JavaFileObject createMockAnnotation(
       String packageName, String annotationName, String targets, String members) {
-    String qualifiedName = packageName + "." + annotationName;
-    String membersSection = members.isEmpty() ? "" : "\n  " + members + "\n";
-
-    return JavaFileObjects.forSourceString(
-        qualifiedName,
-        """
-        package %s;
-        import java.lang.annotation.ElementType;
-        import java.lang.annotation.Retention;
-        import java.lang.annotation.RetentionPolicy;
-        import java.lang.annotation.Target;
-
-        @Retention(RetentionPolicy.RUNTIME)
-        @Target({%s})
-        public @interface %s {%s}
-        """
-            .formatted(packageName, targets, annotationName, membersSection));
+    return CodegenTestUtils.createMockAnnotation(packageName, annotationName, targets, members);
   }
 }
