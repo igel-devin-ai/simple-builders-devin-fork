@@ -23,8 +23,8 @@
  */
 package org.javahelpers.simple.builders.processor;
 
-import static org.javahelpers.codegen.testing.ProcessorAsserts.assertGenerationSucceeded;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
+import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
