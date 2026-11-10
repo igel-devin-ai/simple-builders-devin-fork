@@ -115,10 +115,9 @@ class MapStructSpiProbeTest {
     // builders are filtered.
     assertEquals(MethodType.SETTER, results.foreignSetterType);
 
-    // A marked bean outside the generation scope is skipped by planning: it defers while the
-    // registry may still fill and resolves to no builder — reported as a warning — once the
-    // generating round is done. The in-scope bean forces a second round so the post-registration
-    // lookup runs.
+    // A marked bean outside the generation scope is skipped by planning: the provider answers
+    // "no builder" immediately instead of deferring, and every later lookup stays empty. The
+    // in-scope bean forces a second round so the post-registration lookup runs.
     Compilation skippedCompile =
         Compiler.javac()
             .withProcessors(new SpiProbeProcessor(true), new BuilderProcessor())
@@ -126,7 +125,7 @@ class MapStructSpiProbeTest {
             .compile(personDto(), scopedDto(), templateDto());
     assertThat(skippedCompile).succeeded();
     ProbeResults skipped = ProbeResults.instance;
-    assertInstanceOf(TypeHierarchyErroneousException.class, skipped.skippedBeanDeferred);
+    assertNull(skipped.skippedBeanEarly);
     assertNull(skipped.skippedBeanRegistered);
     assertNull(skipped.skippedBeanFinished);
     // A bean marked only via a template annotation (meta-annotated @SimpleBuilder.Template) is
@@ -142,9 +141,10 @@ class MapStructSpiProbeTest {
     final Map<String, MethodType> prefixMethodTypes = new LinkedHashMap<>();
     Throwable unregisteredDeferral;
     Throwable templateDeferral;
-    Throwable skippedBeanDeferred;
     Throwable foreignUnpublishedDeferral;
     Throwable ignoredUnpublishedDeferral;
+    BuilderInfo skippedBeanEarly;
+    boolean skippedBeanProbed;
     BuilderInfo skippedBeanRegistered;
     BuilderInfo skippedBeanFinished;
     BuilderInfo foreignRegistered;
@@ -161,8 +161,9 @@ class MapStructSpiProbeTest {
       prefixMethodTypes.clear();
       unregisteredDeferral = null;
       templateDeferral = null;
-      skippedBeanDeferred = null;
       foreignUnpublishedDeferral = null;
+      skippedBeanEarly = null;
+      skippedBeanProbed = false;
       ignoredUnpublishedDeferral = null;
       skippedBeanRegistered = null;
       skippedBeanFinished = null;
@@ -183,7 +184,7 @@ class MapStructSpiProbeTest {
    * builder is pending, then method classification once the builder type exists. Runs ahead of
    * {@link BuilderProcessor} in the first round so beans are probed before registration. In {@code
    * skippedMode} it probes the marked bean that the scoped {@link BuilderProcessor} never plans —
-   * deferral while unpublished plus the finished outcome.
+   * the provider answers "no builder" immediately, then stays empty once finished.
    */
   @SupportedAnnotationTypes("*")
   public static final class SpiProbeProcessor extends AbstractProcessor {
@@ -223,7 +224,7 @@ class MapStructSpiProbeTest {
 
         @Override
         public Map<String, String> getOptions() {
-          return Map.of();
+          return processingEnv.getOptions();
         }
       };
     }
@@ -247,10 +248,11 @@ class MapStructSpiProbeTest {
       }
 
       if (skippedMode) {
-        // The bean is marked but out of the generation scope: it defers while the registry
-        // may still fill, then resolves to no builder once the generating round is done.
-        if (results.skippedBeanDeferred == null) {
-          results.skippedBeanDeferred = lookupExpectingDeferral(bean);
+        // The bean is marked but out of the generation scope: the provider can tell no builder
+        // will be planned, so it answers "no builder" immediately instead of deferring.
+        if (!results.skippedBeanProbed) {
+          results.skippedBeanProbed = true;
+          results.skippedBeanEarly = lookup(provider, "test.PersonDto");
         } else {
           results.skippedBeanRegistered = lookup(provider, "test.PersonDto");
         }
