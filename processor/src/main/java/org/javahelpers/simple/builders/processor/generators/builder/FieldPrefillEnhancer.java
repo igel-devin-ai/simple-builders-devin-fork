@@ -24,20 +24,20 @@
 package org.javahelpers.simple.builders.processor.generators.builder;
 
 import java.util.Optional;
-import org.javahelpers.codegen.model.type.TypeInstantiation;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.generators.BuilderEnhancer;
 import org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
+import org.javahelpers.simple.builders.processor.model.type.PrefillCall;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
- * Enhancer that adds the private prefilling methods backing {@link TypeInstantiation.PrefillCall}
- * resolutions: one {@code prefill<Builder>(T value)} method per referenced builder type, obtaining
- * an empty builder and calling one field function per readable property. Several fields referencing
- * the same type share one prefilling method.
+ * Enhancer that adds the private prefilling methods backing {@link PrefillCall} resolutions: one
+ * {@code prefill<Builder>(T value)} method per referenced builder type, obtaining an empty builder
+ * and calling one field function per readable property. Several fields referencing the same type
+ * share one prefilling method.
  */
 public class FieldPrefillEnhancer implements BuilderEnhancer {
 
@@ -72,12 +72,12 @@ public class FieldPrefillEnhancer implements BuilderEnhancer {
    * @param field the field to inspect
    * @return the field-prefilling call, or empty
    */
-  private static Optional<TypeInstantiation.PrefillCall> fieldPrefill(
+  private static Optional<PrefillCall> fieldPrefill(
       BuilderFieldDto field, BuilderProcessingContext context) {
     return context
         .resolveBuilderType(field.getFieldType())
         .flatMap(ResolvedBuilder::funcForPrefilledBuilder)
-        .filter(TypeInstantiation.PrefillCall.class::isInstance)
-        .map(TypeInstantiation.PrefillCall.class::cast);
+        .filter(PrefillCall.class::isInstance)
+        .map(PrefillCall.class::cast);
   }
 }

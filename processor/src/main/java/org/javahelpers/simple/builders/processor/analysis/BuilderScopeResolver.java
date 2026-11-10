@@ -45,6 +45,7 @@ import org.javahelpers.codegen.model.type.TypeInstantiation;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
+import org.javahelpers.simple.builders.processor.model.type.PrefillCall;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
@@ -367,7 +368,7 @@ public final class BuilderScopeResolver {
       return Optional.empty();
     }
     return Optional.of(
-        new TypeInstantiation.PrefillCall(
+        new PrefillCall(
             builderTypeName,
             referencedTypeName,
             funcForEmptyBuilder,
@@ -380,8 +381,7 @@ public final class BuilderScopeResolver {
    * A naming convention paired with the prefilled fields the builder covers under it: the
    * convention the most properties follow wins.
    */
-  private record ConventionCoverage(
-      String prefix, List<TypeInstantiation.PrefillCall.Field> prefilledFields) {}
+  private record ConventionCoverage(String prefix, List<PrefillCall.Field> prefilledFields) {}
 
   /**
    * Candidate field-function prefixes: {@code ""} (fluent {@code name(v)}) and {@code set}
@@ -422,7 +422,7 @@ public final class BuilderScopeResolver {
    * @param prefix the naming convention to try
    * @return the prefilled fields in property order
    */
-  private List<TypeInstantiation.PrefillCall.Field> collectPrefilledFields(
+  private List<PrefillCall.Field> collectPrefilledFields(
       List<JavaLangAnalyser.ReadableProperty> properties,
       List<ExecutableElement> fieldFunctions,
       String prefix) {
@@ -439,9 +439,8 @@ public final class BuilderScopeResolver {
    * @param property the readable property to prefill
    * @return the prefilled field to emit
    */
-  private static TypeInstantiation.PrefillCall.Field prefilledField(
-      JavaLangAnalyser.ReadableProperty property) {
-    return new TypeInstantiation.PrefillCall.Field(property.name(), property.accessor());
+  private static PrefillCall.Field prefilledField(JavaLangAnalyser.ReadableProperty property) {
+    return new PrefillCall.Field(property.name(), property.accessor());
   }
 
   /**
