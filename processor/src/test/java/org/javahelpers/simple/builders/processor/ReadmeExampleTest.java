@@ -25,9 +25,8 @@
 package org.javahelpers.simple.builders.processor;
 
 import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
@@ -37,12 +36,6 @@ import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.junit.jupiter.api.Test;
 
 class ReadmeExampleTest {
-
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation);
-    return compilation;
-  }
 
   @Test
   void basicUsage_personBuilder_example() {
@@ -89,7 +82,7 @@ class ReadmeExampleTest {
             """);
 
     // Test 1: Builder generation (without usage)
-    Compilation compilation = compileSources(person);
+    Compilation compilation = compile(person);
     String generatedCode = loadGeneratedSource(compilation, builderClassName);
     BuilderAsserts.assertGenerationSucceeded(compilation, builderClassName, generatedCode);
 
@@ -104,7 +97,7 @@ class ReadmeExampleTest {
         contains("public Person build()"));
 
     // Test 2: Usage compilation (with usage)
-    Compilation compilationWithUsage = compileSources(person, usage);
+    Compilation compilationWithUsage = compile(person, usage);
 
     // Validate the full usage too
     assertGenerationSucceeded(compilationWithUsage, "PersonBuilder");
@@ -196,7 +189,7 @@ class ReadmeExampleTest {
             }
             """);
 
-    Compilation compilation = compileSources(project, task, statusEnum);
+    Compilation compilation = compile(project, task, statusEnum);
 
     String projectBuilder = loadGeneratedSource(compilation, "ProjectBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "ProjectBuilder", projectBuilder);
@@ -225,7 +218,7 @@ class ReadmeExampleTest {
         contains("public Task build()"));
 
     // Validate the full usage too
-    Compilation compilationWithUsage = compileSources(project, task, statusEnum, usage);
+    Compilation compilationWithUsage = compile(project, task, statusEnum, usage);
     assertGenerationSucceeded(compilationWithUsage, "TaskBuilder");
   }
 
