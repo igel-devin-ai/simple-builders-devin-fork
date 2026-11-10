@@ -35,7 +35,6 @@ import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.GenericParameterDto;
-import org.javahelpers.codegen.model.type.TypeInstantiation;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameList;
@@ -44,6 +43,7 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
+import org.javahelpers.simple.builders.processor.model.type.PrefillCall;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
@@ -289,14 +289,13 @@ public final class MethodGeneratorUtil {
   }
 
   /**
-   * Creates the private prefilling method backing a {@link TypeInstantiation.PrefillCall}: obtains
-   * an empty builder and calls one field function per prefilled property of the value.
+   * Creates the private prefilling method backing a {@link PrefillCall}: obtains an empty builder
+   * and calls one field function per prefilled property of the value.
    *
    * @param prefillCall the resolved field-prefilling instantiation
    * @return the method DTO for the prefilling method
    */
-  public static BuilderMethodDto createFieldPrefillMethod(
-      TypeInstantiation.PrefillCall prefillCall) {
+  public static BuilderMethodDto createFieldPrefillMethod(PrefillCall prefillCall) {
     MethodParameterDto parameter = new MethodParameterDto();
     parameter.setParameterName("value");
     parameter.setParameterTypeName(prefillCall.sourceType());
@@ -311,7 +310,7 @@ public final class MethodGeneratorUtil {
     code.append("$builderType:T builder = ")
         .append(prefillCall.funcForEmptyInstance().instantiationCode("$builderType:T", ""))
         .append(";\n");
-    for (TypeInstantiation.PrefillCall.Field prefilledField : prefillCall.prefilledFields()) {
+    for (PrefillCall.Field prefilledField : prefillCall.prefilledFields()) {
       code.append("builder.")
           .append(prefillCall.fieldMethodFor(prefilledField))
           .append("(value.")

@@ -31,6 +31,7 @@ import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUti
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +60,7 @@ class ConditionalExecutionTest {
 
     Compilation compilation = compile(person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify complete method signature with exact types
     ProcessorAsserts.assertContaining(
@@ -120,7 +121,7 @@ class ConditionalExecutionTest {
 
     Compilation compilation = compile(user);
     String generatedCode = loadGeneratedSource(compilation, "UserBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
 
     // Verify conditional method has correct signature for UserBuilder
     ProcessorAsserts.assertContaining(
@@ -171,7 +172,7 @@ class ConditionalExecutionTest {
 
     Compilation compilation = compile(config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
     // Verify complete signature with ConfigBuilder return type
     ProcessorAsserts.assertContaining(
@@ -220,7 +221,7 @@ class ConditionalExecutionTest {
 
     Compilation compilation = compile(settings);
     String generatedCode = loadGeneratedSource(compilation, "SettingsBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "SettingsBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "SettingsBuilder", generatedCode);
 
     // Verify positive-only overload signature
     ProcessorAsserts.assertContaining(

@@ -31,6 +31,7 @@ import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUti
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +60,7 @@ class WithInterfaceTest {
 
     Compilation compilation = compile(project);
     String generatedCode = loadGeneratedSource(compilation, "ProjectBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ProjectBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ProjectBuilder", generatedCode);
 
     // Verify complete With interface is generated with default implementations
     String expectedWithInterface =
@@ -133,7 +134,7 @@ class WithInterfaceTest {
 
     Compilation compilation = compile(user);
     String generatedCode = loadGeneratedSource(compilation, "UserBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
 
     // Verify complete With interface with default implementations for constructor fields
     String expectedWithInterface =
@@ -204,7 +205,7 @@ class WithInterfaceTest {
 
     Compilation compilation = compile(config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
     // Verify complete With interface with correct type names (primitives)
     String expectedWithInterface =

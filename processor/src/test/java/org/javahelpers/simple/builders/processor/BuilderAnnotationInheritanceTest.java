@@ -26,9 +26,9 @@ package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
-import static org.javahelpers.codegen.testing.ProcessorAsserts.assertGenerationSucceeded;
-import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNoBuilderGenerated;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNotContaining;
+import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
+import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertNoBuilderGenerated;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 

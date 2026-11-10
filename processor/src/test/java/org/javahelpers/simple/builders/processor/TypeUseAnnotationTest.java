@@ -34,6 +34,7 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -88,7 +89,7 @@ class TypeUseAnnotationTest {
 
     Compilation compilation = compile(notNullAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are preserved in builder field
     ProcessorAsserts.assertingResult(
@@ -133,7 +134,7 @@ class TypeUseAnnotationTest {
 
     Compilation compilation = compile(notNullAnnotation, product);
     String generatedCode = loadGeneratedSource(compilation, "ProductBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are preserved
     ProcessorAsserts.assertingResult(
@@ -178,7 +179,7 @@ class TypeUseAnnotationTest {
 
     Compilation compilation = compile(notNullAnnotation, config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are preserved
     ProcessorAsserts.assertingResult(
@@ -223,7 +224,7 @@ class TypeUseAnnotationTest {
 
     Compilation compilation = compile(notNullAnnotation, validAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
     // Verify that both TYPE_USE annotations are preserved
     ProcessorAsserts.assertingResult(
@@ -266,7 +267,7 @@ class TypeUseAnnotationTest {
 
     Compilation compilation = compile(notNullAnnotation, container);
     String generatedCode = loadGeneratedSource(compilation, "ContainerBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ContainerBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ContainerBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are preserved in nested generics
     ProcessorAsserts.assertingResult(
@@ -321,7 +322,7 @@ class TypeUseAnnotationTest {
 
     Compilation compilation = compile(paramAnnotation, typeUseAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
     // The @ParamOnly annotation comes from the constructor parameter.
     // It should NOT appear on the field type in the builder.
@@ -375,7 +376,7 @@ class TypeUseAnnotationTest {
 
     Compilation compilation = compile(notNullAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are NOT preserved in builder field
     ProcessorAsserts.assertingResult(
@@ -420,7 +421,7 @@ class TypeUseAnnotationTest {
 
     Compilation compilation = compile(hybridAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
     // Verify deduplication
     ProcessorAsserts.assertingResult(

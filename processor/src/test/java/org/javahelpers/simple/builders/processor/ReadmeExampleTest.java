@@ -32,6 +32,7 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.junit.jupiter.api.Test;
 
 class ReadmeExampleTest {
@@ -83,7 +84,7 @@ class ReadmeExampleTest {
     // Test 1: Builder generation (without usage)
     Compilation compilation = compile(person);
     String generatedCode = loadGeneratedSource(compilation, builderClassName);
-    ProcessorAsserts.assertGenerationSucceeded(compilation, builderClassName, generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, builderClassName, generatedCode);
 
     // Fixed expected strings based on README usage snippet
     ProcessorAsserts.assertingResult(
@@ -191,7 +192,7 @@ class ReadmeExampleTest {
     Compilation compilation = compile(project, task, statusEnum);
 
     String projectBuilder = loadGeneratedSource(compilation, "ProjectBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ProjectBuilder", projectBuilder);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ProjectBuilder", projectBuilder);
 
     // Assert key capabilities corresponding to README usage
     ProcessorAsserts.assertingResult(
@@ -207,7 +208,7 @@ class ReadmeExampleTest {
 
     // Also validate TaskBuilder exists and typical fluent API
     String taskBuilder = loadGeneratedSource(compilation, "TaskBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "TaskBuilder", taskBuilder);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "TaskBuilder", taskBuilder);
     ProcessorAsserts.assertingResult(
         taskBuilder,
         contains("public static TaskBuilder create()"),
@@ -226,7 +227,7 @@ class ReadmeExampleTest {
    * source (build() and static create()).
    */
   public static void assertGenerationSucceeded(Compilation compilation, String builderSimpleName) {
-    ProcessorAsserts.assertGenerationSucceeded(
+    BuilderAsserts.assertGenerationSucceeded(
         compilation, builderSimpleName, loadGeneratedSource(compilation, builderSimpleName));
   }
 }
