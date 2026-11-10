@@ -30,6 +30,7 @@ import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.notContains;
 import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
 import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertNoBuilderGenerated;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
@@ -40,10 +41,6 @@ import org.junit.jupiter.api.Test;
 
 /** Tests for the {@code @Ignore4BuilderGeneration} opt-out annotation. */
 class Ignore4BuilderGenerationTest {
-
-  private Compilation compile(JavaFileObject... sourceFiles) {
-    return ProcessorTestUtils.createCompiler().compile(sourceFiles);
-  }
 
   /**
    * (a) A subclass that inherits a template annotation from its parent and is annotated with

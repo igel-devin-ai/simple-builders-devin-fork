@@ -29,6 +29,7 @@ import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNotContaining;
 import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
 import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertNoBuilderGenerated;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
@@ -46,10 +47,6 @@ import org.junit.jupiter.api.Test;
  * href="https://github.com/java-helpers/simple-builders/issues/244">issue #244</a>.
  */
 class BuilderAnnotationInheritanceTest {
-
-  private Compilation compile(JavaFileObject... sourceFiles) {
-    return ProcessorTestUtils.createCompiler().compile(sourceFiles);
-  }
 
   /**
    * An unannotated subclass of a class annotated with {@code @SimpleBuilder} must itself get a

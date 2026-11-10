@@ -24,6 +24,7 @@
 package org.javahelpers.simple.builders.processor;
 
 import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
@@ -37,10 +38,6 @@ import org.junit.jupiter.api.Test;
  * implements feature #86: Supporting addToField for Sets/Lists.
  */
 class AddToCollectionTest {
-
-  private static Compilation compile(JavaFileObject... sources) {
-    return ProcessorTestUtils.createCompiler().compile(sources);
-  }
 
   @Test
   void add2Method_generatedForListField() {

@@ -26,10 +26,9 @@ package org.javahelpers.simple.builders.processor;
 
 import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.notContains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createMockAnnotation;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
@@ -60,12 +59,6 @@ import org.junit.jupiter.api.Test;
  */
 class TypeUseAnnotationTest {
 
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation);
-    return compilation;
-  }
-
   @Test
   void typeUseAnnotations_onListElements_copiedToBuilderMethods() {
     String packageName = "test.typeuse.list";
@@ -94,7 +87,7 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, person);
+    Compilation compilation = compile(notNullAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
@@ -139,7 +132,7 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, product);
+    Compilation compilation = compile(notNullAnnotation, product);
     String generatedCode = loadGeneratedSource(compilation, "ProductBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
 
@@ -184,7 +177,7 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, config);
+    Compilation compilation = compile(notNullAnnotation, config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
@@ -229,7 +222,7 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, validAnnotation, data);
+    Compilation compilation = compile(notNullAnnotation, validAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
@@ -272,7 +265,7 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, container);
+    Compilation compilation = compile(notNullAnnotation, container);
     String generatedCode = loadGeneratedSource(compilation, "ContainerBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "ContainerBuilder", generatedCode);
 
@@ -327,7 +320,7 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(paramAnnotation, typeUseAnnotation, data);
+    Compilation compilation = compile(paramAnnotation, typeUseAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
@@ -381,7 +374,7 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, person);
+    Compilation compilation = compile(notNullAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
@@ -426,7 +419,7 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(hybridAnnotation, data);
+    Compilation compilation = compile(hybridAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 

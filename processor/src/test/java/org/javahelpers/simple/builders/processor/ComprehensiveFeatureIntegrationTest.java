@@ -24,6 +24,7 @@
 package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,10 +62,6 @@ import org.junit.jupiter.api.Test;
  * </ul>
  */
 class ComprehensiveFeatureIntegrationTest {
-
-  private static Compilation compile(JavaFileObject... sources) {
-    return ProcessorTestUtils.createCompiler().compile(sources);
-  }
 
   @Test
   void allFeatures_generatedCorrectly() {

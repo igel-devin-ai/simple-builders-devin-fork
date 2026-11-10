@@ -59,6 +59,19 @@ public final class ProcessorTestUtils {
   }
 
   /**
+   * Compiles the given sources with the {@link BuilderProcessor} and prints the diagnostics when
+   * verbose mode is enabled.
+   *
+   * @param sources the sources to compile
+   * @return the compilation result
+   */
+  public static Compilation compile(JavaFileObject... sources) {
+    Compilation compilation = createCompiler().compile(sources);
+    printDiagnosticsOnVerbose(compilation);
+    return compilation;
+  }
+
+  /**
    * Creates a configured {@link Compiler} instance with the given processors in invocation order.
    *
    * <p>Use this overload when a test compiles with several annotation processors whose relative

@@ -25,6 +25,7 @@
 package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
+import static org.javahelpers.codegen.testing.CodegenTestUtils.readSource;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
 
 import com.google.testing.compile.Compilation;
@@ -33,14 +34,6 @@ import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
 class JacksonModuleMultiPackageTest {
-
-  private static String extractContent(JavaFileObject fileObject) {
-    try {
-      return fileObject.getCharContent(false).toString();
-    } catch (Exception e) {
-      return fileObject.toString();
-    }
-  }
 
   @Test
   void generateJacksonModule_WithMultiplePackages_ShouldGenerateMultipleModules() {
@@ -79,7 +72,7 @@ class JacksonModuleMultiPackageTest {
     // Verify module in pkg.one
     JavaFileObject module1 =
         compilation.generatedSourceFile("pkg.one.SimpleBuildersJacksonModule").orElseThrow();
-    String pkgOneContent = extractContent(module1);
+    String pkgOneContent = readSource(module1);
     assertContaining(
         pkgOneContent,
         "package pkg.one;",
@@ -94,7 +87,7 @@ class JacksonModuleMultiPackageTest {
     // Verify module in pkg.two
     JavaFileObject module2 =
         compilation.generatedSourceFile("pkg.two.SimpleBuildersJacksonModule").orElseThrow();
-    String pkgTwoContent = extractContent(module2);
+    String pkgTwoContent = readSource(module2);
     assertContaining(
         pkgTwoContent,
         "package pkg.two;",
@@ -152,7 +145,7 @@ class JacksonModuleMultiPackageTest {
     // Verify module in pkg.target (not pkg.source)
     JavaFileObject module3 =
         compilation.generatedSourceFile("pkg.target.SimpleBuildersJacksonModule").orElseThrow();
-    String pkgTargetContent = extractContent(module3);
+    String pkgTargetContent = readSource(module3);
     assertContaining(
         pkgTargetContent,
         "package pkg.target;",
