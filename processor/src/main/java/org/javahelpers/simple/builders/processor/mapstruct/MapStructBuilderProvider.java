@@ -93,11 +93,12 @@ public class MapStructBuilderProvider implements BuilderProvider {
   private Map<String, String> processorOptions = Map.of();
   private BuilderConfigurationReader configurationReader;
 
-  /** Resolved builder infos by bean qualified name; only positive results are cached. */
+  /** Resolved builder infos by bean qualified name; only positive results are cached per init. */
   private final Map<String, BuilderInfo> builderInfoCache = new HashMap<>();
 
   @Override
   public void init(MapStructProcessingEnvironment processingEnvironment) {
+    builderInfoCache.clear();
     this.elementUtils = processingEnvironment.getElementUtils();
     Map<String, String> options = processingEnvironment.getOptions();
     processorOptions = options == null ? Map.of() : options;
