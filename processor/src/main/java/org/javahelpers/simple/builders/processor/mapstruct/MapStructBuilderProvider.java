@@ -38,11 +38,16 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import org.javahelpers.codegen.analysis.JavaLangAnalyser;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.logging.SinkProcessingLogger;
+import org.javahelpers.codegen.model.core.PackageScopes;
 import org.javahelpers.codegen.processing.CompilerArgumentsReader;
 import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
 import org.javahelpers.simple.builders.processor.SimpleBuildersSpiIntegration;
 import org.javahelpers.simple.builders.processor.SimpleBuildersSpiIntegration.PublishedBuilder;
+import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
+import org.javahelpers.simple.builders.processor.processing.BuilderConfigurationReader;
 import org.javahelpers.simple.builders.processor.processing.CompilerArgumentsEnum;
 import org.mapstruct.ap.spi.BuilderInfo;
 import org.mapstruct.ap.spi.BuilderProvider;
@@ -80,8 +85,13 @@ import org.mapstruct.ap.spi.TypeHierarchyErroneousException;
 @AutoService(BuilderProvider.class)
 public class MapStructBuilderProvider implements BuilderProvider {
 
+  /** SPI environments expose no Messager — configuration reads log to a no-op sink. */
+  private static final ProcessingLogger SPI_LOGGER =
+      new SinkProcessingLogger((severity, message) -> {}, false, null);
+
   private Elements elementUtils;
   private Map<String, String> processorOptions = Map.of();
+  private BuilderConfigurationReader configurationReader;
 
   /** Resolved builder infos by bean qualified name; only positive results are cached. */
   private final Map<String, BuilderInfo> builderInfoCache = new HashMap<>();
@@ -91,6 +101,10 @@ public class MapStructBuilderProvider implements BuilderProvider {
     this.elementUtils = processingEnvironment.getElementUtils();
     Map<String, String> options = processingEnvironment.getOptions();
     processorOptions = options == null ? Map.of() : options;
+    BuilderConfiguration globalConfiguration =
+        BuilderConfigurationReader.readCompilerConfiguration(processorOptions, SPI_LOGGER);
+    configurationReader =
+        new BuilderConfigurationReader(globalConfiguration, SPI_LOGGER, elementUtils);
   }
 
   @Override
@@ -153,12 +167,19 @@ public class MapStructBuilderProvider implements BuilderProvider {
       TypeElement beanElement, Optional<PublishedBuilder> published) {
     if (published.isEmpty()) {
       if (!isFinished()) {
+        if (isExcludedFromGeneration(beanElement) || isNeverBuilderTarget(beanElement)) {
+          // A marked bean the effective generation scope excludes can never be planned, and JDK
+          // types are never builder targets — answer "no builder" now instead of deferring into a
+          // round the empty plan will not produce.
+          return null;
+        }
         // The generating round may not have run yet — any bean may still be registered, so
         // defer the mapper for a retry once the registry is final.
         throw new TypeHierarchyErroneousException(beanElement.asType());
       }
-      // The registry is final: a marked bean without an entry was skipped by planning.
-      if (isBuilderGenerationTarget(beanElement)) {
+      // The registry is final: a marked bean without an entry was skipped by planning. Beans the
+      // generation scope excludes are skipped intentionally and stay quiet.
+      if (isBuilderGenerationTarget(beanElement) && !isOutsideGenerationScope(beanElement)) {
         warnMarkedBeanWithoutRegisteredBuilder(beanElement);
       }
       return null;
@@ -222,19 +243,50 @@ public class MapStructBuilderProvider implements BuilderProvider {
   }
 
   /**
+   * Whether planning can never register a builder for {@code beanElement} in this compilation: the
+   * bean is marked for generation but the effective {@code builderGenerationPackages} scope
+   * excludes its package.
+   */
+  private boolean isExcludedFromGeneration(TypeElement beanElement) {
+    return isBuilderGenerationTarget(beanElement) && isOutsideGenerationScope(beanElement);
+  }
+
+  /** Whether the effective {@code builderGenerationPackages} scope excludes the bean's package. */
+  private boolean isOutsideGenerationScope(TypeElement beanElement) {
+    PackageScopes scopes = configurationReader.resolveBuilderGenerationPackages(beanElement);
+    if (scopes.isEmpty()) {
+      return false;
+    }
+    return !scopes.includes(packageNameOf(beanElement));
+  }
+
+  /** Whether the type lives in a JDK package simple-builders never generates builders for. */
+  private boolean isNeverBuilderTarget(TypeElement beanElement) {
+    String packageName = packageNameOf(beanElement);
+    return packageName.startsWith("java.")
+        || packageName.startsWith("javax.")
+        || packageName.startsWith("jdk.");
+  }
+
+  private String packageNameOf(TypeElement beanElement) {
+    return elementUtils.getPackageOf(beanElement).getQualifiedName().toString();
+  }
+
+  /**
    * Whether {@code beanElement} is marked for builder generation ({@code @SimpleBuilder} or a
-   * builder template annotation, not opted out via {@code @Ignore4BuilderGeneration}). The marker
-   * only decides the finished-state warning — deferral and claiming never depend on it.
+   * builder template annotation, not opted out via {@code @Ignore4BuilderGeneration}), directly or
+   * through an inherited annotation. The marker decides the finished-state warning and whether an
+   * unfinished miss can be answered as "no builder" — deferral and claiming never depend on it.
    */
   private boolean isBuilderGenerationTarget(TypeElement beanElement) {
     Objects.requireNonNull(beanElement, "beanElement must not be null");
     if (JavaLangAnalyser.findAnnotation(beanElement, Ignore4BuilderGeneration.class).isPresent()) {
       return false;
     }
-    if (JavaLangAnalyser.findAnnotation(beanElement, SimpleBuilder.class).isPresent()) {
-      return true;
-    }
-    for (AnnotationMirror mirror : beanElement.getAnnotationMirrors()) {
+    for (AnnotationMirror mirror : elementUtils.getAllAnnotationMirrors(beanElement)) {
+      if (mirror.getAnnotationType().toString().equals(SimpleBuilder.class.getCanonicalName())) {
+        return true;
+      }
       // A custom builder template annotation (e.g. @SimpleMinimalBuilder or a project-defined
       // one): its type is meta-annotated with @SimpleBuilder.Template.
       if (mirror.getAnnotationType().asElement() instanceof TypeElement annotationType

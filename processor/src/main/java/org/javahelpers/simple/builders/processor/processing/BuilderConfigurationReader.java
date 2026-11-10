@@ -41,6 +41,7 @@ import javax.lang.model.util.Elements;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.OptionState;
 import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.model.core.PackageScopes;
 import org.javahelpers.codegen.processing.CompilerArgumentsReader;
 import org.javahelpers.simple.builders.processor.exceptions.BuilderException;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
@@ -159,6 +160,28 @@ public class BuilderConfigurationReader {
   }
 
   /**
+   * Reads a complete BuilderConfiguration from an explicit options map — the same lookup SPI
+   * adapters can use on the options map their host framework hands them.
+   *
+   * @param options the compiler options map to read values from
+   * @param logger the logger for warnings on unrecognized values
+   * @return a BuilderConfiguration with values read from the options map
+   */
+  public static BuilderConfiguration readCompilerConfiguration(
+      Map<String, String> options, ProcessingLogger logger) {
+    BuilderConfiguration.Builder builder = BuilderConfiguration.builder();
+    Stream.of(CompilerArgumentsEnum.values())
+        .filter(option -> !option.isAnnotationOnly())
+        .forEach(
+            option ->
+                option.apply(builder, CompilerArgumentsReader.readValue(option, options), logger));
+    if (CompilerArgumentsReader.readBooleanValue(CompilerArgumentsEnum.VERBOSE, options, false)) {
+      builder.verbose(OptionState.ENABLED);
+    }
+    return builder.build();
+  }
+
+  /**
    * Resolves the complete builder configuration for an element by chaining all configuration
    * sources in priority order.
    *
@@ -197,6 +220,24 @@ public class BuilderConfigurationReader {
 
     logger.debugEndOperation("Resulting configuration resolved: %s", result.toString());
     return result;
+  }
+
+  /**
+   * Resolves only the effective {@code builderGenerationPackages} scope for an element, without the
+   * access/package validation {@link #resolveConfiguration(Element)} performs. SPI adapters use
+   * this to decide whether planning can still produce a builder for the element.
+   *
+   * @param element the annotated element to resolve the generation scope for
+   * @return the effective package scopes (empty means unscoped)
+   */
+  public PackageScopes resolveBuilderGenerationPackages(Element element) {
+    BuilderConfiguration inheritedConfig = readFromScope(element, AnnotationScope.INHERITED);
+    BuilderConfiguration directConfig = readFromScope(element, AnnotationScope.DIRECT);
+    return BuilderConfiguration.DEFAULT
+        .merge(globalConfiguration)
+        .merge(inheritedConfig)
+        .merge(directConfig)
+        .builderGenerationPackages();
   }
 
   /**

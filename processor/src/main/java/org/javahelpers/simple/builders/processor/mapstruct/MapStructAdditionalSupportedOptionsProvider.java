@@ -32,8 +32,8 @@ import org.mapstruct.ap.spi.AdditionalSupportedOptionsProvider;
 /**
  * Declares the simple-builders options the MapStruct SPIs read. MapStruct filters the options map
  * it hands to SPI environments down to the names {@link AdditionalSupportedOptionsProvider}s
- * declare — without this provider {@code -Asimplebuilder.usingMapStructIntegration} would never
- * reach them.
+ * declare — without this provider neither {@code -Asimplebuilder.usingMapStructIntegration} nor
+ * {@code -Asimplebuilder.builderGenerationPackages} would ever reach them.
  */
 @AutoService(AdditionalSupportedOptionsProvider.class)
 public class MapStructAdditionalSupportedOptionsProvider
@@ -43,6 +43,8 @@ public class MapStructAdditionalSupportedOptionsProvider
   public Set<String> getAdditionalSupportedOptions() {
     return Set.of(
         CompilerArgumentsEnum.USING_MAPSTRUCT_INTEGRATION.getCompilerArgument(),
-        CompilerArgumentsEnum.USING_MAPSTRUCT_INTEGRATION.getOptionName());
+        CompilerArgumentsEnum.USING_MAPSTRUCT_INTEGRATION.getOptionName(),
+        CompilerArgumentsEnum.BUILDER_GENERATION_PACKAGES.getCompilerArgument(),
+        CompilerArgumentsEnum.BUILDER_GENERATION_PACKAGES.getOptionName());
   }
 }
