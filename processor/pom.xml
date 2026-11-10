@@ -57,7 +57,6 @@
     
     <!-- Dependency Versions -->
     <auto-service.version>1.1.1</auto-service.version>
-    <roaster.version>2.31.1.Final</roaster.version>
     <commons-lang.version>3.21.0</commons-lang.version>
     <commons-collections.version>4.6.0</commons-collections.version>
     <jackson-databind.version>2.22.4</jackson-databind.version>
@@ -133,18 +132,6 @@
       <artifactId>auto-service</artifactId>
       <version>${auto-service.version}</version>
       <optional>true</optional>
-    </dependency>
-    <!-- Utility library for generate java code -->
-    <dependency>
-      <groupId>org.jboss.forge.roaster</groupId>
-      <artifactId>roaster-api</artifactId>
-      <version>${roaster.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.forge.roaster</groupId>
-      <artifactId>roaster-jdt</artifactId>
-      <version>${roaster.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <!-- MapStruct SPI (BuilderProvider) - only needed to compile the SPI implementation;
          loaded by mapstruct-processor at annotation processing time, never at runtime -->
