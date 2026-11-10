@@ -24,7 +24,6 @@
 
 package org.javahelpers.codegen.testing;
 
-import static com.google.testing.compile.CompilationSubject.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.testing.compile.Compilation;
@@ -44,29 +43,6 @@ public final class ProcessorAsserts {
   private static String normalizeWhitespace(String input) {
     if (input == null) return null;
     return input.replaceAll("[\\t\\n\\r\\s]+", "").trim();
-  }
-
-  /**
-   * Asserts compilation succeeded and that the basic builder API exists in the provided generated
-   * source (build() and static create()).
-   */
-  public static void assertGenerationSucceeded(
-      Compilation compilation, String builderSimpleName, String generated) {
-    assertThat(compilation).succeededWithoutWarnings();
-
-    String targetSimpleName =
-        builderSimpleName.endsWith("Builder")
-            ? builderSimpleName.substring(0, builderSimpleName.length() - "Builder".length())
-            : builderSimpleName;
-
-    String normalized = normalizeWhitespace(generated);
-    Assertions.assertTrue(
-        normalized.contains(normalizeWhitespace("public " + targetSimpleName + " build()")),
-        "method missing: 'public " + targetSimpleName + " build()'");
-    Assertions.assertTrue(
-        normalized.contains(
-            normalizeWhitespace("public static " + builderSimpleName + " create()")),
-        "method missing: 'public static " + builderSimpleName + " create()'");
   }
 
   /** Common interface for assertion records. */
@@ -159,20 +135,20 @@ public final class ProcessorAsserts {
   }
 
   /**
-   * Asserts that no generated source file for the given class' builder exists in the compilation.
+   * Asserts that no generated source file for the given type exists in the compilation.
    *
-   * <p>The check is based on the simple class name: a file whose name ends with {@code
-   * <className>Builder.java} is considered the builder for {@code className}.
+   * <p>The check is based on the simple type name: a file whose name ends with {@code
+   * <simpleName>.java} is considered the source of {@code simpleName}.
    *
    * @param compilation the compilation result
-   * @param className the simple class name for which no builder should have been generated
+   * @param simpleName the simple name of the type which should not have been generated
    * @param message the failure message
    */
-  public static void assertNoBuilderGenerated(
-      Compilation compilation, String className, String message) {
+  public static void assertNoSourceGenerated(
+      Compilation compilation, String simpleName, String message) {
     Assertions.assertTrue(
         compilation.generatedSourceFiles().stream()
-            .noneMatch(f -> f.getName().endsWith(className + "Builder.java")),
+            .noneMatch(f -> f.getName().endsWith(simpleName + ".java")),
         message);
   }
 

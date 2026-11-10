@@ -34,6 +34,7 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.junit.jupiter.api.Test;
 
 /** Test that annotations from target class fields are copied to builder fields. */
@@ -88,7 +89,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(notNullAnnotation, customAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify that annotations are copied to builder method parameters
     ProcessorAsserts.assertingResult(
@@ -135,7 +136,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(notNullAnnotation, positiveAnnotation, product);
     String generatedCode = loadGeneratedSource(compilation, "ProductBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
 
     // Verify that annotations from constructor parameters are copied to builder method parameters
     ProcessorAsserts.assertingResult(
@@ -177,7 +178,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(notNullAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify that NotNull annotation is copied to method parameters
     ProcessorAsserts.assertingResult(generatedCode, contains("name(@NotNull String name)"));
@@ -293,7 +294,7 @@ class AnnotationCopyTest {
     Compilation compilation =
         compileSources(priorityEnum, metadataAnnotation, complexAnnotation, task);
     String generatedCode = loadGeneratedSource(compilation, "TaskBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "TaskBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "TaskBuilder", generatedCode);
 
     // Verify annotation with all value types is copied correctly
     ProcessorAsserts.assertingResult(
@@ -349,7 +350,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // @Deprecated is applied to the generated builder method itself (not the parameter —
     // the parameter is a new declaration, the deprecation is about the property).
@@ -396,7 +397,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // The generated builder method IS @Deprecated because the setter is the write API for the
     // property and the builder method replaces it — deprecation propagates.
@@ -434,7 +435,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(book);
     String generatedCode = loadGeneratedSource(compilation, "BookBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "BookBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "BookBuilder", generatedCode);
 
     // The generated builder method for the deprecated record component is @Deprecated (on the
     // method, not the parameter — the parameter is a new declaration).
@@ -498,7 +499,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // Full text-block comparison of the generated builder class. With most options disabled,
     // the output is minimal enough to compare comprehensively. The text block includes the
@@ -669,7 +670,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(myDto);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // The @deprecated javadoc from the DTO class is propagated to the builder class
     ProcessorAsserts.assertingResult(
@@ -719,7 +720,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // The @deprecated javadoc text is propagated to the generated builder method
     ProcessorAsserts.assertingResult(
@@ -763,7 +764,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // The since and forRemoval attributes are preserved on the generated builder method
     ProcessorAsserts.assertingResult(
@@ -800,7 +801,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(service);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // A deprecated getter does NOT propagate @Deprecated to the generated builder method
     // (deprecated getter != deprecated property). The class carries a class-level
@@ -878,7 +879,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(dto, oldType);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // The builder method is @Deprecated because the field type is deprecated
     ProcessorAsserts.assertingResult(
@@ -948,7 +949,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(dto, itemDto);
     String generatedCode = loadGeneratedSource(compilation, "MyDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MyDtoBuilder", generatedCode);
 
     // Class-level @SuppressWarnings is present because the builder internally calls
     // ItemForDeprecationBuilder.create() which is @Deprecated
@@ -995,7 +996,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(frameworkAnnotation, entity);
     String generatedCode = loadGeneratedSource(compilation, "EntityBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "EntityBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "EntityBuilder", generatedCode);
 
     // Verify that SimpleBuilder framework annotations are NOT copied to builder methods
     ProcessorAsserts.assertingResult(
@@ -1039,7 +1040,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(validAnnotation, model);
     String generatedCode = loadGeneratedSource(compilation, "ModelBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ModelBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ModelBuilder", generatedCode);
 
     // Verify that custom annotations ARE copied (not filtered out)
     ProcessorAsserts.assertingResult(
@@ -1083,7 +1084,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(generatedAnnotation, model);
     String generatedCode = loadGeneratedSource(compilation, "ModelBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ModelBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ModelBuilder", generatedCode);
 
     // Verify that @Generated annotations are NOT copied to parameters (they're metadata, not
     // validation)
@@ -1127,7 +1128,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(arrayAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
     // Verify empty arrays are formatted correctly
     ProcessorAsserts.assertingResult(
@@ -1169,7 +1170,7 @@ class AnnotationCopyTest {
 
     Compilation compilation = compileSources(rangeAnnotation, measurement);
     String generatedCode = loadGeneratedSource(compilation, "MeasurementBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "MeasurementBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "MeasurementBuilder", generatedCode);
 
     // Verify mixed primitive arrays are formatted correctly
     ProcessorAsserts.assertingResult(
@@ -1233,7 +1234,7 @@ class AnnotationCopyTest {
         compileSources(
             createJakartaValidAnnotation(), createJakartaNotNullAnnotation(), address, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     ProcessorAsserts.assertingResult(
         generatedCode,
@@ -1301,7 +1302,7 @@ class AnnotationCopyTest {
             contact,
             customer);
     String generatedCode = loadGeneratedSource(compilation, "CustomerBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "CustomerBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "CustomerBuilder", generatedCode);
 
     ProcessorAsserts.assertingResult(
         generatedCode,
@@ -1359,7 +1360,7 @@ class AnnotationCopyTest {
         compileSources(
             createJakartaValidAnnotation(), createJakartaNotNullAnnotation(), department, employee);
     String generatedCode = loadGeneratedSource(compilation, "EmployeeBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "EmployeeBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "EmployeeBuilder", generatedCode);
 
     ProcessorAsserts.assertingResult(
         generatedCode,
@@ -1430,7 +1431,7 @@ class AnnotationCopyTest {
             metadata,
             document);
     String generatedCode = loadGeneratedSource(compilation, "DocumentBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "DocumentBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "DocumentBuilder", generatedCode);
 
     ProcessorAsserts.assertingResult(
         generatedCode,
