@@ -421,8 +421,14 @@ class MethodConflictResolutionTest {
             d -> System.out.println("✓ Lower priority dropped correctly: " + d.getMessage(null)));
   }
 
+  /**
+   * In verbose mode warnings must be emitted without element attachment — javac would otherwise
+   * prepend {@code File.java:[line,col]} mid-line and break the hierarchical layout. Instead the
+   * processor reports one {@code Location of the warning(s) reported above} marker per warned class
+   * at round end, carrying the class's source position.
+   */
   @Test
-  void shouldEmitWarningsElementlessAndLocationMarkerOncePerClassInVerboseMode() {
+  void shouldDeferWarningLocationsInVerboseMode() {
     // Given: A DTO with a builder field conflict, compiled in verbose mode
     String packageName = "test";
     String className = "VerboseClash";
