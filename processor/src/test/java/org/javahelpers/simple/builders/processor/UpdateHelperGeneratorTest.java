@@ -148,6 +148,9 @@ class UpdateHelperGeneratorTest {
             .count();
 
     assertTrue(conflictWarnings > 0, "Expected an update-helper/setter conflict warning");
+    // Conflict warnings must carry the element position so javac renders File.java:[line,col]
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Method conflict resolved");
     ProcessorAsserts.assertContaining(generated, "testUpdate(UnaryOperator<String> testUpdate)");
     ProcessorAsserts.assertNotContaining(
         generated, "testUpdate(UnaryOperator<String> testUpdater)");

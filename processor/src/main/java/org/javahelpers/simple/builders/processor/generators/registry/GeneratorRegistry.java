@@ -118,8 +118,11 @@ public class GeneratorRegistry {
           }
         } catch (Exception e) {
           context.error(
+              context.getCurrentTask().element(),
               "Failed to apply method generator %s to field %s: %s",
-              generator.getClass().getName(), field.getFieldNameInBuilder(), e.getMessage());
+              generator.getClass().getName(),
+              field.getFieldNameInBuilder(),
+              e.getMessage());
         }
       }
     }
@@ -154,6 +157,7 @@ public class GeneratorRegistry {
               describeContribution(contentCounts(builderDto), before));
         } catch (Exception e) {
           context.error(
+              context.getCurrentTask().element(),
               "Failed to apply enhancer %s to builder %s: %s",
               enhancer.getClass().getName(),
               builderDto.getBuilderTypeName().getClassName(),

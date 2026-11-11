@@ -479,6 +479,17 @@ public class AnnotationProcessingContext implements TypeMappingContext {
   }
 
   /**
+   * Reports an error at the location of the given element with a formatted message.
+   *
+   * @param element the element where the error occurred, used for location information
+   * @param format the format string
+   * @param args arguments referenced by the format specifiers in the format string
+   */
+  public void error(Element element, String format, Object... args) {
+    logger.error(element, format, args);
+  }
+
+  /**
    * Returns whether strict/fail-fast mode is enabled via the supplied {@link
    * AnnotationProcessingOptions}.
    *
