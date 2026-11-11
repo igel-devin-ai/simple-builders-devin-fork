@@ -126,6 +126,14 @@ public interface ProcessingLogger {
   void debugEndOperation(String formatClosingMessage, Object... args);
 
   /**
+   * Emits deferred source-location markers for warnings reported during the current processing
+   * round. Implementations bound to an annotation processing environment may delay element-attached
+   * warnings to keep hierarchical output free of the javac position prefix; this hook reports them
+   * once per round. Implementations without element-attached reporting do nothing.
+   */
+  default void flushWarningLocations() {}
+
+  /**
    * Resets the indentation level to zero to prevent cascading errors between processing runs. This
    * should be called at the end of each processing round.
    */

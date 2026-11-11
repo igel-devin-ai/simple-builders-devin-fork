@@ -24,9 +24,12 @@
 
 package org.javahelpers.codegen.processing.logging;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import org.javahelpers.codegen.logging.SinkProcessingLogger;
 
@@ -39,6 +42,14 @@ public class MessagerProcessingLogger extends SinkProcessingLogger {
 
   /** Util class for exposing messages of type {@code javax.annotation.processing.Messager}. */
   private final Messager messager;
+
+  /**
+   * Classes of element-attached warnings emitted in verbose mode. Verbose warnings are posted
+   * without an element because javac would prepend {@code File.java:[line,col]} mid-line and break
+   * the hierarchical layout; {@link #flushWarningLocations()} reports their class locations once
+   * per processing round instead.
+   */
+  private final Set<Element> warningLocations = new LinkedHashSet<>();
 
   /**
    * Creates a new MessagerProcessingLogger with the specified ProcessingEnvironment. The Messager
@@ -124,10 +135,42 @@ public class MessagerProcessingLogger extends SinkProcessingLogger {
       // When debug is enabled, add spaces to align with [DEBUG] prefix (which is 5 characters
       // longer)
       String indentedMessage = formatHierarchicalMessage(message, 5); // Add 5 spaces for alignment
-      messager.printMessage(Diagnostic.Kind.WARNING, indentedMessage, e);
+      messager.printMessage(Diagnostic.Kind.WARNING, indentedMessage);
+      if (e != null) {
+        Element typeElement = enclosingType(e);
+        warningLocations.add(typeElement != null ? typeElement : e);
+      }
     } else {
       // When debug is disabled, print flat
       messager.printMessage(Diagnostic.Kind.WARNING, prefixed(message), e);
     }
+  }
+
+  /**
+   * Emits one element-attached warning per class that produced warnings since the last call,
+   * pointing to the location of the warnings reported above. Used by the processing-round driver to
+   * keep verbose warnings free of the javac position prefix.
+   */
+  @Override
+  public void flushWarningLocations() {
+    for (Element e : warningLocations) {
+      messager.printMessage(
+          Diagnostic.Kind.WARNING, prefixed("Location of the warning(s) reported above"), e);
+    }
+    warningLocations.clear();
+  }
+
+  /**
+   * Walks up the element hierarchy to the enclosing type (class, interface, enum, record, or
+   * annotation) carrying the source position of the declaration.
+   *
+   * @param e the element to resolve, may be {@code null}
+   * @return the enclosing type element, or {@code null} when the element is not inside a type
+   */
+  private static TypeElement enclosingType(Element e) {
+    while (e != null && !(e instanceof TypeElement)) {
+      e = e.getEnclosingElement();
+    }
+    return (TypeElement) e;
   }
 }

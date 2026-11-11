@@ -163,6 +163,7 @@ public abstract class AbstractCodegenProcessor<
     }
     if (roundEnv.processingOver()) {
       onProcessingOver(context);
+      logger.flushWarningLocations();
       return claimsAnnotations(getSupportedAnnotationTypes());
     }
 
@@ -175,6 +176,7 @@ public abstract class AbstractCodegenProcessor<
     tracker.endPhase("Element Collection");
 
     if (skipsRound(collected, context)) {
+      logger.flushWarningLocations();
       return claimsAnnotations(getSupportedAnnotationTypes());
     }
 
@@ -228,6 +230,10 @@ public abstract class AbstractCodegenProcessor<
       logger.info(
           "Successfully generated %d target(s) in this processing round", successfulGenerations);
     }
+
+    // Report the classes behind this round's element-attached warnings (kept element-less in
+    // verbose mode to protect the hierarchical layout)
+    logger.flushWarningLocations();
 
     // Reset indentation level at the end of each processing round to prevent cascading errors
     context.resetIndentation();

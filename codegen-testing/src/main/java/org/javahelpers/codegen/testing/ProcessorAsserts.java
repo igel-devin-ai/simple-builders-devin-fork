@@ -166,6 +166,32 @@ public final class ProcessorAsserts {
   }
 
   /**
+   * Asserts that at least one diagnostic of the given kind contains the text and that every
+   * matching diagnostic carries no source position ({@link Diagnostic#getSource()} null). Used to
+   * verify verbose mode emits warnings element-less so the javac position prefix does not break the
+   * hierarchical layout.
+   *
+   * @param compilation the compilation result
+   * @param kind the diagnostic kind to inspect
+   * @param text substring each checked message must contain
+   */
+  public static void assertDiagnosticsHaveNoSourcePosition(
+      Compilation compilation, Diagnostic.Kind kind, String text) {
+    List<Diagnostic<? extends JavaFileObject>> matching =
+        compilation.diagnostics().stream()
+            .filter(d -> d.getKind() == kind)
+            .filter(d -> d.getMessage(null).contains(text))
+            .toList();
+    Assertions.assertFalse(
+        matching.isEmpty(), "Expected at least one " + kind + " containing '" + text + "'");
+    for (Diagnostic<? extends JavaFileObject> diagnostic : matching) {
+      Assertions.assertNull(
+          diagnostic.getSource(),
+          "Diagnostic unexpectedly carries a source position: " + diagnostic.getMessage(null));
+    }
+  }
+
+  /**
    * Asserts that no generated source file for the given type exists in the compilation.
    *
    * <p>The check is based on the simple type name: a file whose name ends with {@code
