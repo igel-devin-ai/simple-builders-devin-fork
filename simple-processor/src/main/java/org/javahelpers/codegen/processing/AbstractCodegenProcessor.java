@@ -167,7 +167,7 @@ public abstract class AbstractCodegenProcessor<
     }
 
     PerformanceTracker tracker = context.getPerformanceTracker();
-    logger.info("PROCESSING ROUND START");
+    logger.debug("PROCESSING ROUND START");
     onRoundStart(context);
 
     tracker.startPhase();
