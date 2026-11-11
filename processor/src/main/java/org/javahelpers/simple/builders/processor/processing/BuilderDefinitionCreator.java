@@ -340,6 +340,7 @@ public class BuilderDefinitionCreator {
         methodsWithSameSignature.sort(new BuilderMethodDto.BuilderMethodComparator());
         BuilderMethodDto winner = methodsWithSameSignature.get(0);
         context.warning(
+            context.getCurrentTask().element(),
             "Method conflict resolved for signature '%s': %d methods found. "
                 + "Kept: priority=%d, sourceField='%s', constructorField=%b. "
                 + "Dropped: %s",
@@ -806,12 +807,16 @@ public class BuilderDefinitionCreator {
     String renamedFieldName = fieldName + newTypeName;
 
     context.warning(
+        param,
         """
           Builder field conflict: field '%s' (type %s) renamed to '%s' in builder to avoid conflict with existing field (type %s). \
         The reason could be having helperfunctions in the DTO or a mistake in the DTO (e.g., two setters with the same name but different field types). \
         Please check it and if the DTO is correct, you can get rid of this warning by setting the IgnoreInBuilder annotation on one of the setters for this field.\
         """,
-        fieldName, newTypeName, renamedFieldName, existingTypeName);
+        fieldName,
+        newTypeName,
+        renamedFieldName,
+        existingTypeName);
 
     return renamedFieldName;
   }

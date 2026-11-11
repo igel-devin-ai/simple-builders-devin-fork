@@ -262,7 +262,8 @@ public class BuilderConfigurationReader {
     logger.debugStartOperation(
         "Resolving configuration for @SimpleBuilderFor target: %s", elementName);
 
-    BuilderConfiguration optionsConfig = extractOptionsFromAnnotationMirror(annotationInstance);
+    BuilderConfiguration optionsConfig =
+        extractOptionsFromAnnotationMirror(annotationInstance, element);
 
     BuilderConfiguration result =
         BuilderConfiguration.DEFAULT.merge(globalConfiguration).merge(optionsConfig);
@@ -289,7 +290,7 @@ public class BuilderConfigurationReader {
 
     for (AnnotationMirror mirror : mirrors) {
       if (isSimpleBuilderAnnotation(mirror)) {
-        simpleBuilderConfig = extractSimpleBuilderConfiguration(mirror);
+        simpleBuilderConfig = extractSimpleBuilderConfiguration(mirror, element);
       } else if (customTemplateConfig == null) {
         BuilderConfiguration templateConfig = extractCustomTemplateConfiguration(mirror);
         if (templateConfig != null) {
@@ -313,11 +314,12 @@ public class BuilderConfigurationReader {
    * inline {@code options()} from the usage, so inline options override the template defaults.
    */
   private BuilderConfiguration extractSimpleBuilderConfiguration(
-      AnnotationMirror simpleBuilderMirror) {
+      AnnotationMirror simpleBuilderMirror, Element element) {
     TypeElement simpleBuilderType =
         (TypeElement) simpleBuilderMirror.getAnnotationType().asElement();
     BuilderConfiguration templateDefaults = extractTemplateConfigurationFromType(simpleBuilderType);
-    BuilderConfiguration inlineOptions = extractOptionsFromAnnotationMirror(simpleBuilderMirror);
+    BuilderConfiguration inlineOptions =
+        extractOptionsFromAnnotationMirror(simpleBuilderMirror, element);
     return mergeNullable(templateDefaults, inlineOptions);
   }
 
@@ -342,7 +344,7 @@ public class BuilderConfigurationReader {
     if (templateMetaMirror == null) {
       return null;
     }
-    return extractOptionsFromAnnotationMirror(templateMetaMirror);
+    return extractOptionsFromAnnotationMirror(templateMetaMirror, annotationType);
   }
 
   /**
@@ -368,7 +370,7 @@ public class BuilderConfigurationReader {
    *     are set
    */
   private BuilderConfiguration extractOptionsFromAnnotationMirror(
-      AnnotationMirror annotationMirror) {
+      AnnotationMirror annotationMirror, Element element) {
     if (annotationMirror == null) {
       return null;
     }
@@ -396,7 +398,7 @@ public class BuilderConfigurationReader {
     }
 
     // Parse the options annotation using AnnotationMirror (can't use reflection here)
-    return parseOptionsFromMirror(optionsMirror);
+    return parseOptionsFromMirror(optionsMirror, element);
   }
 
   /** Merges two nullable configurations, preferring the override when both are present. */
@@ -415,13 +417,16 @@ public class BuilderConfigurationReader {
    * Parses SimpleBuilder.Options from AnnotationMirror. Only contains explicitly set values (not
    * defaults).
    */
-  private BuilderConfiguration parseOptionsFromMirror(AnnotationMirror optionsMirror) {
+  private BuilderConfiguration parseOptionsFromMirror(
+      AnnotationMirror optionsMirror, Element element) {
     Map<? extends ExecutableElement, ? extends AnnotationValue> values =
         optionsMirror.getElementValues();
 
     BuilderConfiguration.Builder builder = BuilderConfiguration.builder();
 
-    values.entrySet().forEach(entry -> applyOption(builder, entry.getKey(), entry.getValue()));
+    values
+        .entrySet()
+        .forEach(entry -> applyOption(builder, entry.getKey(), entry.getValue(), element));
 
     return builder.build();
   }
@@ -429,12 +434,14 @@ public class BuilderConfigurationReader {
   private void applyOption(
       BuilderConfiguration.Builder builder,
       ExecutableElement key,
-      AnnotationValue annotationValue) {
+      AnnotationValue annotationValue,
+      Element element) {
     String name = key.getSimpleName().toString();
     Object value = annotationValue.getValue();
     CompilerArgumentsEnum option = CompilerArgumentsEnum.fromOptionName(name);
     if (isNotABuilderOption(option)) {
-      logger.warning("Unknown configuration option '%s' with value '%s' - ignoring", name, value);
+      logger.warning(
+          element, "Unknown configuration option '%s' with value '%s' - ignoring", name, value);
       return;
     }
     option.apply(builder, value, logger);

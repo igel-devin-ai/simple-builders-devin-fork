@@ -79,7 +79,8 @@ The Simple Builders processor provides **conditional hierarchical logging** to b
 - Every message carries the `simple-builders:` logger prefix; DEBUG messages are posted on the `[INFO]` channel so they show as `[INFO] [DEBUG]`
 - Provides full visibility into the processing hierarchy
 - Example: `[INFO]         simple-builders: │  └─ Successfully generated 3 target(s) in this processing round`
-- Example: `[WARNING]      simple-builders: │  │  ├─ Builder field conflict: field 'name'...`
+- Example: `[WARNING] /path/to/DemoDto.java:[12,34]      simple-builders: │  │  ├─ Builder field conflict: field 'name'...`
+- Warnings and errors attached to a source element are rendered with their `File.java:[line,col]` position, so you can navigate straight to the offending class, method or parameter; the hierarchical indentation still applies in debug mode
 - Example: `[INFO] [DEBUG] simple-builders: │  │  │  └─ Processing method: setName`
 - All message types align vertically despite different prefix lengths
 

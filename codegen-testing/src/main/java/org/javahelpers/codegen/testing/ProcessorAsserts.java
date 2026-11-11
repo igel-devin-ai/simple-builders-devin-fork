@@ -29,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.google.testing.compile.Compilation;
 import java.util.ArrayList;
 import java.util.List;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Assertions;
 
 /**
@@ -131,6 +133,35 @@ public final class ProcessorAsserts {
           notes.get(i).contains(expectedSubstrings[i]),
           "Note %d mismatch.%n  Expected to contain: %s%n  Actual: %s"
               .formatted(index, expectedSubstrings[index], notes.get(index)));
+    }
+  }
+
+  /**
+   * Asserts that at least one diagnostic of the given kind contains the text and that every
+   * matching diagnostic carries a source position ({@link Diagnostic#getSource()} non-null). javac
+   * renders element-attached diagnostics as {@code File.java:[line,col]}; diagnostics emitted
+   * without an element have no position and cannot be navigated back to the offending source.
+   *
+   * @param compilation the compilation result
+   * @param kind the diagnostic kind to inspect
+   * @param text substring each checked message must contain
+   */
+  public static void assertDiagnosticsHaveSourcePosition(
+      Compilation compilation, Diagnostic.Kind kind, String text) {
+    List<Diagnostic<? extends JavaFileObject>> matching =
+        compilation.diagnostics().stream()
+            .filter(d -> d.getKind() == kind)
+            .filter(d -> d.getMessage(null).contains(text))
+            .toList();
+    Assertions.assertFalse(
+        matching.isEmpty(), "Expected at least one " + kind + " containing '" + text + "'");
+    for (Diagnostic<? extends JavaFileObject> diagnostic : matching) {
+      Assertions.assertNotNull(
+          diagnostic.getSource(),
+          "Diagnostic carries no source position: " + diagnostic.getMessage(null));
+      Assertions.assertTrue(
+          diagnostic.getLineNumber() > 0,
+          "Diagnostic carries no line number: " + diagnostic.getMessage(null));
     }
   }
 

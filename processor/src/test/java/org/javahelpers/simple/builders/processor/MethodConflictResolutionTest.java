@@ -226,6 +226,9 @@ class MethodConflictResolutionTest {
 
     assert builderFieldConflictCount > 0
         : "Expected builder field conflict warning for duplicate 'name' fields with different types";
+    // Conflict warnings must carry the element position so javac renders File.java:[line,col]
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Builder field conflict");
 
     // Assert specific methods exist in generated code
     // Note: Both fields try to create supplier methods with same signature:
@@ -304,6 +307,9 @@ class MethodConflictResolutionTest {
 
     assert builderFieldConflictCount > 0
         : "Expected builder field conflict warning for duplicate 'name' fields";
+    // Conflict warnings must carry the element position so javac renders File.java:[line,col]
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Builder field conflict");
 
     // Assert specific methods exist in generated code
     // Note: firstName, lastName fields have no generated methods because they have no getters
@@ -393,6 +399,9 @@ class MethodConflictResolutionTest {
 
     assert lowerPriorityDroppedCount > 0
         : "Expected warning about lower priority method (80) being dropped in favor of higher priority (100)";
+    // Conflict warnings must carry the element position so javac renders File.java:[line,col]
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Method conflict resolved");
 
     // Verify that only the higher priority method exists (the direct setter from Supplier field)
     // The auto-generated supplier method from String field should have been dropped
