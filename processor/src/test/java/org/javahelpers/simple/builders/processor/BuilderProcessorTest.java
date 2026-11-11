@@ -98,7 +98,6 @@ class BuilderProcessorTest {
         "[DEBUG] simple-builders: └─ Initialized GeneratorRegistry with 15 method generators and 10 builder",
         // Round 1 — start
         "[DEBUG] simple-builders: PROCESSING ROUND START",
-        "[DEBUG] simple-builders: Processing round started.",
         "[DEBUG] simple-builders: Found 1 annotated elements.",
         "[DEBUG] simple-builders: Found 0 type(s) for generation with @SimpleBuilderFor.",
         // Round 1 — configuration resolution
@@ -166,7 +165,6 @@ class BuilderProcessorTest {
         "simple-builders: Successfully generated 1 target(s) in this processing round",
         // Round 2 — no new elements: planning is skipped before the domain hook runs
         "[DEBUG] simple-builders: PROCESSING ROUND START",
-        "[DEBUG] simple-builders: Processing round started.",
         "[DEBUG] simple-builders: No matching elements collected — skipping planning for this"
             + " round.");
   }

@@ -250,7 +250,6 @@ For complete documentation, see [DEBUG_LOGGING.md](DEBUG_LOGGING.md).
 ========== Compilation Diagnostics ==========
 --- NOTES ---
 [DEBUG] simple-builders: PROCESSING ROUND START
-[DEBUG] simple-builders: Processing round started.
 [DEBUG] simple-builders: Found 1 annotated elements.
 [DEBUG] simple-builders: Found 0 type(s) for generation with @SimpleBuilderFor.
 [DEBUG] simple-builders: Processing element: Project

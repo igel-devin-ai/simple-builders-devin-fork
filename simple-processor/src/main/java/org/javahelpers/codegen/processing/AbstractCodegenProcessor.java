@@ -173,7 +173,6 @@ public abstract class AbstractCodegenProcessor<
     tracker.startPhase();
     ElementGroups collected = findElements(annotations, roundEnv);
     tracker.endPhase("Element Collection");
-    logger.debug("Processing round started.");
 
     if (skipsRound(collected, context)) {
       return claimsAnnotations(getSupportedAnnotationTypes());
