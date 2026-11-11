@@ -95,8 +95,7 @@ The following is a verbatim excerpt of a real run (`mvn -pl example clean compil
 [INFO] [DEBUG] simple-builders: Initializing generator registry
 [INFO] [DEBUG] simple-builders: ├─ Loaded 16 method generators and 10 builder enhancers total
 [INFO] [DEBUG] simple-builders: └─ Initialized GeneratorRegistry with 16 method generators and 10 builder enhancers
-[INFO] simple-builders: PROCESSING ROUND START
-[INFO] [DEBUG] simple-builders: Processing round started.
+[INFO] [DEBUG] simple-builders: PROCESSING ROUND START
 [INFO] [DEBUG] simple-builders: Found 12 annotated elements.
 [INFO] [DEBUG] simple-builders: Found 1 type(s) for generation with @SimpleBuilderFor.
 [INFO] [DEBUG] simple-builders: Processing element: SponsorDto
@@ -162,8 +161,7 @@ The following is a verbatim excerpt of a real run (`mvn -pl example clean compil
     same generation scope:)
 [INFO] [DEBUG] simple-builders: │  │  ├─ Registered JacksonIntegrationDtoBuilder for Jackson module in package 'org.javahelpers.simple.builders.example'
 [INFO]         simple-builders: Successfully generated 12 target(s) in this processing round
-[INFO] simple-builders: PROCESSING ROUND START
-[INFO] [DEBUG] simple-builders: Processing round started.
+[INFO] [DEBUG] simple-builders: PROCESSING ROUND START
 [INFO] [DEBUG] simple-builders: No matching elements collected — skipping planning for this round.
 … (empty rounds repeat until processing finishes)
 [INFO]         simple-builders: Processing OVER. JacksonModuleEnabled: true, Packages: 1
@@ -198,7 +196,6 @@ Notes on individual lines:
 Without debug logging enabled, you only see the INFO-level messages:
 
 ```
-[INFO] simple-builders: PROCESSING ROUND START
 [INFO] simple-builders: Successfully generated 3 target(s) in this processing round
 ```
 

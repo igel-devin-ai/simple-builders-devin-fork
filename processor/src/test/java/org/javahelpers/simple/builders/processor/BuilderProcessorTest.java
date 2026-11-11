@@ -97,8 +97,7 @@ class BuilderProcessorTest {
         "[DEBUG] simple-builders: ├─ Loaded 15 method generators and 10 builder enhancers total",
         "[DEBUG] simple-builders: └─ Initialized GeneratorRegistry with 15 method generators and 10 builder",
         // Round 1 — start
-        "simple-builders: PROCESSING ROUND START",
-        "[DEBUG] simple-builders: Processing round started.",
+        "[DEBUG] simple-builders: PROCESSING ROUND START",
         "[DEBUG] simple-builders: Found 1 annotated elements.",
         "[DEBUG] simple-builders: Found 0 type(s) for generation with @SimpleBuilderFor.",
         // Round 1 — configuration resolution
@@ -165,10 +164,35 @@ class BuilderProcessorTest {
             + " VerboseTestBuilder",
         "simple-builders: Successfully generated 1 target(s) in this processing round",
         // Round 2 — no new elements: planning is skipped before the domain hook runs
-        "simple-builders: PROCESSING ROUND START",
-        "[DEBUG] simple-builders: Processing round started.",
+        "[DEBUG] simple-builders: PROCESSING ROUND START",
         "[DEBUG] simple-builders: No matching elements collected — skipping planning for this"
             + " round.");
+  }
+
+  @Test
+  void shouldLogMinimalMessagesInDefaultMode() {
+    // Given
+    JavaFileObject sourceFile =
+        ProcessorTestUtils.simpleBuilderClass(
+            "test",
+            "MinimalLogTest",
+            """
+                private String name;
+                public String getName() { return name; }
+                public void setName(String name) { this.name = name; }
+            """);
+
+    // When: Compile without verbose flag — default logging
+    Compilation compilation = compile(sourceFile);
+
+    // Then: Compilation succeeds and only the generation summary is reported.
+    // Assert the complete ordered log output so that ANY change (added, removed, or
+    // modified message) fails this test. When you change logging, update the expected
+    // list below and the documentation in DEBUG_LOGGING.md / CONTRIBUTING.md.
+    assertThat(compilation).succeeded();
+    ProcessorAsserts.assertNotesInOrder(
+        compilation,
+        "simple-builders: Successfully generated 1 target(s) in this processing round");
   }
 
   @Test
