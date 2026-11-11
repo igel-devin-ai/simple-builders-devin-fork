@@ -44,10 +44,10 @@ public class MessagerProcessingLogger extends SinkProcessingLogger {
   private final Messager messager;
 
   /**
-   * Classes of element-attached warnings emitted in verbose mode. Verbose warnings are posted
-   * without an element because javac would prepend {@code File.java:[line,col]} mid-line and break
-   * the hierarchical layout; {@link #flushWarningLocations()} reports their class locations once
-   * per processing round instead.
+   * Classes of element-attached warnings emitted in verbose mode, registered via {@link
+   * #deferWarningLocation(Element)}. Verbose warnings are posted without an element because javac
+   * would prepend {@code File.java:[line,col]} mid-line and break the hierarchical layout; {@link
+   * #flushWarningLocations()} reports their class locations once per processing round instead.
    */
   private final Set<Element> warningLocations = new LinkedHashSet<>();
 
@@ -136,10 +136,7 @@ public class MessagerProcessingLogger extends SinkProcessingLogger {
       // longer)
       String indentedMessage = formatHierarchicalMessage(message, 5); // Add 5 spaces for alignment
       messager.printMessage(Diagnostic.Kind.WARNING, indentedMessage);
-      if (e != null) {
-        Element typeElement = enclosingType(e);
-        warningLocations.add(typeElement != null ? typeElement : e);
-      }
+      deferWarningLocation(e);
     } else {
       // When debug is disabled, print flat
       messager.printMessage(Diagnostic.Kind.WARNING, prefixed(message), e);
@@ -158,6 +155,20 @@ public class MessagerProcessingLogger extends SinkProcessingLogger {
           Diagnostic.Kind.WARNING, prefixed("Location of the warning(s) reported above"), e);
     }
     warningLocations.clear();
+  }
+
+  /**
+   * Registers the enclosing type of the given element for the deferred location marker emitted by
+   * {@link #flushWarningLocations()}. No-op for {@code null} elements.
+   *
+   * @param e the element a verbose warning was reported for, may be {@code null}
+   */
+  private void deferWarningLocation(Element e) {
+    if (e == null) {
+      return;
+    }
+    Element typeElement = enclosingType(e);
+    warningLocations.add(typeElement != null ? typeElement : e);
   }
 
   /**
