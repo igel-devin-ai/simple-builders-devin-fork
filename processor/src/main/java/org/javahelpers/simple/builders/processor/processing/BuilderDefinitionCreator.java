@@ -121,12 +121,10 @@ public class BuilderDefinitionCreator {
     Map<String, BuilderFieldDto> fieldNameRegistry = new HashMap<>();
 
     ExecutableElement constructor = findConstructorForBuilder(annotatedType, context);
-    List<? extends VariableElement> constructorParameters = constructor.getParameters();
-    boolean constructorDeprecated = constructor.getAnnotation(Deprecated.class) != null;
+    boolean constructorDeprecated = isConstructorDeprecated(constructor);
 
     List<BuilderFieldDto> constructorFields =
-        extractConstructorFields(
-            annotatedType, constructorParameters, result, context, fieldNameRegistry);
+        extractConstructorFields(annotatedType, constructor, result, context, fieldNameRegistry);
     result.addAllFieldsInConstructor(constructorFields);
 
     List<BuilderFieldDto> setterFields =
@@ -524,8 +522,7 @@ public class BuilderDefinitionCreator {
    * Extracts fields from the constructor parameters.
    *
    * @param annotatedType the type being processed
-   * @param constructorParameters parameters of the constructor selected for builder initialization,
-   *     empty when the type has no param-carrying accessible constructor
+   * @param constructor the constructor selected for builder initialization
    * @param builderDef the builder definition being constructed
    * @param context processing context
    * @param fieldNameRegistry registry to track field names and resolve conflicts
@@ -533,11 +530,12 @@ public class BuilderDefinitionCreator {
    */
   private static List<BuilderFieldDto> extractConstructorFields(
       TypeElement annotatedType,
-      List<? extends VariableElement> constructorParameters,
+      ExecutableElement constructor,
       BuilderDefinitionDto builderDef,
       BuilderProcessingContext context,
       Map<String, BuilderFieldDto> fieldNameRegistry) {
     List<BuilderFieldDto> constructorFields = new LinkedList<>();
+    List<? extends VariableElement> constructorParameters = constructor.getParameters();
     if (!constructorParameters.isEmpty()) {
       context.debugStartOperation(
           "Analyzing constructor with %d parameter(s)", constructorParameters.size());
@@ -1234,27 +1232,45 @@ public class BuilderDefinitionCreator {
   }
 
   /**
-   * Determines which constructor to use for builder initialization. A constructor annotated with
-   * {@link SimpleBuilderConstructor} is the explicit selection: accessible means it is returned
-   * directly; not accessible from the generated builder's package raises a {@link BuilderException}
-   * instead of silently falling back to the heuristic. Otherwise delegates to {@link
-   * JavaLangAnalyser#findPrimaryConstructor}.
+   * Checks whether the constructor selected for builder generation is {@code @Deprecated}.
+   *
+   * @param constructor the constructor selected for builder initialization
+   * @return {@code true} if the selected constructor is deprecated
+   */
+  private static boolean isConstructorDeprecated(ExecutableElement constructor) {
+    return constructor.getAnnotation(Deprecated.class) != null;
+  }
+
+  /**
+   * Determines which constructor to use for builder initialization. Constructors annotated with
+   * {@link SimpleBuilderConstructor} are the explicit selection: an accessible one is returned
+   * directly; one that is not accessible from the generated builder's package raises a {@link
+   * BuilderException} instead of silently falling back to the heuristic. Without an annotated
+   * constructor, the accessible constructor carrying the most parameters wins (first declared on
+   * ties).
    *
    * @param annotatedType the type element to search for constructors
    * @param context processing context
-   * @return the constructor selected for builder initialization, never {@code null}: callers are
-   *     expected to have verified via {@link JavaLangAnalyser#hasAccessibleConstructor} that an
-   *     accessible constructor exists
+   * @return the constructor selected for builder initialization, never {@code null}
    * @throws BuilderException if a constructor is annotated with {@link SimpleBuilderConstructor}
-   *     but is not accessible from the generated builder's package
+   *     but is not accessible from the generated builder's package, or if no accessible constructor
+   *     exists
    */
   private static ExecutableElement findConstructorForBuilder(
       TypeElement annotatedType, BuilderProcessingContext context) throws BuilderException {
-    Optional<ExecutableElement> annotated =
-        JavaLangAnalyser.findConstructorAnnotatedWith(
+    List<ExecutableElement> annotatedConstructors =
+        JavaLangAnalyser.findConstructorsAnnotatedWith(
             annotatedType, SimpleBuilderConstructor.class, context);
-    if (annotated.isPresent()) {
-      ExecutableElement annotatedCtor = annotated.get();
+    if (!annotatedConstructors.isEmpty()) {
+      ExecutableElement annotatedCtor = annotatedConstructors.get(0);
+      if (annotatedConstructors.size() > 1) {
+        context.warning(
+            annotatedCtor,
+            "Multiple constructors annotated with @%s found on '%s'; the first declared is "
+                + "used.",
+            SimpleBuilderConstructor.class.getSimpleName(),
+            annotatedType.getQualifiedName());
+      }
       if (!context.isMemberAccessibleFromBuilderPackage(annotatedCtor)) {
         throw new BuilderException(
             annotatedCtor,
@@ -1266,12 +1282,22 @@ public class BuilderDefinitionCreator {
       }
       return annotatedCtor;
     }
-    return JavaLangAnalyser.findPrimaryConstructor(
-            annotatedType, SimpleBuilderConstructor.class, context)
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "No accessible constructor on '" + annotatedType.getQualifiedName() + "'"));
+    ExecutableElement selected = null;
+    for (ExecutableElement ctor :
+        JavaLangAnalyser.findAccessibleConstructors(annotatedType, context)) {
+      if (selected == null || ctor.getParameters().size() > selected.getParameters().size()) {
+        selected = ctor;
+      }
+    }
+    if (selected == null) {
+      throw new BuilderException(
+          annotatedType,
+          "No accessible constructor found on '%s'. A builder can only be generated for types "
+              + "that can be constructed through accessible Java APIs (e.g. a public or "
+              + "package-visible constructor reachable from the generated builder).",
+          annotatedType.getQualifiedName());
+    }
+    return selected;
   }
 
   /**
