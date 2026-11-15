@@ -41,9 +41,6 @@ public class TypeNameNested extends TypeName {
   /** The enclosing type; may itself be a {@link TypeNameNested} for deeper nesting. */
   private final TypeName enclosingType;
 
-  /** The innermost simple name without enclosing qualifiers (e.g. {@code "Inner"}). */
-  private final String simpleName;
-
   /**
    * Constructor for TypeNameNested.
    *
@@ -55,7 +52,6 @@ public class TypeNameNested extends TypeName {
         requireNonNull(enclosingType).getPackageName(),
         enclosingType.getClassName() + "." + requireNonNull(simpleName));
     this.enclosingType = enclosingType;
-    this.simpleName = simpleName;
   }
 
   /**
@@ -65,15 +61,6 @@ public class TypeNameNested extends TypeName {
    */
   public TypeName getEnclosingType() {
     return enclosingType;
-  }
-
-  /**
-   * Returns the innermost name without enclosing qualifiers.
-   *
-   * @return simple name, e.g. {@code "Inner"} for {@code Outer.Inner}
-   */
-  public String getSimpleName() {
-    return simpleName;
   }
 
   @Override

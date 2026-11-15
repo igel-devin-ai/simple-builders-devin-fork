@@ -77,7 +77,6 @@ class TypeNameTest {
   void nestedType_exposesEnclosingTypeAndQualifiedName() {
     TypeNameNested inner = new TypeNameNested(new TypeName("test", "Outer"), "Inner");
 
-    assertEquals("Inner", inner.getSimpleName());
     assertEquals("Outer.Inner", inner.getClassName());
     assertEquals("test.Outer.Inner", inner.getFullQualifiedName());
     assertTrue(inner.isNestedType());
@@ -91,7 +90,7 @@ class TypeNameTest {
 
     assertEquals("Outer.Middle.Inner", deep.getClassName());
     assertEquals("test.Outer.Middle.Inner", deep.getFullQualifiedName());
-    assertEquals("Middle", ((TypeNameNested) deep.getEnclosingType()).getSimpleName());
+    assertEquals("Outer.Middle", deep.getEnclosingType().getClassName());
   }
 
   @Test
