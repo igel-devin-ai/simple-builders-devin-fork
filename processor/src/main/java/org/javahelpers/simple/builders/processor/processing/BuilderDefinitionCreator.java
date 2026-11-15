@@ -121,9 +121,13 @@ public class BuilderDefinitionCreator {
     Map<String, BuilderFieldDto> fieldNameRegistry = new HashMap<>();
 
     Optional<ExecutableElement> constructor = findConstructorForBuilder(annotatedType, context);
+    List<? extends VariableElement> constructorParameters =
+        constructor.map(ExecutableElement::getParameters).orElse(List.of());
+    boolean constructorDeprecated = isConstructorDeprecated(constructor);
 
     List<BuilderFieldDto> constructorFields =
-        extractConstructorFields(annotatedType, constructor, result, context, fieldNameRegistry);
+        extractConstructorFields(
+            annotatedType, constructorParameters, result, context, fieldNameRegistry);
     result.addAllFieldsInConstructor(constructorFields);
 
     List<BuilderFieldDto> setterFields =
@@ -141,7 +145,7 @@ public class BuilderDefinitionCreator {
     // Suppress deprecation warnings inside generated code that legitimately calls deprecated
     // DTO members (e.g. build() calls deprecated setters/constructor, from-instance constructor
     // calls deprecated getters).
-    applyDeprecationSuppressions(result, annotatedType, constructor, context);
+    applyDeprecationSuppressions(result, annotatedType, constructorDeprecated, context);
 
     // Finalize the definition - convert to generic class representation
     finalizeDefinition(result, context);
@@ -521,7 +525,8 @@ public class BuilderDefinitionCreator {
    * Extracts fields from the constructor parameters.
    *
    * @param annotatedType the type being processed
-   * @param constructor the constructor selected for builder initialization, empty if none
+   * @param constructorParameters parameters of the constructor selected for builder initialization,
+   *     empty when the type has no param-carrying accessible constructor
    * @param builderDef the builder definition being constructed
    * @param context processing context
    * @param fieldNameRegistry registry to track field names and resolve conflicts
@@ -529,21 +534,20 @@ public class BuilderDefinitionCreator {
    */
   private static List<BuilderFieldDto> extractConstructorFields(
       TypeElement annotatedType,
-      Optional<ExecutableElement> constructor,
+      List<? extends VariableElement> constructorParameters,
       BuilderDefinitionDto builderDef,
       BuilderProcessingContext context,
       Map<String, BuilderFieldDto> fieldNameRegistry) {
     List<BuilderFieldDto> constructorFields = new LinkedList<>();
-    if (constructor.isPresent()) {
-      ExecutableElement ctor = constructor.get();
+    if (!constructorParameters.isEmpty()) {
       context.debugStartOperation(
-          "Analyzing constructor with %d parameter(s)", ctor.getParameters().size());
+          "Analyzing constructor with %d parameter(s)", constructorParameters.size());
 
       TypeName builderType =
           MethodGeneratorUtil.createGenericTypeName(
               builderDef.getBuilderTypeName(), builderDef.getGenerics());
 
-      for (VariableElement param : ctor.getParameters()) {
+      for (VariableElement param : constructorParameters) {
         context.debugStartOperation("Analyzing parameter: %s", param.getSimpleName());
         Optional<BuilderFieldDto> fieldFromCtor =
             createFieldFromConstructor(
@@ -1165,16 +1169,16 @@ public class BuilderDefinitionCreator {
    *
    * @param builderDto the builder definition to update
    * @param annotatedType the annotated DTO type element
-   * @param constructor the constructor selected for builder initialization, empty if none
+   * @param constructorDeprecated whether the constructor selected for builder initialization is
+   *     {@code @Deprecated}
    * @param context processing context
    */
   private static void applyDeprecationSuppressions(
       BuilderDefinitionDto builderDto,
       TypeElement annotatedType,
-      Optional<ExecutableElement> constructor,
+      boolean constructorDeprecated,
       BuilderProcessingContext context) {
     boolean dtoDeprecated = annotatedType.getAnnotation(Deprecated.class) != null;
-    boolean constructorDeprecated = isConstructorDeprecated(constructor);
     // Check getter method deprecation from the flag stored during field creation — a deprecated
     // getter triggers compiler warnings in generated code (the from-instance constructor calls
     // getters). Getter deprecation is intentionally NOT propagated to builder methods, so it
