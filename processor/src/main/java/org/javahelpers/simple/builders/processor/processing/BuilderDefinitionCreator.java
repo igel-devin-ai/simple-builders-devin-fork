@@ -120,8 +120,10 @@ public class BuilderDefinitionCreator {
     // Track field names to resolve conflicts during field creation
     Map<String, BuilderFieldDto> fieldNameRegistry = new HashMap<>();
 
+    Optional<ExecutableElement> constructor = findConstructorForBuilder(annotatedType, context);
+
     List<BuilderFieldDto> constructorFields =
-        extractConstructorFields(annotatedType, result, context, fieldNameRegistry);
+        extractConstructorFields(annotatedType, constructor, result, context, fieldNameRegistry);
     result.addAllFieldsInConstructor(constructorFields);
 
     List<BuilderFieldDto> setterFields =
@@ -139,7 +141,7 @@ public class BuilderDefinitionCreator {
     // Suppress deprecation warnings inside generated code that legitimately calls deprecated
     // DTO members (e.g. build() calls deprecated setters/constructor, from-instance constructor
     // calls deprecated getters).
-    applyDeprecationSuppressions(result, annotatedType, context);
+    applyDeprecationSuppressions(result, annotatedType, constructor, context);
 
     // Finalize the definition - convert to generic class representation
     finalizeDefinition(result, context);
@@ -519,6 +521,7 @@ public class BuilderDefinitionCreator {
    * Extracts fields from the constructor parameters.
    *
    * @param annotatedType the type being processed
+   * @param constructor the constructor selected for builder initialization, empty if none
    * @param builderDef the builder definition being constructed
    * @param context processing context
    * @param fieldNameRegistry registry to track field names and resolve conflicts
@@ -526,14 +529,13 @@ public class BuilderDefinitionCreator {
    */
   private static List<BuilderFieldDto> extractConstructorFields(
       TypeElement annotatedType,
+      Optional<ExecutableElement> constructor,
       BuilderDefinitionDto builderDef,
       BuilderProcessingContext context,
-      Map<String, BuilderFieldDto> fieldNameRegistry)
-      throws BuilderException {
+      Map<String, BuilderFieldDto> fieldNameRegistry) {
     List<BuilderFieldDto> constructorFields = new LinkedList<>();
-    Optional<ExecutableElement> constructorOpt = findConstructorForBuilder(annotatedType, context);
-    if (constructorOpt.isPresent()) {
-      ExecutableElement ctor = constructorOpt.get();
+    if (constructor.isPresent()) {
+      ExecutableElement ctor = constructor.get();
       context.debugStartOperation(
           "Analyzing constructor with %d parameter(s)", ctor.getParameters().size());
 
@@ -1163,13 +1165,16 @@ public class BuilderDefinitionCreator {
    *
    * @param builderDto the builder definition to update
    * @param annotatedType the annotated DTO type element
+   * @param constructor the constructor selected for builder initialization, empty if none
    * @param context processing context
    */
   private static void applyDeprecationSuppressions(
-      BuilderDefinitionDto builderDto, TypeElement annotatedType, BuilderProcessingContext context)
-      throws BuilderException {
+      BuilderDefinitionDto builderDto,
+      TypeElement annotatedType,
+      Optional<ExecutableElement> constructor,
+      BuilderProcessingContext context) {
     boolean dtoDeprecated = annotatedType.getAnnotation(Deprecated.class) != null;
-    boolean constructorDeprecated = isConstructorDeprecated(annotatedType, context);
+    boolean constructorDeprecated = isConstructorDeprecated(constructor);
     // Check getter method deprecation from the flag stored during field creation — a deprecated
     // getter triggers compiler warnings in generated code (the from-instance constructor calls
     // getters). Getter deprecation is intentionally NOT propagated to builder methods, so it
@@ -1228,22 +1233,19 @@ public class BuilderDefinitionCreator {
   /**
    * Checks whether the constructor selected for builder generation is {@code @Deprecated}.
    *
-   * @param annotatedType the annotated DTO type element
-   * @param context processing context
+   * @param constructor the constructor selected for builder initialization, empty if none
    * @return {@code true} if the selected constructor is deprecated
    */
-  private static boolean isConstructorDeprecated(
-      TypeElement annotatedType, BuilderProcessingContext context) throws BuilderException {
-    return findConstructorForBuilder(annotatedType, context)
-        .filter(ctor -> ctor.getAnnotation(Deprecated.class) != null)
-        .isPresent();
+  private static boolean isConstructorDeprecated(Optional<ExecutableElement> constructor) {
+    return constructor.filter(ctor -> ctor.getAnnotation(Deprecated.class) != null).isPresent();
   }
 
   /**
    * Determines which constructor to use for builder initialization. A constructor annotated with
-   * {@link SimpleBuilderConstructor} is the explicit selection — when it is not accessible from the
-   * generated builder's package, a {@link BuilderException} is raised instead of silently falling
-   * back to the heuristic. Otherwise delegates to {@link JavaLangAnalyser#findPrimaryConstructor}.
+   * {@link SimpleBuilderConstructor} is the explicit selection: accessible means it is returned
+   * directly; not accessible from the generated builder's package raises a {@link BuilderException}
+   * instead of silently falling back to the heuristic. Otherwise delegates to {@link
+   * JavaLangAnalyser#findPrimaryConstructor}.
    *
    * @param annotatedType the type element to search for constructors
    * @param context processing context
@@ -1256,14 +1258,18 @@ public class BuilderDefinitionCreator {
     Optional<ExecutableElement> annotated =
         JavaLangAnalyser.findConstructorAnnotatedWith(
             annotatedType, SimpleBuilderConstructor.class, context);
-    if (annotated.isPresent() && !context.isMemberAccessibleFromBuilderPackage(annotated.get())) {
-      throw new BuilderException(
-          annotated.get(),
-          "Constructor annotated with @%s on '%s' is not accessible from the generated "
-              + "builder's package. Make it public or package-visible, or remove the "
-              + "annotation.",
-          SimpleBuilderConstructor.class.getSimpleName(),
-          annotatedType.getQualifiedName());
+    if (annotated.isPresent()) {
+      ExecutableElement annotatedCtor = annotated.get();
+      if (!context.isMemberAccessibleFromBuilderPackage(annotatedCtor)) {
+        throw new BuilderException(
+            annotatedCtor,
+            "Constructor annotated with @%s on '%s' is not accessible from the generated "
+                + "builder's package. Make it public or package-visible, or remove the "
+                + "annotation.",
+            SimpleBuilderConstructor.class.getSimpleName(),
+            annotatedType.getQualifiedName());
+      }
+      return annotated;
     }
     return JavaLangAnalyser.findPrimaryConstructor(
         annotatedType, SimpleBuilderConstructor.class, context);
