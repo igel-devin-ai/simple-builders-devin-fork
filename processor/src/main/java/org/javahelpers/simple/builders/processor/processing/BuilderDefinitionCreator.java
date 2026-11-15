@@ -120,10 +120,9 @@ public class BuilderDefinitionCreator {
     // Track field names to resolve conflicts during field creation
     Map<String, BuilderFieldDto> fieldNameRegistry = new HashMap<>();
 
-    Optional<ExecutableElement> constructor = findConstructorForBuilder(annotatedType, context);
-    List<? extends VariableElement> constructorParameters =
-        constructor.map(ExecutableElement::getParameters).orElse(List.of());
-    boolean constructorDeprecated = isConstructorDeprecated(constructor);
+    ExecutableElement constructor = findConstructorForBuilder(annotatedType, context);
+    List<? extends VariableElement> constructorParameters = constructor.getParameters();
+    boolean constructorDeprecated = constructor.getAnnotation(Deprecated.class) != null;
 
     List<BuilderFieldDto> constructorFields =
         extractConstructorFields(
@@ -1235,16 +1234,6 @@ public class BuilderDefinitionCreator {
   }
 
   /**
-   * Checks whether the constructor selected for builder generation is {@code @Deprecated}.
-   *
-   * @param constructor the constructor selected for builder initialization, empty if none
-   * @return {@code true} if the selected constructor is deprecated
-   */
-  private static boolean isConstructorDeprecated(Optional<ExecutableElement> constructor) {
-    return constructor.filter(ctor -> ctor.getAnnotation(Deprecated.class) != null).isPresent();
-  }
-
-  /**
    * Determines which constructor to use for builder initialization. A constructor annotated with
    * {@link SimpleBuilderConstructor} is the explicit selection: accessible means it is returned
    * directly; not accessible from the generated builder's package raises a {@link BuilderException}
@@ -1253,11 +1242,13 @@ public class BuilderDefinitionCreator {
    *
    * @param annotatedType the type element to search for constructors
    * @param context processing context
-   * @return Optional containing the selected constructor, or empty if none suitable
+   * @return the constructor selected for builder initialization, never {@code null}: callers are
+   *     expected to have verified via {@link JavaLangAnalyser#hasAccessibleConstructor} that an
+   *     accessible constructor exists
    * @throws BuilderException if a constructor is annotated with {@link SimpleBuilderConstructor}
    *     but is not accessible from the generated builder's package
    */
-  private static Optional<ExecutableElement> findConstructorForBuilder(
+  private static ExecutableElement findConstructorForBuilder(
       TypeElement annotatedType, BuilderProcessingContext context) throws BuilderException {
     Optional<ExecutableElement> annotated =
         JavaLangAnalyser.findConstructorAnnotatedWith(
@@ -1273,10 +1264,14 @@ public class BuilderDefinitionCreator {
             SimpleBuilderConstructor.class.getSimpleName(),
             annotatedType.getQualifiedName());
       }
-      return annotated;
+      return annotatedCtor;
     }
     return JavaLangAnalyser.findPrimaryConstructor(
-        annotatedType, SimpleBuilderConstructor.class, context);
+            annotatedType, SimpleBuilderConstructor.class, context)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "No accessible constructor on '" + annotatedType.getQualifiedName() + "'"));
   }
 
   /**

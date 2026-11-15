@@ -890,8 +890,8 @@ public final class JavaLangAnalyser {
   /**
    * Finds the primary constructor of a type: the one to use when generated code must instantiate
    * it. Prioritizes constructors annotated with the given marker annotation. If none is annotated,
-   * selects the constructor with the highest number of parameters. Returns empty if no constructor
-   * has parameters (i.e., only default constructor or none found).
+   * selects the accessible constructor with the highest number of parameters — including the
+   * zero-argument default constructor. Returns empty only if no accessible constructor exists.
    *
    * @param annotatedType the type element to search for constructors
    * @param constructorAnnotation the marker annotation selecting a constructor explicitly; may be
@@ -925,7 +925,7 @@ public final class JavaLangAnalyser {
         selected = ctor;
       }
     }
-    return (selected != null && maxParams > 0) ? Optional.of(selected) : Optional.empty();
+    return Optional.ofNullable(selected);
   }
 
   /**
