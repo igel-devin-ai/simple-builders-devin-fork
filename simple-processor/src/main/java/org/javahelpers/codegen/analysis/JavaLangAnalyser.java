@@ -898,7 +898,7 @@ public final class JavaLangAnalyser {
    */
   public static List<ExecutableElement> findAccessibleConstructors(
       TypeElement annotatedType, AnnotationProcessingContext context) {
-    return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
+    return findAllConstructors(annotatedType, context).stream()
         .filter(context::isAccessibleFromGeneratedPackage)
         .toList();
   }
@@ -918,7 +918,7 @@ public final class JavaLangAnalyser {
       TypeElement annotatedType,
       Class<? extends Annotation> constructorAnnotation,
       AnnotationProcessingContext context) {
-    return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
+    return findAllConstructors(annotatedType, context).stream()
         .filter(ctor -> ctor.getAnnotation(constructorAnnotation) != null)
         .toList();
   }
@@ -934,7 +934,20 @@ public final class JavaLangAnalyser {
    */
   public static boolean hasAccessibleConstructor(
       TypeElement typeElement, AnnotationProcessingContext context) {
-    return ElementFilter.constructorsIn(context.getAllMembers(typeElement)).stream()
+    return findAllConstructors(typeElement, context).stream()
         .anyMatch(context::isAccessibleFromGeneratedPackage);
+  }
+
+  /**
+   * Returns all constructors of a type without any filtering. Selection concerns — accessibility,
+   * marker annotations, parameter count — are left to the callers.
+   *
+   * @param typeElement the type element to search for constructors
+   * @param context the processing context providing access to elements and types utilities
+   * @return list of all constructors, possibly empty
+   */
+  private static List<ExecutableElement> findAllConstructors(
+      TypeElement typeElement, AnnotationProcessingContext context) {
+    return ElementFilter.constructorsIn(context.getAllMembers(typeElement));
   }
 }

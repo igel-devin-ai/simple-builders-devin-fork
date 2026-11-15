@@ -121,7 +121,6 @@ public class BuilderDefinitionCreator {
     Map<String, BuilderFieldDto> fieldNameRegistry = new HashMap<>();
 
     ExecutableElement constructor = findConstructorForBuilder(annotatedType, context);
-    boolean constructorDeprecated = isConstructorDeprecated(constructor);
 
     List<BuilderFieldDto> constructorFields =
         extractConstructorFields(annotatedType, constructor, result, context, fieldNameRegistry);
@@ -142,7 +141,7 @@ public class BuilderDefinitionCreator {
     // Suppress deprecation warnings inside generated code that legitimately calls deprecated
     // DTO members (e.g. build() calls deprecated setters/constructor, from-instance constructor
     // calls deprecated getters).
-    applyDeprecationSuppressions(result, annotatedType, constructorDeprecated, context);
+    applyDeprecationSuppressions(result, annotatedType, constructor, context);
 
     // Finalize the definition - convert to generic class representation
     finalizeDefinition(result, context);
@@ -1166,16 +1165,16 @@ public class BuilderDefinitionCreator {
    *
    * @param builderDto the builder definition to update
    * @param annotatedType the annotated DTO type element
-   * @param constructorDeprecated whether the constructor selected for builder initialization is
-   *     {@code @Deprecated}
+   * @param constructor the constructor selected for builder initialization
    * @param context processing context
    */
   private static void applyDeprecationSuppressions(
       BuilderDefinitionDto builderDto,
       TypeElement annotatedType,
-      boolean constructorDeprecated,
+      ExecutableElement constructor,
       BuilderProcessingContext context) {
     boolean dtoDeprecated = annotatedType.getAnnotation(Deprecated.class) != null;
+    boolean constructorDeprecated = constructor.getAnnotation(Deprecated.class) != null;
     // Check getter method deprecation from the flag stored during field creation — a deprecated
     // getter triggers compiler warnings in generated code (the from-instance constructor calls
     // getters). Getter deprecation is intentionally NOT propagated to builder methods, so it
@@ -1229,16 +1228,6 @@ public class BuilderDefinitionCreator {
         anyMethodDeprecated,
         anyGetterMethodDeprecated,
         anyElementTypeDeprecated);
-  }
-
-  /**
-   * Checks whether the constructor selected for builder generation is {@code @Deprecated}.
-   *
-   * @param constructor the constructor selected for builder initialization
-   * @return {@code true} if the selected constructor is deprecated
-   */
-  private static boolean isConstructorDeprecated(ExecutableElement constructor) {
-    return constructor.getAnnotation(Deprecated.class) != null;
   }
 
   /**
