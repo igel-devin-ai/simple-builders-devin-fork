@@ -57,8 +57,7 @@ public class AnnotationValidator {
 
     if (annotatedElement.getModifiers().contains(Modifier.ABSTRACT)) {
       throw new BuilderException(
-          annotatedElement,
-          "The " + SimpleBuilder.class.getSimpleName() + " should not be abstract");
+          annotatedElement, "The target class for generating a builder should not be abstract");
     }
 
     // Only allow @SimpleBuilder on top-level classes

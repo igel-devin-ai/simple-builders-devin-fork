@@ -233,7 +233,8 @@ class BuilderProcessorTest {
 
     // Then: compilation should succeed but with a warning
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningContaining("The SimpleBuilder should not be abstract");
+    assertThat(compilation)
+        .hadWarningContaining("The target class for generating a builder should not be abstract");
   }
 
   @Test
