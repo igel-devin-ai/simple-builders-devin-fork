@@ -215,6 +215,43 @@ class BuilderProcessorTest {
   }
 
   @Test
+  void shouldWarnWhenAnnotatedConstructorIsNotAccessible() {
+    // Given: a private constructor explicitly selected via @SimpleBuilderConstructor
+    String source =
+        """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilderConstructor;
+
+            @SimpleBuilder
+            public class PrivateCtorDto {
+              private final String value;
+
+              public PrivateCtorDto() {
+                this.value = null;
+              }
+
+              @SimpleBuilderConstructor
+              private PrivateCtorDto(String value, int ignored) {
+                this.value = value;
+              }
+
+              public String getValue() {
+                return value;
+              }
+            }
+            """;
+
+    // When
+    Compilation compilation = compile(ProcessorTestUtils.forSource(source));
+
+    // Then: the unusable selection is reported instead of silently falling back
+    assertThat(compilation)
+        .hadWarningContaining("is not accessible from the generated builder's package");
+  }
+
+  @Test
   void shouldGenerateBuilderForNonEmptyConstructorWithFinalFields() {
     // Given
     String packageName = "test";

@@ -487,7 +487,8 @@ public class BuilderDefinitionCreator {
       TypeElement annotatedType,
       BuilderDefinitionDto builderDef,
       ProcessingContext context,
-      Map<String, FieldDto> fieldNameRegistry) {
+      Map<String, FieldDto> fieldNameRegistry)
+      throws BuilderException {
     List<FieldDto> constructorFields = new LinkedList<>();
     Optional<ExecutableElement> constructorOpt = findConstructorForBuilder(annotatedType, context);
     if (constructorOpt.isPresent()) {
@@ -1114,7 +1115,8 @@ public class BuilderDefinitionCreator {
    * @param context processing context
    */
   private static void applyDeprecationSuppressions(
-      BuilderDefinitionDto builderDto, TypeElement annotatedType, ProcessingContext context) {
+      BuilderDefinitionDto builderDto, TypeElement annotatedType, ProcessingContext context)
+      throws BuilderException {
     boolean dtoDeprecated = annotatedType.getAnnotation(Deprecated.class) != null;
     boolean constructorDeprecated = isConstructorDeprecated(annotatedType, context);
     // Check getter method deprecation from the flag stored during field creation — a deprecated
@@ -1180,7 +1182,7 @@ public class BuilderDefinitionCreator {
    * @return {@code true} if the selected constructor is deprecated
    */
   private static boolean isConstructorDeprecated(
-      TypeElement annotatedType, ProcessingContext context) {
+      TypeElement annotatedType, ProcessingContext context) throws BuilderException {
     return JavaLangAnalyser.findConstructorForBuilder(annotatedType, context)
         .filter(ctor -> ctor.getAnnotation(Deprecated.class) != null)
         .isPresent();

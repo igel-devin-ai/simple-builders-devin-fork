@@ -92,6 +92,50 @@ class CustomCollectionTypeTest {
   }
 
   @Test
+  void customListWithPrivateCollectionConstructor_shouldNotWrapAsList() {
+    // The only Collection-accepting constructor is private, so generated code cannot call it:
+    // the type must fall back to a plain generic type instead of TypeNameList.
+    JavaFileObject customList =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import java.util.ArrayList;
+            import java.util.Collection;
+            public class PrivateCtorList<E> extends ArrayList<E> {
+              private PrivateCtorList(Collection<E> c) { super(c); }
+              public PrivateCtorList() {}
+            }
+            """);
+
+    JavaFileObject dto =
+        ProcessorTestUtils.simpleBuilderClass(
+            "test",
+            "PrivateCtorListDto",
+            """
+                private final PrivateCtorList<String> numbers;
+
+                public PrivateCtorListDto(PrivateCtorList<String> numbers) {
+                  this.numbers = numbers;
+                }
+
+                public PrivateCtorList<String> getNumbers() {
+                  return numbers;
+                }
+            """);
+
+    Compilation compilation = compile(customList, dto);
+    String generatedCode = loadGeneratedSource(compilation, "PrivateCtorListDtoBuilder");
+    assertGenerationSucceeded(compilation, "PrivateCtorListDtoBuilder", generatedCode);
+
+    // No varargs helper — wrapping would require the inaccessible Collection constructor
+    ProcessorAsserts.assertNotContaining(generatedCode, "numbers(String... numbers)");
+
+    // Plain setter still generated with the unwrapped type
+    ProcessorAsserts.assertContaining(
+        generatedCode, "public PrivateCtorListDtoBuilder numbers(PrivateCtorList<String> numbers)");
+  }
+
+  @Test
   void standardArrayListWithSingleTypeParameter_shouldGenerateVarargsHelper() {
     // Standard ArrayList should generate varargs helper
     JavaFileObject dto =

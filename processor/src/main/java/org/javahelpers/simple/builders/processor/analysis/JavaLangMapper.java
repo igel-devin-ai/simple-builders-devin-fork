@@ -499,6 +499,8 @@ public final class JavaLangMapper {
     return typeElement.getEnclosedElements().stream()
         .filter(element -> element.getKind() == javax.lang.model.element.ElementKind.CONSTRUCTOR)
         .map(element -> (javax.lang.model.element.ExecutableElement) element)
+        // Generated code calls this constructor — it must be reachable from the builder's package
+        .filter(context::isMemberAccessibleFromBuilderPackage)
         .anyMatch(
             constructor -> {
               if (constructor.getParameters().size() != 1) {

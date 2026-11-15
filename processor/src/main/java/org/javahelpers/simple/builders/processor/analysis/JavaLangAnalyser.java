@@ -49,6 +49,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilderConstructor;
+import org.javahelpers.simple.builders.processor.exceptions.BuilderException;
 import org.javahelpers.simple.builders.processor.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
 
@@ -829,20 +830,33 @@ public final class JavaLangAnalyser {
    * @param annotatedType the type element to search for constructors
    * @param context the processing context providing access to elements and types utilities
    * @return Optional containing the selected constructor, or empty if none suitable
+   * @throws BuilderException if a constructor is annotated with {@link SimpleBuilderConstructor}
+   *     but is not accessible from the generated builder's package
    */
   public static Optional<ExecutableElement> findConstructorForBuilder(
-      TypeElement annotatedType, ProcessingContext context) {
-    List<ExecutableElement> ctors =
-        ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
-            .filter(context::isMemberAccessibleFromBuilderPackage)
-            .toList();
+      TypeElement annotatedType, ProcessingContext context) throws BuilderException {
+    List<ExecutableElement> allCtors =
+        ElementFilter.constructorsIn(context.getAllMembers(annotatedType));
 
-    // First, check if any constructor is annotated with @SimpleBuilderConstructor
-    for (ExecutableElement ctor : ctors) {
+    // The explicit annotation wins over the accessibility filter — an inaccessible annotated
+    // constructor must be reported instead of silently falling back to the heuristic.
+    for (ExecutableElement ctor : allCtors) {
       if (ctor.getAnnotation(SimpleBuilderConstructor.class) != null) {
+        if (!context.isMemberAccessibleFromBuilderPackage(ctor)) {
+          throw new BuilderException(
+              ctor,
+              "Constructor annotated with @%s on '%s' is not accessible from the generated "
+                  + "builder's package. Make it public or package-visible, or remove the "
+                  + "annotation.",
+              SimpleBuilderConstructor.class.getSimpleName(),
+              annotatedType.getQualifiedName());
+        }
         return Optional.of(ctor);
       }
     }
+
+    List<ExecutableElement> ctors =
+        allCtors.stream().filter(context::isMemberAccessibleFromBuilderPackage).toList();
 
     // Fall back to heuristic: select constructor with the most parameters
     ExecutableElement selected = null;
