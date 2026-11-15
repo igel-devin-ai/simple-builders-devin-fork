@@ -106,15 +106,6 @@ public class BuilderDefinitionCreator {
           annotatedType.getQualifiedName(),
           context.getBuilderPackageName());
     }
-    if (!JavaLangAnalyser.hasAccessibleConstructor(annotatedType, context)) {
-      throw new BuilderException(
-          annotatedElement,
-          "No accessible constructor found on '%s'. A builder can only be generated for types "
-              + "that can be constructed through accessible Java APIs (e.g. a public or "
-              + "package-visible constructor reachable from the generated builder).",
-          annotatedType.getQualifiedName());
-    }
-
     BuilderDefinitionDto result = initializeBuilderDefinition(annotatedType, context);
 
     // Track field names to resolve conflicts during field creation

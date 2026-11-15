@@ -898,7 +898,7 @@ public final class JavaLangAnalyser {
    */
   public static List<ExecutableElement> findAccessibleConstructors(
       TypeElement annotatedType, AnnotationProcessingContext context) {
-    return findAllConstructors(annotatedType, context).stream()
+    return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
         .filter(context::isAccessibleFromGeneratedPackage)
         .toList();
   }
@@ -918,36 +918,8 @@ public final class JavaLangAnalyser {
       TypeElement annotatedType,
       Class<? extends Annotation> constructorAnnotation,
       AnnotationProcessingContext context) {
-    return findAllConstructors(annotatedType, context).stream()
+    return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
         .filter(ctor -> ctor.getAnnotation(constructorAnnotation) != null)
         .toList();
-  }
-
-  /**
-   * Checks whether the given type has at least one constructor that is accessible from the package
-   * generated code is written to. A type without an accessible constructor cannot be instantiated
-   * by generated code.
-   *
-   * @param typeElement the type element to check
-   * @param context the processing context providing access to elements and types utilities
-   * @return {@code true} if an accessible constructor exists
-   */
-  public static boolean hasAccessibleConstructor(
-      TypeElement typeElement, AnnotationProcessingContext context) {
-    return findAllConstructors(typeElement, context).stream()
-        .anyMatch(context::isAccessibleFromGeneratedPackage);
-  }
-
-  /**
-   * Returns all constructors of a type without any filtering. Selection concerns — accessibility,
-   * marker annotations, parameter count — are left to the callers.
-   *
-   * @param typeElement the type element to search for constructors
-   * @param context the processing context providing access to elements and types utilities
-   * @return list of all constructors, possibly empty
-   */
-  private static List<ExecutableElement> findAllConstructors(
-      TypeElement typeElement, AnnotationProcessingContext context) {
-    return ElementFilter.constructorsIn(context.getAllMembers(typeElement));
   }
 }
