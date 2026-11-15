@@ -113,6 +113,7 @@ class SimpleBuilderForTest {
             package ext;
             public class Singleton {
               private Singleton() {}
+              public static Singleton create() { return new Singleton(); }
             }
             """);
 
@@ -157,6 +158,7 @@ class SimpleBuilderForTest {
             package ext;
             public class Singleton {
               private Singleton() {}
+              public static Singleton create() { return new Singleton(); }
             }
             """);
 

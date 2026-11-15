@@ -888,58 +888,38 @@ public final class JavaLangAnalyser {
   }
 
   /**
-   * Finds the primary constructor of a type: the one to use when generated code must instantiate
-   * it. Prioritizes constructors annotated with the given marker annotation. If none is annotated,
-   * selects the constructor with the highest number of parameters. Returns empty if no constructor
-   * has parameters (i.e., only default constructor or none found).
+   * Finds all constructors of a type that are accessible from the generated package (e.g. private
+   * constructors are excluded). No selection heuristic is applied — choosing which constructor to
+   * use is the caller's concern.
    *
    * @param annotatedType the type element to search for constructors
-   * @param constructorAnnotation the marker annotation selecting a constructor explicitly; may be
-   *     {@code null} to skip the annotation check
    * @param context the processing context providing access to elements and types utilities
-   * @return Optional containing the selected constructor, or empty if none suitable
+   * @return list of accessible constructors, possibly empty
    */
-  public static Optional<ExecutableElement> findPrimaryConstructor(
-      TypeElement annotatedType,
-      Class<? extends Annotation> constructorAnnotation,
-      AnnotationProcessingContext context) {
-    List<ExecutableElement> ctors =
-        ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
-            .filter(context::isAccessibleFromGeneratedPackage)
-            .toList();
-
-    // First, check if any constructor is annotated with the constructor annotation
-    for (ExecutableElement ctor : ctors) {
-      if (constructorAnnotation != null && ctor.getAnnotation(constructorAnnotation) != null) {
-        return Optional.of(ctor);
-      }
-    }
-
-    // Fall back to heuristic: select constructor with the most parameters
-    ExecutableElement selected = null;
-    int maxParams = -1;
-    for (ExecutableElement ctor : ctors) {
-      int p = ctor.getParameters().size();
-      if (p > maxParams) {
-        maxParams = p;
-        selected = ctor;
-      }
-    }
-    return (selected != null && maxParams > 0) ? Optional.of(selected) : Optional.empty();
+  public static List<ExecutableElement> findAccessibleConstructors(
+      TypeElement annotatedType, AnnotationProcessingContext context) {
+    return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
+        .filter(context::isAccessibleFromGeneratedPackage)
+        .toList();
   }
 
   /**
-   * Checks whether the given type has at least one constructor that is accessible from the package
-   * generated code is written to. A type without an accessible constructor cannot be instantiated
-   * by generated code.
+   * Finds all constructors annotated with the given marker annotation, regardless of their
+   * accessibility. Callers that generate code invoking a constructor must check accessibility
+   * separately — e.g. via {@code context.isAccessibleFromGeneratedPackage(ctor)} — and report the
+   * explicit selection when it is not usable.
    *
-   * @param typeElement the type element to check
+   * @param annotatedType the type element to search for constructors
+   * @param constructorAnnotation the marker annotation to look for
    * @param context the processing context providing access to elements and types utilities
-   * @return {@code true} if an accessible constructor exists
+   * @return list of annotated constructors, possibly empty
    */
-  public static boolean hasAccessibleConstructor(
-      TypeElement typeElement, AnnotationProcessingContext context) {
-    return ElementFilter.constructorsIn(context.getAllMembers(typeElement)).stream()
-        .anyMatch(context::isAccessibleFromGeneratedPackage);
+  public static List<ExecutableElement> findConstructorsAnnotatedWith(
+      TypeElement annotatedType,
+      Class<? extends Annotation> constructorAnnotation,
+      AnnotationProcessingContext context) {
+    return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
+        .filter(ctor -> ctor.getAnnotation(constructorAnnotation) != null)
+        .toList();
   }
 }

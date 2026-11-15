@@ -238,6 +238,86 @@ class BuilderProcessorTest {
   }
 
   @Test
+  void shouldWarnWhenAnnotatedConstructorIsNotAccessible() {
+    // Given: a private constructor explicitly selected via @SimpleBuilderConstructor
+    String source =
+        """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilderConstructor;
+
+            @SimpleBuilder
+            public class PrivateCtorDto {
+              private final String value;
+
+              public PrivateCtorDto() {
+                this.value = null;
+              }
+
+              @SimpleBuilderConstructor
+              private PrivateCtorDto(String value, int ignored) {
+                this.value = value;
+              }
+
+              public String getValue() {
+                return value;
+              }
+            }
+            """;
+
+    // When
+    Compilation compilation = compile(ProcessorTestUtils.forSource(source));
+
+    // Then: the unusable selection is reported instead of silently falling back
+    assertThat(compilation)
+        .hadWarningContaining("is not accessible from the generated builder's package");
+  }
+
+  /**
+   * {@code @SimpleBuilderConstructor} is meant to select a single constructor. When a type marks
+   * several constructors, the ambiguity is reported and the first declared is used instead of an
+   * arbitrary silent pick.
+   */
+  @Test
+  void shouldWarnOnMultipleAnnotatedConstructors() {
+    // Given: two constructors explicitly selected via @SimpleBuilderConstructor
+    String source =
+        """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilderConstructor;
+
+            @SimpleBuilder
+            public class MultiCtorDto {
+              private final String value;
+
+              @SimpleBuilderConstructor
+              public MultiCtorDto() {
+                this.value = null;
+              }
+
+              @SimpleBuilderConstructor
+              public MultiCtorDto(String value) {
+                this.value = value;
+              }
+
+              public String getValue() {
+                return value;
+              }
+            }
+            """;
+
+    // When
+    Compilation compilation = compile(ProcessorTestUtils.forSource(source));
+
+    // Then
+    assertThat(compilation)
+        .hadWarningContaining("Multiple constructors annotated with @SimpleBuilderConstructor");
+  }
+
+  @Test
   void shouldGenerateBuilderForNonEmptyConstructorWithFinalFields() {
     // Given
     String packageName = "test";

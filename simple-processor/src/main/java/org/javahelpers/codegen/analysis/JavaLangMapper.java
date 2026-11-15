@@ -419,6 +419,7 @@ public final class JavaLangMapper {
     return typeElement.getEnclosedElements().stream()
         .filter(element -> element.getKind() == javax.lang.model.element.ElementKind.CONSTRUCTOR)
         .map(element -> (javax.lang.model.element.ExecutableElement) element)
+        .filter(context::isAccessibleFromGeneratedPackage)
         .anyMatch(
             constructor -> {
               if (constructor.getParameters().size() != 1) {
