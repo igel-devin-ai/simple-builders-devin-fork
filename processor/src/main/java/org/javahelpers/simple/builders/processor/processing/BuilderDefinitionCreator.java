@@ -1166,9 +1166,7 @@ public class BuilderDefinitionCreator {
    * @param context processing context
    */
   private static void applyDeprecationSuppressions(
-      BuilderDefinitionDto builderDto,
-      TypeElement annotatedType,
-      BuilderProcessingContext context)
+      BuilderDefinitionDto builderDto, TypeElement annotatedType, BuilderProcessingContext context)
       throws BuilderException {
     boolean dtoDeprecated = annotatedType.getAnnotation(Deprecated.class) != null;
     boolean constructorDeprecated = isConstructorDeprecated(annotatedType, context);
