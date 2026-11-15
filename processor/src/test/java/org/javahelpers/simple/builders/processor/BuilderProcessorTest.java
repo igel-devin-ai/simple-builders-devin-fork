@@ -309,6 +309,88 @@ class BuilderProcessorTest {
   }
 
   @Test
+  void shouldGenerateBuilderForDeeplyNestedPropertyType() {
+    // Given: a property typed as a doubly nested class (Outer.Middle.Inner)
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private Outer.Middle.Inner value;
+
+              public Outer.Middle.Inner getValue() { return value; }
+              public void setValue(Outer.Middle.Inner value) { this.value = value; }
+            }
+            """);
+    JavaFileObject outer =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            public class Outer {
+              public static class Middle {
+                public static class Inner {}
+              }
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(source, outer);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: the full qualifier chain is kept and a legal nested import is emitted
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "import test.Outer.Middle.Inner;");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Outer.Middle;");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Inner;");
+  }
+
+  @Test
+  void shouldGenerateBuilderForGenericNestedPropertyType() {
+    // Given: a property typed as a generic nested class (Outer.Pair<String>)
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private Outer.Pair<String> pair;
+
+              public Outer.Pair<String> getPair() { return pair; }
+              public void setPair(Outer.Pair<String> pair) { this.pair = pair; }
+            }
+            """);
+    JavaFileObject outer =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            public class Outer {
+              public static class Pair<T> {}
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(source, outer);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: generic nested type resolves with its enclosing qualifier and type arguments
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "import test.Outer.Pair;");
+    ProcessorAsserts.assertContaining(generatedCode, "Pair<String>");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Pair;");
+  }
+
+  @Test
   void shouldGenerateBuilderForNonEmptyConstructorWithFinalFields() {
     // Given
     String packageName = "test";

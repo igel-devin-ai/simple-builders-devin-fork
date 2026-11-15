@@ -36,6 +36,7 @@ import org.javahelpers.codegen.model.method.MethodCodeTypePlaceholder;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameNested;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
 import org.javahelpers.codegen.roaster.exceptions.RoasterMapperException;
@@ -61,14 +62,12 @@ public final class RoasterMapper {
       mappedType = mapType(arrayType.getTypeOfArray()) + "[]";
     } else if (typeName instanceof TypeNameGeneric genericType) {
       mappedType = mapGenericType(genericType);
+    } else if (typeName instanceof TypeNameNested) {
+      // Roaster splits a bare "Outer.Inner" into package "Outer" + class "Inner"; passing the
+      // full qualified name makes it emit "import pkg.Outer.Inner" and use "Inner" in code.
+      mappedType = typeName.getFullQualifiedName();
     } else {
-      // For nested classes (className contains '.', e.g. "Outer.Inner") Roaster would split a
-      // bare "Outer.Inner" into package "Outer" + class "Inner". Passing the full qualified name
-      // makes it emit the correct "import pkg.Outer.Inner" and use "Inner" in code.
-      mappedType =
-          typeName.getClassName().contains(".")
-              ? typeName.getFullQualifiedName()
-              : typeName.getClassName();
+      mappedType = typeName.getClassName();
     }
 
     return prependTypeUseAnnotations(mappedType, typeName.getAnnotations());
@@ -100,15 +99,22 @@ public final class RoasterMapper {
   }
 
   private static String mapGenericType(TypeNameGeneric genericType) {
+    // Nested generic types keep the fully qualified name: Roaster parses "pkg.Outer.Pair<T>" by
+    // importing "pkg.Outer.Pair" and using "Pair<T>" in code. The raw type's FQN is used because
+    // TypeNameGeneric.getFullQualifiedName() already includes the type arguments.
+    String baseName =
+        genericType.isNestedType()
+            ? genericType.getRawType().getFullQualifiedName()
+            : genericType.getClassName();
     if (genericType.getInnerTypeArguments().isEmpty()) {
-      return genericType.getClassName();
+      return baseName;
     }
     String innerTypes =
         genericType.getInnerTypeArguments().stream()
             .map(RoasterMapper::mapBoxedType)
             .reduce((a, b) -> a + ", " + b)
             .orElse("");
-    return genericType.getClassName() + "<" + innerTypes + ">";
+    return baseName + "<" + innerTypes + ">";
   }
 
   /**

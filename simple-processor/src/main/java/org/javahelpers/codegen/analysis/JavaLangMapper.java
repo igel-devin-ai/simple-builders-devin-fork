@@ -48,6 +48,7 @@ import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
+import org.javahelpers.codegen.model.type.TypeNameNested;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
@@ -211,6 +212,24 @@ public final class JavaLangMapper {
     if (element instanceof TypeElement typeElement) {
       setEmptyConstructorInfo(typeName, typeElement, context);
     }
+  }
+
+  /**
+   * Builds a {@link TypeName} for a type element, representing nested classes as {@link
+   * TypeNameNested} so the enclosing-class qualifier is kept structurally (e.g. {@code Outer.Inner}
+   * or deeper chains like {@code Outer.Middle.Inner}).
+   *
+   * @param typeElement the type element to map
+   * @param packageName the package of the outermost enclosing type
+   * @return TypeName or TypeNameNested for nested classes
+   */
+  private static TypeName toTypeName(TypeElement typeElement, String packageName) {
+    String simpleName = typeElement.getSimpleName().toString();
+    Element enclosingElement = typeElement.getEnclosingElement();
+    if (enclosingElement instanceof TypeElement enclosingType) {
+      return new TypeNameNested(toTypeName(enclosingType, packageName), simpleName);
+    }
+    return new TypeName(packageName, simpleName);
   }
 
   /**
@@ -513,11 +532,7 @@ public final class JavaLangMapper {
               public TypeName visitDeclared(DeclaredType t, Void p) {
                 TypeElement elementOfParameter = (TypeElement) context.asElement(typeOfParameter);
                 String packageName = context.getPackageName(elementOfParameter);
-                // Use the qualified name relative to the package so nested types keep their
-                // enclosing-class qualifier (e.g. "Outer.Inner"), matching mapToTypeName
-                String qualifiedName = elementOfParameter.getQualifiedName().toString();
-                String className = Strings.CS.removeStart(qualifiedName, packageName + ".");
-                TypeName rawType = new TypeName(packageName, className);
+                TypeName rawType = toTypeName(elementOfParameter, packageName);
                 if (elementOfParameter.getKind() == ElementKind.ENUM) {
                   rawType.setEnumType(true);
                 }
