@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,8 @@ import static com.google.testing.compile.CompilationSubject.assertThat;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -89,7 +90,7 @@ class BuilderScopeProcessingTest {
             .compile(dto("test", "OutOfScopeDto", "ReferencedDto"), referencedDto("test"));
 
     assertThat(compilation).succeeded();
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "OutOfScopeDto", "An out-of-scope DTO must not get a builder");
   }
 
@@ -112,7 +113,7 @@ class BuilderScopeProcessingTest {
         generated, "public LibraryUsageDtoBuilder referenced(LibraryDto referenced)");
     ProcessorAsserts.assertNotContaining(
         generated, "referencedBuilderConsumer", "LibraryDtoBuilder");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "LibraryDto", "The library type must not be generated in this compilation");
   }
 
@@ -203,7 +204,7 @@ class BuilderScopeProcessingTest {
         generated, "public UnannotatedUsageDtoBuilder referenced(LibraryDto referenced)");
     ProcessorAsserts.assertContaining(generated, "referencedBuilderConsumer");
     ProcessorAsserts.assertContaining(generated, "LibraryDtoBuilder");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "LibraryDto", "The library type must not be generated in this compilation");
   }
 
@@ -228,7 +229,7 @@ class BuilderScopeProcessingTest {
     ProcessorAsserts.assertContaining(generated, "referencedBuilderConsumer");
     ProcessorAsserts.assertContaining(generated, "LibraryDtoFactory");
     ProcessorAsserts.assertNotContaining(generated, "LibraryDtoBuilder");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "LibraryDto", "The library type must not be generated in this compilation");
   }
 

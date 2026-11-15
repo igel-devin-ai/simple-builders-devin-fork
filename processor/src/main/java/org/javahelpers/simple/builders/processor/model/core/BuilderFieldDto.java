@@ -1,0 +1,409 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Andreas Igel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package org.javahelpers.simple.builders.processor.model.core;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
+import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.core.DeprecationInfoDto;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.type.GenericParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
+
+/**
+ * Definition of a field. Containing all information to generate methods in builder to set or modify
+ * that field.
+ */
+public class BuilderFieldDto {
+  /** Name of the field as it appears in the original DTO (used for method names and setters). */
+  private String originalFieldName;
+
+  /** Name of the field as stored in the builder (may be renamed to avoid conflicts). */
+  private String fieldNameInBuilder;
+
+  /** Type of field. Containing generic, name of package and class */
+  private TypeName fieldType;
+
+  /** List of all methods in builder, which provide helpers to change the field. */
+  private final List<BuilderMethodDto> fieldSetterMethodsList = new ArrayList<>();
+
+  /**
+   * Original javadoc description extracted from setter or constructor parameter. This is used when
+   * generating javadoc for builder methods that reference this field.
+   */
+  private String originalJavaDocDescription;
+
+  /** Javadoc for the tracked value field in the builder. */
+  private JavadocDto javaDoc;
+
+  /** Method-level generics declared on the setter, to be reused in builder methods. */
+  private final List<GenericParameterDto> fieldGenerics = new ArrayList<>();
+
+  /**
+   * Metadata about the getter method resolved for this field (name and deprecation status). The
+   * from-instance constructor calls the getter to initialise the builder. {@code null} when no
+   * getter was found.
+   */
+  private GetterInfoDto getterInfo;
+
+  /**
+   * Whether this field is marked as non-nullable via annotations like @NotNull, @NonNull, etc. For
+   * constructor fields: must be set AND can't be null. For setter fields: if set, can't be null
+   * (optional to set).
+   */
+  private boolean nonNullable = false;
+
+  /**
+   * Parameter-level annotations extracted from the field parameter (constructor or setter param).
+   * These are separate from type-use annotations and should be applied to method parameters.
+   */
+  private final List<AnnotationDto> parameterAnnotations = new ArrayList<>();
+
+  /**
+   * Default value expression for this field, or {@code null} if no default is declared. The
+   * expression is pre-formatted as a Java code snippet (e.g. {@code "GENERAL"} for strings, {@code
+   * 0.0} for primitives, {@code List.of()} for complex types).
+   */
+  private String defaultValue;
+
+  /**
+   * Deprecation metadata for this field, detected from relevant property elements (constructor
+   * parameter, record component, backing field). {@code null} when the field is not deprecated.
+   */
+  private DeprecationInfoDto deprecationInfo;
+
+  /**
+   * Gets the original field name from the DTO. This name is used for generating method names,
+   * parameter names, and setter method names (e.g., "userName" becomes "setUserName").
+   *
+   * @return the original field name from the DTO
+   */
+  public String getOriginalFieldName() {
+    return originalFieldName;
+  }
+
+  /**
+   * Sets the original field name from the DTO.
+   *
+   * @param originalFieldName the original field name from the DTO
+   */
+  public void setOriginalFieldName(String originalFieldName) {
+    this.originalFieldName = originalFieldName;
+  }
+
+  /**
+   * Gets the field name as stored in the builder. This name may be different from the original
+   * field name if renaming was required to avoid conflicts with other fields or reserved words.
+   *
+   * @return the field name as used in the builder
+   */
+  public String getFieldNameInBuilder() {
+    return fieldNameInBuilder;
+  }
+
+  /**
+   * Sets the field name as stored in the builder.
+   *
+   * @param fieldNameInBuilder the field name to use in the builder
+   */
+  public void setFieldNameInBuilder(String fieldNameInBuilder) {
+    this.fieldNameInBuilder = fieldNameInBuilder;
+  }
+
+  /**
+   * Gets the setter method name for this field. The setter name is derived from the original field
+   * name and follows JavaBean conventions (e.g., "userName" becomes "setUserName").
+   *
+   * @return the setter method name for this field (never null)
+   */
+  public String getSetterName() {
+    return "set" + StringUtils.capitalize(originalFieldName);
+  }
+
+  /**
+   * Getting type of field.
+   *
+   * @return {@code org.javahelpers.simple.builders.internal.dtos.Typename} of field
+   */
+  public TypeName getFieldType() {
+    return fieldType;
+  }
+
+  /**
+   * Setting type of field.
+   *
+   * @param fieldType field of type {@code org.javahelpers.simple.builders.internal.dtos.Typename}
+   */
+  public void setFieldType(TypeName fieldType) {
+    this.fieldType = fieldType;
+  }
+
+  /**
+   * Getting list of methods to modify that field.
+   *
+   * @return list of methods with type {@code BuilderMethodDto}
+   */
+  public List<BuilderMethodDto> getMethods() {
+    return Collections.unmodifiableList(fieldSetterMethodsList);
+  }
+
+  public void removeMethods(Collection<BuilderMethodDto> toRemove) {
+    this.fieldSetterMethodsList.removeAll(toRemove);
+  }
+
+  /**
+   * Adds a method to field-definition.
+   *
+   * @param methodDto method definition
+   */
+  public void addMethod(BuilderMethodDto methodDto) {
+    this.fieldSetterMethodsList.add(methodDto);
+  }
+
+  /**
+   * Gets the original javadoc description extracted from the DTO.
+   *
+   * @return the original javadoc description, or null if none present
+   */
+  public String getOriginalJavaDocDescription() {
+    return originalJavaDocDescription;
+  }
+
+  /**
+   * Sets the original javadoc description extracted from the DTO.
+   *
+   * @param originalJavaDocDescription the original javadoc description
+   */
+  public void setOriginalJavaDocDescription(String originalJavaDocDescription) {
+    this.originalJavaDocDescription = originalJavaDocDescription;
+  }
+
+  /**
+   * Gets the original javadoc description if available, otherwise returns the original field name.
+   *
+   * <p>This is useful when generating javadoc for builder methods that reference the field, as it
+   * provides a meaningful description even when no explicit javadoc was provided.
+   *
+   * @return the javadoc description if available, otherwise the original field name
+   */
+  public String getJavaDocDescriptionOrFieldName() {
+    return originalJavaDocDescription != null ? originalJavaDocDescription : originalFieldName;
+  }
+
+  /**
+   * Getting Javadoc for the tracked value field in the builder.
+   *
+   * @return Javadoc or null if none present
+   */
+  public JavadocDto getJavaDoc() {
+    return javaDoc;
+  }
+
+  /**
+   * Setting Javadoc for the tracked value field in the builder.
+   *
+   * @param javaDoc Javadoc
+   */
+  public void setJavaDoc(JavadocDto javaDoc) {
+    this.javaDoc = javaDoc;
+  }
+
+  /**
+   * Returns generics declared on the setter (field-specific).
+   *
+   * @return the list of generic parameters for this field
+   */
+  public List<GenericParameterDto> getFieldGenerics() {
+    return fieldGenerics;
+  }
+
+  /**
+   * Replaces generics list with the provided entries.
+   *
+   * @param generics the list of generic parameters to set
+   */
+  public void setFieldGenerics(List<GenericParameterDto> generics) {
+    this.fieldGenerics.clear();
+    if (generics != null) {
+      this.fieldGenerics.addAll(generics);
+    }
+  }
+
+  /**
+   * Returns the getter info for this field.
+   *
+   * @return the getter info, or {@code null} if no getter was resolved
+   */
+  public GetterInfoDto getGetterInfo() {
+    return getterInfo;
+  }
+
+  /**
+   * Sets the getter info for this field.
+   *
+   * @param getterInfo the getter info to set, or {@code null} to clear
+   */
+  public void setGetterInfo(GetterInfoDto getterInfo) {
+    this.getterInfo = getterInfo;
+  }
+
+  /**
+   * Returns the getter method name to use (without parentheses).
+   *
+   * @return Optional containing the getter name, or empty if not set
+   */
+  public Optional<String> getGetterName() {
+    return Optional.ofNullable(getterInfo).map(GetterInfoDto::getGetterName);
+  }
+
+  /**
+   * Checks if the getter method for this field is {@code @Deprecated}.
+   *
+   * @return {@code true} if the getter is deprecated
+   */
+  public boolean isGetterDeprecated() {
+    return getterInfo != null && getterInfo.deprecated();
+  }
+
+  /**
+   * Checks if this field is marked as non-nullable.
+   *
+   * @return true if the field has @NotNull/@NonNull annotation
+   */
+  public boolean isNonNullable() {
+    return nonNullable;
+  }
+
+  /**
+   * Marks this field as non-nullable.
+   *
+   * @param nonNullable true if the field cannot be null
+   */
+  public void setNonNullable(boolean nonNullable) {
+    this.nonNullable = nonNullable;
+  }
+
+  /**
+   * Returns parameter-level annotations that should be applied to method parameters.
+   *
+   * @return list of parameter annotations
+   */
+  public List<AnnotationDto> getParameterAnnotations() {
+    return parameterAnnotations;
+  }
+
+  /**
+   * Sets parameter-level annotations from the field parameter.
+   *
+   * @param annotations list of annotations to set
+   */
+  public void setParameterAnnotations(List<AnnotationDto> annotations) {
+    this.parameterAnnotations.clear();
+    if (annotations != null) {
+      this.parameterAnnotations.addAll(annotations);
+    }
+  }
+
+  /**
+   * Checks if this field has a parameter annotation with the given fully qualified name.
+   *
+   * @param annotationFqn the fully qualified name of the annotation to check for
+   * @return true if the field has the specified annotation
+   */
+  public boolean hasAnnotation(String annotationFqn) {
+    if (annotationFqn == null || parameterAnnotations.isEmpty()) {
+      return false;
+    }
+    return parameterAnnotations.stream()
+        .anyMatch(
+            annotation ->
+                annotation.getAnnotationType() != null
+                    && annotationFqn.equals(annotation.getAnnotationType().getFullQualifiedName()));
+  }
+
+  /**
+   * Gets the default value expression for this field, if one was declared via {@code @Default} or a
+   * compatible annotation.
+   *
+   * @return an {@link Optional} containing the formatted Java expression, or empty if no default
+   */
+  public Optional<String> getDefaultValue() {
+    return Optional.ofNullable(defaultValue);
+  }
+
+  /**
+   * Sets the default value expression for this field.
+   *
+   * @param defaultValue the formatted Java expression (e.g. {@code "GENERAL"}, {@code 0.0}, {@code
+   *     List.of()}), or {@code null} to clear
+   */
+  public void setDefaultValue(String defaultValue) {
+    this.defaultValue = defaultValue;
+  }
+
+  /**
+   * Whether this field is required to be set at build time.
+   *
+   * <p>A field is required if it is marked as non-nullable AND has no default value. A field with a
+   * default value is never required, even if annotated with {@code @NotNull}.
+   *
+   * @return {@code true} if the field must be explicitly set before {@code build()}
+   */
+  public boolean isRequired() {
+    return nonNullable && defaultValue == null;
+  }
+
+  /**
+   * Gets the deprecation metadata for this field.
+   *
+   * @return the deprecation info, or {@code null} if the field is not deprecated
+   */
+  public DeprecationInfoDto getDeprecationInfo() {
+    return deprecationInfo;
+  }
+
+  /**
+   * Sets the deprecation metadata for this field.
+   *
+   * @param deprecationInfo the deprecation info, or {@code null} if not deprecated
+   */
+  public void setDeprecationInfo(DeprecationInfoDto deprecationInfo) {
+    this.deprecationInfo = deprecationInfo;
+  }
+
+  /**
+   * Checks if this field is deprecated (a relevant element is marked {@code @Deprecated}).
+   *
+   * @return {@code true} if the field is deprecated
+   */
+  public boolean isDeprecated() {
+    return deprecationInfo != null && deprecationInfo.isDeprecated();
+  }
+}

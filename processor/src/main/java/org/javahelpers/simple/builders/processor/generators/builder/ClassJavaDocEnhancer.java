@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,14 @@
 
 package org.javahelpers.simple.builders.processor.generators.builder;
 
+import org.javahelpers.codegen.model.javadoc.JavadocCodeBlockDto;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.generators.BuilderEnhancer;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocCodeBlockDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Enhancer that adds class-level JavaDoc to generated builder classes.
@@ -83,12 +83,12 @@ public class ClassJavaDocEnhancer implements BuilderEnhancer {
 
   @Override
   public boolean appliesTo(
-      BuilderDefinitionDto builderDto, TypeName dtoType, ProcessingContext context) {
+      BuilderDefinitionDto builderDto, TypeName dtoType, BuilderProcessingContext context) {
     return true; // Class JavaDoc is always needed for builders
   }
 
   @Override
-  public void enhanceBuilder(BuilderDefinitionDto builderDto, ProcessingContext context) {
+  public void enhanceBuilder(BuilderDefinitionDto builderDto, BuilderProcessingContext context) {
     TypeName targetType = builderDto.getBuildingTargetTypeName();
     JavadocDto javadoc = createClassJavadoc(targetType);
     String indentionString = "    ";
@@ -96,9 +96,10 @@ public class ClassJavaDocEnhancer implements BuilderEnhancer {
     // Synthesise example blocks from the fluent-chain fragments stored on methods. This keeps the
     // per-method "builder.field(value);" example and the class-level kitchen-sink chain in sync
     // with a single source of truth (the fragment on the BuilderMethodDto).
-    // Note: Methods are stored in FieldDto objects at this point (before finalizeDefinition).
+    // Note: Methods are stored in BuilderFieldDto objects at this point (before
+    // finalizeDefinition).
     JavadocCodeBlockDto classExampleBlock = new JavadocCodeBlockDto();
-    for (FieldDto field : builderDto.getAllFieldsForBuilder()) {
+    for (BuilderFieldDto field : builderDto.getAllFieldsForBuilder()) {
       for (BuilderMethodDto method : field.getMethods()) {
         String fragment = method.getExampleChainFragment();
         if (fragment == null) {

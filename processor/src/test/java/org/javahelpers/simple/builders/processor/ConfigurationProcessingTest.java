@@ -1,3 +1,27 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Andreas Igel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
@@ -11,12 +35,12 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.FormattingMode;
-import org.javahelpers.simple.builders.core.enums.OptionState;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.FormattingMode;
+import org.javahelpers.codegen.enums.OptionState;
+import org.javahelpers.codegen.testing.FormatterProfileTestUtils;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
-import org.javahelpers.simple.builders.processor.testing.FormatterProfileTestUtils;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -89,7 +113,7 @@ class ConfigurationProcessingTest {
     assertEquals(AccessModifier.PRIVATE, config.getBuilderConstructorAccess());
     assertEquals(AccessModifier.PACKAGE_PRIVATE, config.getMethodAccess());
     assertEquals("Builder", config.getBuilderSuffix());
-    assertEquals("", config.getSetterSuffix());
+    assertEquals("", config.getSetterPrefix());
     assertEquals("lightweight", config.formattingMode());
     assertEquals(Set.of("a.b"), config.getBuilderGenerationPackagesSet());
     assertEquals(Set.of("c.d"), config.getBuilderUsagePackagesSet());
@@ -158,7 +182,7 @@ class ConfigurationProcessingTest {
         .generateJavaDoc(OptionState.ENABLED)
         // Naming
         .builderSuffix("Builder")
-        .setterSuffix("")
+        .setterPrefix("")
         // Formatting
         .formattingMode("lightweight")
         // Builder scoping
@@ -271,7 +295,7 @@ class ConfigurationProcessingTest {
                 "-Asimplebuilder.usingJacksonDeserializerAnnotation=false",
                 "-Asimplebuilder.generateJavaDoc=false",
                 "-Asimplebuilder.builderSuffix=CustomBuilder",
-                "-Asimplebuilder.setterSuffix=with")
+                "-Asimplebuilder.setterPrefix=with")
             .compile(nestedDto, addressDto, source);
 
     // Then: Compilation should succeed
@@ -361,7 +385,7 @@ class ConfigurationProcessingTest {
     ProcessorAsserts.assertNotContaining(
         generatedCode, "public MinimalDtoCustomBuilder withName(String name)");
 
-    // But package-private methods should exist - with setterSuffix="with", methods are prefixed
+    // But package-private methods should exist - with setterPrefix="with", methods are prefixed
     ProcessorAsserts.assertContaining(
         generatedCode,
         "MinimalDtoCustomBuilder withName(String name)",
@@ -387,7 +411,7 @@ class ConfigurationProcessingTest {
         "MinimalDtoCustomBuilder withProperties(Consumer<HashMapBuilder<String, Integer>> propertiesBuilderConsumer)");
 
     // Still generates: basic setters and build method
-    // With setterSuffix="with", all setter methods should be prefixed with "with" and capitalized
+    // With setterPrefix="with", all setter methods should be prefixed with "with" and capitalized
     ProcessorAsserts.assertContaining(
         generatedCode,
         "class MinimalDtoCustomBuilder",
@@ -416,6 +440,7 @@ class ConfigurationProcessingTest {
             package test;
 
             import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
             import org.javahelpers.simple.builders.core.enums.OptionState;
 
             @SimpleBuilder(options = @SimpleBuilder.Options(generateJavaDoc = OptionState.DISABLED))
@@ -566,7 +591,7 @@ class ConfigurationProcessingTest {
             .generateSupplier(OptionState.ENABLED)
             .generateConsumer(OptionState.ENABLED)
             .builderAccess(AccessModifier.PUBLIC)
-            .setterSuffix("")
+            .setterPrefix("")
             .builderGenerationPackages("base.pkg")
             .builderUsagePackages("base.lib")
             .build();
@@ -576,7 +601,7 @@ class ConfigurationProcessingTest {
         BuilderConfiguration.builder()
             .generateSupplier(OptionState.DISABLED) // Override
             .generateBuilderConsumer(OptionState.DISABLED) // New value
-            .setterSuffix("with") // Override setterSuffix
+            .setterPrefix("with") // Override setterPrefix
             .builderGenerationPackages("override.pkg")
             // generateConsumer not set, should keep base value
             .build();
@@ -598,7 +623,7 @@ class ConfigurationProcessingTest {
         AccessModifier.PUBLIC,
         merged.getBuilderAccess(),
         "Base value should be kept when override is DEFAULT");
-    assertEquals("with", merged.getSetterSuffix(), "Override should win for setterSuffix");
+    assertEquals("with", merged.getSetterPrefix(), "Override should win for setterPrefix");
     assertEquals(Set.of("override.pkg"), merged.getBuilderGenerationPackagesSet());
     assertEquals(Set.of("base.lib"), merged.getBuilderUsagePackagesSet());
   }
@@ -660,7 +685,7 @@ class ConfigurationProcessingTest {
             .generateConsumer(OptionState.ENABLED)
             .builderAccess(AccessModifier.PRIVATE)
             .methodAccess(AccessModifier.PACKAGE_PRIVATE)
-            .setterSuffix("with")
+            .setterPrefix("with")
             .build();
 
     String configString = config.toString();
@@ -675,9 +700,9 @@ class ConfigurationProcessingTest {
     assertTrue(
         configString.contains("PACKAGE_PRIVATE"), "toString should show AccessModifier values");
     assertTrue(
-        configString.contains("setterSuffix"),
-        "toString should mention setterSuffix when non-default");
-    assertTrue(configString.contains("with"), "toString should show setterSuffix value");
+        configString.contains("setterPrefix"),
+        "toString should mention setterPrefix when non-default");
+    assertTrue(configString.contains("with"), "toString should show setterPrefix value");
 
     // Verify it's not just a hash code
     assertTrue(configString.length() > 100, "toString should be detailed, not just class@hashcode");

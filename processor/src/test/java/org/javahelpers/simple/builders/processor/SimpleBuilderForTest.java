@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,8 @@ import static com.google.testing.compile.CompilationSubject.assertThat;
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -48,14 +49,14 @@ class SimpleBuilderForTest {
 
     assertThat(compilation).succeededWithoutWarnings();
     String generated = ProcessorTestUtils.loadGeneratedSource(compilation, "ExternalUserBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ExternalUserBuilder", generated);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ExternalUserBuilder", generated);
     ProcessorAsserts.assertContaining(
         generated,
         "package test;",
         "import ext.ExternalUser;",
         "public ExternalUserBuilder name(String name)");
     // The holder itself must not get a builder - it carries no template annotation
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "Builders", "The @SimpleBuilderFor holder must not get a builder");
   }
 
@@ -120,9 +121,9 @@ class SimpleBuilderForTest {
             .compile(unconstructable, holder("test", "Builders", "ext.Singleton"));
 
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningContaining("Failed to generate builder");
+    assertThat(compilation).hadWarningContaining("Failed to generate target");
     assertThat(compilation).hadWarningContaining("No accessible constructor");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "Singleton", "A type without accessible constructor must not get a builder");
   }
 
@@ -165,7 +166,7 @@ class SimpleBuilderForTest {
             .compile(unconstructable, holder("test", "Builders", "ext.Singleton"));
 
     assertThat(compilation).failed();
-    assertThat(compilation).hadErrorContaining("Failed to generate builder");
+    assertThat(compilation).hadErrorContaining("Failed to generate target");
     assertThat(compilation).hadErrorContaining("No accessible constructor");
   }
 
@@ -242,7 +243,7 @@ class SimpleBuilderForTest {
     // (including @Ignore4BuilderGeneration) are not consulted
     assertThat(compilation).succeededWithoutWarnings();
     String generated = ProcessorTestUtils.loadGeneratedSource(compilation, "OptedOutBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "OptedOutBuilder", generated);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "OptedOutBuilder", generated);
   }
 
   @Test
@@ -360,7 +361,7 @@ class SimpleBuilderForTest {
 
     assertThat(compilation).succeeded();
     assertThat(compilation).hadWarningContaining("is not a valid Java package name");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "ExternalUserBuilder", "An invalid packageName must not produce a builder");
   }
 
@@ -393,7 +394,7 @@ class SimpleBuilderForTest {
 
     assertThat(compilation).succeeded();
     assertThat(compilation).hadWarningContaining("No accessible constructor");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "ExternalWidgetBuilder", "No accessible constructor - no builder");
   }
 
@@ -508,10 +509,10 @@ class SimpleBuilderForTest {
     ProcessorAsserts.assertContaining(userBuilder, "package test;", "public ExternalUser build()");
     ProcessorAsserts.assertContaining(
         orderBuilder, "package test;", "public ExternalOrder build()");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "Contract", "an interface cannot be built");
-    ProcessorAsserts.assertNoBuilderGenerated(compilation, "State", "an enum cannot be built");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(compilation, "State", "an enum cannot be built");
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "BaseDto", "an abstract class cannot be built");
   }
 
@@ -543,7 +544,7 @@ class SimpleBuilderForTest {
     // Only the top-level type is picked up; its nested class is not
     String generated = ProcessorTestUtils.loadGeneratedSource(compilation, "WrapperBuilder");
     ProcessorAsserts.assertContaining(generated, "public Wrapper build()");
-    ProcessorAsserts.assertNoBuilderGenerated(
+    BuilderAsserts.assertNoBuilderGenerated(
         compilation, "Inner", "nested types keep requiring an explicit value entry");
   }
 
@@ -752,6 +753,22 @@ class SimpleBuilderForTest {
           public BaseDto() {}
         }
         """);
+  }
+
+  @Test
+  void sourcePackages_NoResolvableTypes_Warns() {
+    JavaFileObject holder =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilderFor;
+            @SimpleBuilderFor(sourcePackages = "nonexistent.pkg")
+            public class Builders {}
+            """);
+
+    Compilation compilation = ProcessorTestUtils.createCompiler().compile(holder);
+
+    assertThat(compilation).hadWarningContaining("resolves no types - nothing to generate");
   }
 
   private static JavaFileObject holder(String pkg, String className, String targetType) {

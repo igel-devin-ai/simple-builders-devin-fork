@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,7 +32,7 @@ import com.google.testing.compile.Compilation;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -61,10 +62,6 @@ import org.junit.jupiter.api.Test;
  * </ul>
  */
 class ComprehensiveFeatureIntegrationTest {
-
-  private static Compilation compile(JavaFileObject... sources) {
-    return ProcessorTestUtils.createCompiler().compile(sources);
-  }
 
   @Test
   void allFeatures_generatedCorrectly() {
@@ -152,7 +149,9 @@ class ComprehensiveFeatureIntegrationTest {
          *     .previousAddresses(List.of(AddressDtoBuilder.create().build()))
          *     .previousAddresses(() -> List.of(AddressDtoBuilder.create().build()))
          *     .previousAddresses(t -> t.add(addressDtoBuilder -> addressDtoBuilder))
+         *     .previousAddresses(AddressDtoBuilder.create().build(), AddressDtoBuilder.create().build())
          *     .previousAddressesUpdate(list -> list.stream().sorted().toList())
+         *     .add2PreviousAddresses(AddressDtoBuilder.create().build())
          *     .phoneNumbers(List.of("example value"))
          *     .phoneNumbers(() -> List.of("example value"))
          *     .phoneNumbers(t -> t.add("example value"))
@@ -1090,6 +1089,12 @@ class ComprehensiveFeatureIntegrationTest {
            * name, int age, Optional<String> email, List<String> nicknames, Set<String> tags, Map<String, String> metadata,
            * AddressDto address, List<AddressDto> previousAddresses, LinkedList<String> phoneNumbers)}
            *
+           * <h4>Example:</h4>
+           *
+           * <pre>{@code
+           * builder.add2PreviousAddresses(AddressDtoBuilder.create().build());
+           * }</pre>
+           *
            * @param element the element to add
            * @return current instance of builder
            */
@@ -1112,6 +1117,12 @@ class ComprehensiveFeatureIntegrationTest {
            * {@link PersonDto#PersonDto(String, int, Optional, List, Set, Map, AddressDto, List, LinkedList) PersonDto(String
            * name, int age, Optional<String> email, List<String> nicknames, Set<String> tags, Map<String, String> metadata,
            * AddressDto address, List<AddressDto> previousAddresses, LinkedList<String> phoneNumbers)}
+           *
+           * <h4>Example:</h4>
+           *
+           * <pre>{@code
+           * builder.previousAddresses(AddressDtoBuilder.create().build(), AddressDtoBuilder.create().build());
+           * }</pre>
            *
            * @param previousAddresses previousAddresses
            * @return current instance of builder

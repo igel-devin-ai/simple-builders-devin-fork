@@ -34,15 +34,22 @@ The project is organized as a multi-module Maven project:
 ```
 simple-builders/
 ├── core/              # Core annotations and runtime utilities
-├── processor/         # Annotation processor (compile-time code generation)
-├── example/          # Example usage and integration tests
-└── pom.xml           # Parent POM
+├── codegen-core/      # Reusable code generation model, enums and utilities
+├── codegen-roaster/   # Roaster-based code generator backend
+├── simple-processor/  # Generic annotation-processing layer (driver, analysis, logging)
+├── codegen-testing/   # Shared compile-testing utilities
+├── processor/         # Simple-builder domain: annotations-to-builder generation
+├── example/           # Example usage and integration tests
+└── pom.xml            # Parent POM
 ```
 
 ### Module Dependencies
 
-**Important**: The `example` module depends on the `processor` module being installed in your local Maven repository. This is because:
-1. The annotation processor must be available at compile-time
+**Important**: The `example` module depends on the `processor` module **and its codegen
+dependencies** (`codegen-core`, `codegen-roaster`, `codegen-testing`, `simple-processor`) plus
+`example-custom-generator` being installed in your local Maven repository. This is because:
+1. `annotationProcessorPaths` resolves the processor and its transitive dependencies as
+   artifacts at compile-time — the reactor is not consulted when building `example` alone
 2. The example uses `@SimpleBuilder` annotations that trigger code generation
 3. Tests in example validate the generated builders
 
@@ -107,8 +114,11 @@ mvn test -pl processor
 If you're changing code in the `example` module, you **must** install the processor first:
 
 ```bash
-# Install processor (skip its tests for speed)
-mvn install -pl processor -DskipTests
+# Install processor plus its upstream modules (core, codegen-core,
+# codegen-roaster, codegen-testing, simple-processor — pulled in by -am).
+# example-custom-generator is named explicitly because nothing depends on it,
+# yet it sits on the example's annotationProcessorPaths.
+mvn install -pl processor,example-custom-generator -am -DskipTests
 
 # Then test example
 mvn test -pl example
@@ -176,7 +186,7 @@ If you encounter strange compilation errors in the `example` module:
 
 2. **Reinstall dependencies**:
    ```bash
-   mvn clean install -pl processor -DskipTests
+   mvn clean install -pl processor,example-custom-generator -am -DskipTests
    mvn compile -pl example
    ```
 
@@ -191,8 +201,8 @@ If you encounter strange compilation errors in the `example` module:
 If test classes can't find generated builders:
 
 ```bash
-# Ensure processor is installed
-mvn install -pl processor -DskipTests
+# Ensure processor and its dependencies are installed
+mvn install -pl processor,example-custom-generator -am -DskipTests
 
 # Clean and rebuild example
 mvn clean compile -pl example
@@ -239,22 +249,42 @@ For complete documentation, see [DEBUG_LOGGING.md](DEBUG_LOGGING.md).
 ```
 ========== Compilation Diagnostics ==========
 --- NOTES ---
-[DEBUG] simple-builders: Processing round started.
+[DEBUG] simple-builders: PROCESSING ROUND START
 [DEBUG] simple-builders: Found 1 annotated elements.
 [DEBUG] simple-builders: Found 0 type(s) for generation with @SimpleBuilderFor.
+[DEBUG] simple-builders: Processing element: Project
+[DEBUG] simple-builders: ├─ Resolving configuration for element: Project
+[DEBUG] simple-builders: │  └─ Resulting configuration resolved: BuilderConfiguration[builderSuffix=Builder,...]
 [DEBUG] simple-builders: 1 of 1 annotated element(s) are inside the builderGenerationPackages scope.
-[DEBUG] Processing element: Project
-[DEBUG] ├─ Extracting builder definition from: test.Project
-[DEBUG] │  ├─ Builder will be generated as: test.ProjectBuilder
-[DEBUG] │  ├─ Analysing setters for finding fields
-[DEBUG] │  │  ├─ Analyzing method: setName(java.lang.String)
-[DEBUG] │  │  │  └─ Adding field: name (type: java.lang.String)
-[DEBUG] │  └─ Processed 1 possible setters: added 1 fields, skipped 0
-[DEBUG] ├─ Code generation for builder: ProjectBuilder
-[DEBUG] │  ├─ Adding Methods for 4 candidates
-[DEBUG] │  │  └─ 4 Methods added
-[DEBUG] │  └─ Successfully generated builder: ProjectBuilder
-simple-builders: Successfully generated 1 builder(s) in this processing round
+[DEBUG] simple-builders: Processing element: Project
+[DEBUG] simple-builders: ├─ Extracting builder definition from: test.Project
+[DEBUG] simple-builders: │  ├─ Builder will be generated as: test.ProjectBuilder
+[DEBUG] simple-builders: │  ├─ Analysing setters for finding fields
+[DEBUG] simple-builders: │  │  ├─ Analyzing method: setName(java.lang.String)
+[DEBUG] simple-builders: │  │  │  ├─ Processing method generators
+[DEBUG] simple-builders: │  │  │  │  ├─ Applied: BasicSetterGenerator (priority: 100): +1 methods
+[DEBUG] simple-builders: │  │  │  │  └─ Generated 6 methods
+[DEBUG] simple-builders: │  │  │  └─ Adding field: name (type: java.lang.String)
+[DEBUG] simple-builders: │  │  └─ Processed 1 possible setters: added 1 fields, skipped 0
+[DEBUG] simple-builders: │  ├─ Processing class based enhancer
+[DEBUG] simple-builders: │  │  ├─ Applied: CoreMethodsEnhancer (priority: 100): +3 methods
+[DEBUG] simple-builders: │  │  ├─ Applied: ConstructorEnhancer (priority: 95): +2 constructors
+[DEBUG] simple-builders: │  │  └─ Applied 8 builder enhancers
+[DEBUG] simple-builders: │  ├─ Finalizing builder definition
+[DEBUG] simple-builders: │  │  └─ Finalized: 1 class fields, 4 builder-level methods, 2 constructors
+[DEBUG] simple-builders: │  └─ Builder definition extracted: ProjectBuilder
+[DEBUG] simple-builders: Generating targets for: Project
+[DEBUG] simple-builders: ├─ Code generation for class: ProjectBuilder
+[DEBUG] simple-builders: │  ├─ Generating 1 fields
+[DEBUG] simple-builders: │  │  └─ Fields added: 1 fields
+[DEBUG] simple-builders: │  ├─ Generating 4 method candidates
+[DEBUG] simple-builders: │  │  ├─ Resolved to 4 methods after conflict resolution
+[DEBUG] simple-builders: │  │  └─ Methods added: 4
+[DEBUG] simple-builders: │  ├─ Creating JavaFileObject: test.ProjectBuilder
+[DEBUG] simple-builders: │  ├─ Writing class to file: /SOURCE_OUTPUT/test/ProjectBuilder.java
+[DEBUG] simple-builders: │  ├─ Successfully generated class: ProjectBuilder
+[DEBUG] simple-builders: │  └─ Generated builder with 1 fields and 4 methods for ProjectBuilder
+        simple-builders: Successfully generated 1 target(s) in this processing round
 =============================================
 
 ========== Generated Source Files ==========
@@ -295,6 +325,20 @@ mvn fmt:format
 
 # Check formatting without modifying files
 mvn fmt:check
+```
+
+### License Headers
+
+All Java source files must carry the MIT license header defined in
+[`LICENSE.txt`](../LICENSE.txt). The `license-maven-plugin` verifies it
+during `mvn verify`:
+
+```bash
+# Check headers
+mvn license:check
+
+# Add or fix headers automatically
+mvn license:format
 ```
 
 ### Code Quality

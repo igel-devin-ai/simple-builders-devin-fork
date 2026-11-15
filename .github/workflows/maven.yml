@@ -23,6 +23,14 @@ concurrency:
 
 jobs:
   build:
+    # PR runs sent by igel-devin-ai (Devin: `opened`/`reopened` events) are
+    # skipped as neutral instead of consuming CI - later pushes are sent by
+    # devin-ai-integration[bot] and already wait for maintainer approval. A
+    # maintainer "Re-run jobs" sets github.actor to themselves, so the job then
+    # executes normally. Scoped to pull_request events only: on `schedule`
+    # events github.actor is the workflow file's last modifier, which may be
+    # igel-devin-ai itself and would wrongly skip those runs.
+    if: github.event_name != 'pull_request' || github.actor != 'igel-devin-ai'
 
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -46,7 +54,7 @@ jobs:
         fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
         
     - name: Set up JDK 17
-      uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
       with:
         java-version: '17'
         distribution: 'zulu'
@@ -70,6 +78,9 @@ jobs:
 
     - name: Build with Maven
       run: mvn -B install -Pmetrics --file pom.xml
+
+    - name: License header check (incl. performance-test)
+      run: mvn -B license:check -Pperformance-test --file pom.xml
 
     - name: Verify committed generated example builders
       if: github.event_name == 'pull_request'
@@ -105,11 +116,19 @@ jobs:
       run: |
         mkdir -p sonar-analysis-data
         cp -a core/target/classes sonar-analysis-data/core-classes 2>/dev/null || true
+        cp -a codegen-core/target/classes sonar-analysis-data/codegen-core-classes 2>/dev/null || true
+        cp -a simple-processor/target/classes sonar-analysis-data/simple-processor-classes 2>/dev/null || true
+        cp -a codegen-roaster/target/classes sonar-analysis-data/codegen-roaster-classes 2>/dev/null || true
+        cp -a codegen-testing/target/classes sonar-analysis-data/codegen-testing-classes 2>/dev/null || true
         cp -a processor/target/classes sonar-analysis-data/processor-classes 2>/dev/null || true
         cp -a core/target/test-classes sonar-analysis-data/core-test-classes 2>/dev/null || true
+        cp -a codegen-roaster/target/test-classes sonar-analysis-data/codegen-roaster-test-classes 2>/dev/null || true
+        cp -a codegen-testing/target/test-classes sonar-analysis-data/codegen-testing-test-classes 2>/dev/null || true
         cp -a processor/target/test-classes sonar-analysis-data/processor-test-classes 2>/dev/null || true
         cp -a processor/target/site/jacoco-aggregate/jacoco.xml sonar-analysis-data/jacoco-aggregate.xml 2>/dev/null || true
         cp -a processor/target/site/jacoco/jacoco.xml sonar-analysis-data/processor-jacoco.xml 2>/dev/null || true
+        cp -a codegen-roaster/target/site/jacoco/jacoco.xml sonar-analysis-data/codegen-roaster-jacoco.xml 2>/dev/null || true
+        cp -a codegen-testing/target/site/jacoco/jacoco.xml sonar-analysis-data/codegen-testing-jacoco.xml 2>/dev/null || true
         {
           printf 'pr_number=%s\n' "$PR_NUMBER"
           printf 'pr_head_sha=%s\n' "$PR_HEAD_SHA"
@@ -119,7 +138,7 @@ jobs:
 
     - name: Upload Sonar analysis inputs (fork PRs)
       if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: sonar-analysis-inputs
         path: sonar-analysis-data/
@@ -135,7 +154,7 @@ jobs:
 
     - name: Upload JaCoCo HTML report (processor)
       if: always()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: jacoco-report-html-processor
         path: processor/target/site/jacoco/
@@ -143,7 +162,7 @@ jobs:
 
     - name: Upload JaCoCo XML report (processor)
       if: always()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: jacoco-report-xml-processor
         path: processor/target/site/jacoco/jacoco.xml
@@ -166,8 +185,12 @@ jobs:
         mkdir -p codecov-payload/surefire codecov-payload/failsafe
         cp -f processor/target/site/jacoco/jacoco.xml codecov-payload/ 2>/dev/null || true
         cp -f processor/target/site/jacoco-aggregate/jacoco.xml codecov-payload/jacoco-aggregate.xml 2>/dev/null || true
+        cp -f codegen-roaster/target/site/jacoco/jacoco.xml codecov-payload/codegen-roaster-jacoco.xml 2>/dev/null || true
+        cp -f codegen-testing/target/site/jacoco/jacoco.xml codecov-payload/codegen-testing-jacoco.xml 2>/dev/null || true
         cp -f processor/target/surefire-reports/*.xml codecov-payload/surefire/ 2>/dev/null || true
         cp -f processor/target/failsafe-reports/*.xml codecov-payload/failsafe/ 2>/dev/null || true
+        cp -f codegen-roaster/target/surefire-reports/*.xml codecov-payload/surefire/ 2>/dev/null || true
+        cp -f codegen-testing/target/surefire-reports/*.xml codecov-payload/surefire/ 2>/dev/null || true
         {
           printf 'pr_number=%s\n' "$PR_NUMBER"
           printf 'pr_head_sha=%s\n' "$PR_HEAD_SHA"
@@ -176,7 +199,7 @@ jobs:
 
     - name: Upload Codecov payload artifact (fork PRs)
       if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: codecov-payload
         path: codecov-payload/
@@ -191,6 +214,8 @@ jobs:
         files: |
           processor/target/surefire-reports/*.xml
           processor/target/failsafe-reports/*.xml
+          codegen-roaster/target/surefire-reports/*.xml
+          codegen-testing/target/surefire-reports/*.xml
         fail_ci_if_error: true
         verbose: false
 
@@ -203,6 +228,8 @@ jobs:
         files: |
           processor/target/site/jacoco/jacoco.xml
           processor/target/site/jacoco-aggregate/jacoco.xml
+          codegen-roaster/target/site/jacoco/jacoco.xml
+          codegen-testing/target/site/jacoco/jacoco.xml
         flags: processor
         name: codecov-upload
         verbose: false

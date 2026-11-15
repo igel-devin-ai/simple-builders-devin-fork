@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,14 @@
 package org.javahelpers.simple.builders.processor.processing;
 
 import java.util.function.BiConsumer;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.OptionState;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.OptionState;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.processing.CompilerArgumentsReader;
+import org.javahelpers.codegen.processing.CompilerOption;
+import org.javahelpers.codegen.processing.OptionValueParsers;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration.Builder;
-import org.javahelpers.simple.builders.processor.processing.logging.ProcessingLogger;
 
 /**
  * Enumeration of all builder configuration compiler arguments.
@@ -44,7 +47,7 @@ import org.javahelpers.simple.builders.processor.processing.logging.ProcessingLo
  *
  * <p>Each enum constant provides the option name and the full compiler argument.
  */
-public enum CompilerArgumentsEnum {
+public enum CompilerArgumentsEnum implements CompilerOption {
   // === Field Setter Generation ===
   /** Option for field supplier generation. */
   GENERATE_FIELD_SUPPLIER("generateFieldSupplier", optionState(Builder::generateSupplier)),
@@ -138,6 +141,13 @@ public enum CompilerArgumentsEnum {
   /** Option for Jackson Module generation. */
   GENERATE_JACKSON_MODULE("generateJacksonModule", optionState(Builder::generateJacksonModule)),
 
+  /**
+   * Option for the MapStruct SPI integration. Processor-level: it switches the SPI adapters
+   * discovered by MapStruct itself, so it is read directly via {@link CompilerArgumentsReader}
+   * rather than applied to a {@link BuilderConfiguration.Builder}.
+   */
+  USING_MAPSTRUCT_INTEGRATION("usingMapStructIntegration"),
+
   /** Option for Javadoc generation on the generated builder. */
   GENERATE_JAVADOC("generateJavaDoc", optionState(Builder::generateJavaDoc)),
 
@@ -172,8 +182,8 @@ public enum CompilerArgumentsEnum {
   /** Option for builder class name suffix when referencing usage-scope builders. */
   BUILDER_USAGE_SUFFIX("builderUsageSuffix", string(Builder::builderUsageSuffix)),
 
-  /** Option for setter method name suffix. */
-  SETTER_SUFFIX("setterSuffix", string(Builder::setterSuffix)),
+  /** Option for setter method name prefix. */
+  SETTER_PREFIX("setterPrefix", string(Builder::setterPrefix)),
 
   // === Component Filtering ===
   /**
@@ -188,8 +198,8 @@ public enum CompilerArgumentsEnum {
   // === Performance Optimization ===
   /**
    * Option to control the formatting mode for generated source files. Accepts values {@code jdt},
-   * {@code lightweight}, or {@code none}. See {@link
-   * org.javahelpers.simple.builders.core.enums.FormattingMode} for details.
+   * {@code lightweight}, or {@code none}. See {@link org.javahelpers.codegen.enums.FormattingMode}
+   * for details.
    */
   FORMATTING_MODE("formattingMode", string(Builder::formattingMode)),
 
@@ -286,6 +296,7 @@ public enum CompilerArgumentsEnum {
    *
    * @return The option name
    */
+  @Override
   public String getOptionName() {
     return optionName;
   }
@@ -297,6 +308,7 @@ public enum CompilerArgumentsEnum {
    *
    * @return The full compiler argument
    */
+  @Override
   public String getCompilerArgument() {
     return OPTION_PREFIX + optionName;
   }

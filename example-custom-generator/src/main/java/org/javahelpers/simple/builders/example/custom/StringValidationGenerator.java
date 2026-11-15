@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@ package org.javahelpers.simple.builders.example.custom;
 
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Custom generator that adds validation methods for String fields.
@@ -60,24 +60,23 @@ public class StringValidationGenerator implements MethodGenerator {
     }
 
     @Override
-    public boolean appliesTo(FieldDto field, TypeName dtoType, ProcessingContext context) {
+    public boolean appliesTo(BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
         // Only apply to String fields
         return "java.lang.String".equals(field.getFieldType().getFullQualifiedName());
     }
 
     @Override
-    public List<BuilderMethodDto> generateMethods(FieldDto field, TypeName builderType, ProcessingContext context) {
+    public List<BuilderMethodDto> generateMethods(BuilderFieldDto field, TypeName builderType, BuilderProcessingContext context) {
         String fieldInDto = field.getOriginalFieldName();
         String fieldInBuilder = field.getFieldNameInBuilder();
         String methodName = "validate" + StringUtils.capitalize(fieldInDto);
         
-        String methodBody = String.format(
-            "if (!%s.isSet() || %s.value().trim().isEmpty()) {\n" +
-            "    throw new IllegalArgumentException(\"%s cannot be null or empty\");\n" +
-            "}\n" +
-            "return this;",
-            fieldInBuilder, fieldInBuilder, StringUtils.capitalize(fieldInDto)
-        );
+        String methodBody = """
+            if (!%s.isSet() || %s.value().trim().isEmpty()) {
+                throw new IllegalArgumentException("%s cannot be null or empty");
+            }
+            return this;""".formatted(
+                fieldInBuilder, fieldInBuilder, StringUtils.capitalize(fieldInDto));
 
         BuilderMethodDto validationMethod = new BuilderMethodDto(methodName, builderType);
         validationMethod.setCode(methodBody);

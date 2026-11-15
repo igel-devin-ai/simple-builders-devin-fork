@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +26,19 @@ package org.javahelpers.simple.builders.processor.generators.field;
 
 import java.util.Collections;
 import java.util.List;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Generates basic setter methods for all fields of the builder.
  *
  * <p>This generator creates the primary setter method for each field, which accepts the field type
- * directly and stores it in the builder. The method name follows the configured setter
- * prefix/suffix pattern (default is field name without prefix).
+ * directly and stores it in the builder. The method name follows the configured setter prefix
+ * pattern (default is field name without prefix).
  *
  * <p><b>Important behavior:</b> The generated setter wraps the value using {@code changedValue()}
  * to track that the field has been explicitly set. This allows distinguishing between fields that
@@ -48,7 +48,7 @@ import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
  * builder field must have.
  *
  * <p>This generator cannot be deactivated as it provides the core builder functionality. However,
- * the method naming can be configured using the setter prefix/suffix configuration options.
+ * the method naming can be configured using the setter prefix configuration option.
  *
  * <h3>Example to demonstrate the generated methods</h3>
  *
@@ -78,13 +78,14 @@ public class BasicSetterGenerator implements MethodGenerator {
   }
 
   @Override
-  public boolean appliesTo(FieldDto field, TypeName dtoType, ProcessingContext context) {
+  public boolean appliesTo(
+      BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     return true;
   }
 
   @Override
   public List<BuilderMethodDto> generateMethods(
-      FieldDto field, TypeName builderType, ProcessingContext context) {
+      BuilderFieldDto field, TypeName builderType, BuilderProcessingContext context) {
 
     BuilderMethodDto setterMethod =
         MethodGeneratorUtil.createBuilderMethodForFieldWithTransform(
@@ -92,7 +93,8 @@ public class BasicSetterGenerator implements MethodGenerator {
 
     // Store the fluent-chain fragment so the class-level enhancer can synthesise both the
     // method-level example block and the class-level kitchen-sink chain from one source of truth.
-    MethodGeneratorUtil.addExampleChainFragment(setterMethod, field.getFieldType());
+    MethodGeneratorUtil.addExampleChainFragment(
+        setterMethod, field.getFieldType(), context::resolveBuilderType);
 
     return Collections.singletonList(setterMethod);
   }

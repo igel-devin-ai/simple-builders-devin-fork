@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,32 +28,37 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.FormattingMode;
-import org.javahelpers.simple.builders.processor.classgen.roaster.RoasterCodeGenerator;
-import org.javahelpers.simple.builders.processor.classgen.roaster.exceptions.RoasterMapperException;
-import org.javahelpers.simple.builders.processor.exceptions.BuilderException;
+import org.javahelpers.codegen.CodeGenerationException;
+import org.javahelpers.codegen.SourceFormatter;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.FormattingMode;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
+import org.javahelpers.codegen.model.method.ConstructorDto;
+import org.javahelpers.codegen.model.method.MethodCodeDto;
+import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
+import org.javahelpers.codegen.model.method.MethodDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.processing.AnnotationProcessingEnvironment;
+import org.javahelpers.codegen.processing.logging.MessagerProcessingLogger;
+import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
+import org.javahelpers.codegen.roaster.RoasterSourceFormatter;
+import org.javahelpers.codegen.roaster.exceptions.RoasterMapperException;
+import org.javahelpers.codegen.testing.CapturingProcessingLogger;
+import org.javahelpers.codegen.testing.ProcessingEnvironmentStub;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
-import org.javahelpers.simple.builders.processor.model.core.GenerationTargetClassDto;
-import org.javahelpers.simple.builders.processor.model.method.ConstructorDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodCodeDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodCodePlaceholder;
-import org.javahelpers.simple.builders.processor.model.method.MethodDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodParameterDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
-import org.javahelpers.simple.builders.processor.processing.logging.ProcessingLogger;
-import org.javahelpers.simple.builders.processor.testing.CapturingProcessingLogger;
-import org.javahelpers.simple.builders.processor.testing.ProcessingEnvironmentStub;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 import org.junit.jupiter.api.Test;
 
 /**
  * Regression tests for {@link RoasterCodeGenerator} error-handling robustness.
  *
  * <p>Rendering failures surface as {@link RoasterMapperException}, which extends {@link
- * RuntimeException}. These must be converted into the checked {@link BuilderException} so that the
- * per-builder resilience loops in {@code BuilderProcessor} can isolate the failure to the offending
- * class and continue generating the remaining builders instead of aborting the whole round.
+ * RuntimeException}. These must be converted into the checked {@link CodeGenerationException} so
+ * that the per-builder resilience loops in {@code BuilderProcessor} can isolate the failure to the
+ * offending class and continue generating the remaining builders instead of aborting the whole
+ * round.
  */
 class RoasterCodeGeneratorResilienceTest {
 
@@ -65,7 +70,7 @@ class RoasterCodeGeneratorResilienceTest {
   }
 
   @Test
-  void shouldWrapRenderingRuntimeExceptionInBuilderException() {
+  void shouldWrapRenderingRuntimeExceptionInCodeGenerationException() {
     GenerationTargetClassDto classDef = new GenerationTargetClassDto();
     classDef.setTypeName(new TypeName("com.example", "FailingBuilder"));
     classDef.setClassAccessModifier(AccessModifier.PUBLIC);
@@ -80,12 +85,18 @@ class RoasterCodeGeneratorResilienceTest {
     classDef.addConstructor(constructor);
 
     ProcessingEnvironment env = ProcessingEnvironmentStub.createEmpty();
-    ProcessingLogger logger = new ProcessingLogger(env);
-    ProcessingContext context = new ProcessingContext(logger, BuilderConfiguration.DEFAULT, env);
-    RoasterCodeGenerator generator = new RoasterCodeGenerator(context, env);
+    ProcessingLogger logger = MessagerProcessingLogger.create(env);
+    BuilderProcessingContext context =
+        new BuilderProcessingContext(logger, BuilderConfiguration.DEFAULT, env);
+    RoasterCodeGenerator generator =
+        new RoasterCodeGenerator(
+            new AnnotationProcessingEnvironment(
+                env, logger, context.getPerformanceTracker(), context::reportBasedOnStrictMode));
 
-    BuilderException thrown =
-        assertThrows(BuilderException.class, () -> generator.generateClass(classDef));
+    SourceFormatter formatter = new RoasterSourceFormatter(logger, FormattingMode.NONE);
+    CodeGenerationException thrown =
+        assertThrows(
+            CodeGenerationException.class, () -> generator.generateClass(classDef, formatter));
     assertInstanceOf(RoasterMapperException.class, thrown.getCause());
   }
 
@@ -107,12 +118,19 @@ class RoasterCodeGeneratorResilienceTest {
 
     CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
     ProcessingEnvironment env = ProcessingEnvironmentStub.createEmpty();
-    ProcessingContext context =
-        new ProcessingContext(capturing.logger(), BuilderConfiguration.DEFAULT, env);
-    RoasterCodeGenerator generator = new RoasterCodeGenerator(context, env);
+    BuilderProcessingContext context =
+        new BuilderProcessingContext(capturing.logger(), BuilderConfiguration.DEFAULT, env);
+    RoasterCodeGenerator generator =
+        new RoasterCodeGenerator(
+            new AnnotationProcessingEnvironment(
+                env,
+                capturing.logger(),
+                context.getPerformanceTracker(),
+                context::reportBasedOnStrictMode));
 
+    SourceFormatter formatter = new RoasterSourceFormatter(capturing.logger(), FormattingMode.NONE);
     // generation itself succeeds; only the file-write step fails on the stub's null filer
-    assertThrows(NullPointerException.class, () -> generator.generateClass(classDef));
+    assertThrows(NullPointerException.class, () -> generator.generateClass(classDef, formatter));
     capturing.assertMessage(
         "WARNING: Unexpected duplicate method signature: 'name(java.lang.String)'"
             + " — keeping first occurrence (safety net)");

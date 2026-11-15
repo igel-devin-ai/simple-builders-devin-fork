@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,10 @@
 package org.javahelpers.simple.builders.processor.generators;
 
 import java.util.List;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Service Provider Interface (SPI) for generating builder methods for fields.
@@ -67,7 +67,7 @@ public non-sealed interface MethodGenerator extends Generator {
    * @param context the processing context containing configuration and utilities
    * @return true if this generator should generate methods for this field, false otherwise
    */
-  boolean appliesTo(FieldDto field, TypeName dtoType, ProcessingContext context);
+  boolean appliesTo(BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context);
 
   /**
    * Generates methods for the given field.
@@ -85,5 +85,5 @@ public non-sealed interface MethodGenerator extends Generator {
    * @return list of generated methods (may be empty but should not be null)
    */
   List<BuilderMethodDto> generateMethods(
-      FieldDto field, TypeName builderType, ProcessingContext context);
+      BuilderFieldDto field, TypeName builderType, BuilderProcessingContext context);
 }

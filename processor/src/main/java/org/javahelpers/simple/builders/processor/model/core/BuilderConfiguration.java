@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +24,19 @@
 
 package org.javahelpers.simple.builders.processor.model.core;
 
-import static org.javahelpers.simple.builders.core.enums.AccessModifier.*;
-import static org.javahelpers.simple.builders.core.enums.OptionState.*;
+import static org.javahelpers.codegen.enums.AccessModifier.*;
+import static org.javahelpers.codegen.enums.OptionState.*;
 
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.FormattingMode;
+import org.javahelpers.codegen.enums.OptionState;
+import org.javahelpers.codegen.model.core.PackageScopes;
+import org.javahelpers.codegen.processing.CodegenConfiguration;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.FormattingMode;
-import org.javahelpers.simple.builders.core.enums.OptionState;
 
 /**
  * Configuration for builder generation. Combines annotation values with compiler options. Priority:
@@ -79,10 +81,11 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
  * @param builderSuffix Suffix for builder class name
  * @param builderUsageSuffix Suffix for builder class name when referencing builders from the usage
  *     scope; null means fall back to {@code builderSuffix}
- * @param setterSuffix Suffix for setter method names
+ * @param setterPrefix Prefix for setter method names
  * @param formattingMode Formatting mode for generated source code (null = inherit from compiler
  *     arg)
  * @param strict Strict/fail-fast generation mode
+ * @param verbose Verbose diagnostic output
  */
 public record BuilderConfiguration(
     OptionState generateFieldSupplier,
@@ -118,9 +121,11 @@ public record BuilderConfiguration(
     OptionState usingFieldFunctionPrefill,
     String builderSuffix,
     String builderUsageSuffix,
-    String setterSuffix,
+    String setterPrefix,
     String formattingMode,
-    OptionState strict) {
+    OptionState strict,
+    OptionState verbose)
+    implements CodegenConfiguration {
 
   public BuilderConfiguration {
     builderGenerationPackages =
@@ -162,9 +167,10 @@ public record BuilderConfiguration(
           .usingExistingBuilders(ENABLED)
           .usingFieldFunctionPrefill(ENABLED)
           .builderSuffix("Builder")
-          .setterSuffix("")
+          .setterPrefix("")
           .formattingMode(FormattingMode.JDT.getOptionValue())
           .strict(DISABLED)
+          .verbose(DISABLED)
           .build();
 
   // === Convenience accessors with 'is' prefix for boolean properties ===
@@ -322,12 +328,18 @@ public record BuilderConfiguration(
     return StringUtils.defaultIfBlank(builderUsageSuffix, builderSuffix);
   }
 
-  public String getSetterSuffix() {
-    return setterSuffix;
+  public String getSetterPrefix() {
+    return setterPrefix;
   }
 
+  @Override
   public boolean isStrictModeEnabled() {
     return strict == ENABLED;
+  }
+
+  @Override
+  public boolean isVerboseEnabled() {
+    return verbose == ENABLED;
   }
 
   public FormattingMode formattingModeEnum() {
@@ -411,9 +423,10 @@ public record BuilderConfiguration(
             mergeOptionState(other.usingFieldFunctionPrefill, this.usingFieldFunctionPrefill))
         .builderSuffix(mergeString(other.builderSuffix, this.builderSuffix))
         .builderUsageSuffix(mergeString(other.builderUsageSuffix, this.builderUsageSuffix))
-        .setterSuffix(mergeString(other.setterSuffix, this.setterSuffix))
+        .setterPrefix(mergeString(other.setterPrefix, this.setterPrefix))
         .formattingMode(mergeString(other.formattingMode, this.formattingMode))
         .strict(mergeOptionState(other.strict, this.strict))
+        .verbose(mergeOptionState(other.verbose, this.verbose))
         .build();
   }
 
@@ -502,9 +515,10 @@ public record BuilderConfiguration(
         .appendValueIfSet("usingFieldFunctionPrefill", usingFieldFunctionPrefill)
         .appendIfNotEmpty("builderSuffix", builderSuffix)
         .appendIfNotEmpty("builderUsageSuffix", builderUsageSuffix)
-        .appendIfNotEmpty("setterSuffix", setterSuffix)
+        .appendIfNotEmpty("setterPrefix", setterPrefix)
         .appendIfNotEmpty("formattingMode", formattingMode)
         .appendValueIfSet("strict", strict)
+        .appendValueIfSet("verbose", verbose)
         .toString();
   }
 
@@ -537,6 +551,7 @@ public record BuilderConfiguration(
       return this;
     }
 
+    @Override
     public String toString() {
       return builder.toString();
     }
@@ -587,7 +602,7 @@ public record BuilderConfiguration(
     // === Naming ===
     private String builderSuffix = null;
     private String builderUsageSuffix = null;
-    private String setterSuffix = null;
+    private String setterPrefix = null;
 
     // === Formatting ===
     private String formattingMode = null;
@@ -600,6 +615,9 @@ public record BuilderConfiguration(
 
     // === Error Handling ===
     private OptionState strict = OptionState.UNSET;
+
+    // === Diagnostics ===
+    private OptionState verbose = OptionState.UNSET;
 
     // === Setters ===
     public Builder generateSupplier(OptionState value) {
@@ -912,8 +930,8 @@ public record BuilderConfiguration(
       return this;
     }
 
-    public Builder setterSuffix(String value) {
-      this.setterSuffix = value == null ? null : value.trim();
+    public Builder setterPrefix(String value) {
+      this.setterPrefix = value == null ? null : value.trim();
       return this;
     }
 
@@ -929,6 +947,16 @@ public record BuilderConfiguration(
 
     public Builder strict(boolean value) {
       this.strict = value ? ENABLED : DISABLED;
+      return this;
+    }
+
+    public Builder verbose(OptionState value) {
+      this.verbose = value;
+      return this;
+    }
+
+    public Builder verbose(boolean value) {
+      this.verbose = value ? ENABLED : DISABLED;
       return this;
     }
 
@@ -967,9 +995,10 @@ public record BuilderConfiguration(
           usingFieldFunctionPrefill,
           builderSuffix,
           builderUsageSuffix,
-          setterSuffix,
+          setterPrefix,
           formattingMode,
-          strict);
+          strict,
+          verbose);
     }
   }
 

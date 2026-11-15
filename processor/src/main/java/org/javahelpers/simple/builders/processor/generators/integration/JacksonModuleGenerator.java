@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,18 +31,18 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.FormattingMode;
-import org.javahelpers.simple.builders.processor.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.FormattingMode;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
+import org.javahelpers.codegen.model.integration.JacksonModuleEntryDto;
+import org.javahelpers.codegen.model.method.ConstructorDto;
+import org.javahelpers.codegen.model.method.MethodCodeDto;
+import org.javahelpers.codegen.model.type.NestedTypeDto;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
-import org.javahelpers.simple.builders.processor.model.core.GenerationTargetClassDto;
-import org.javahelpers.simple.builders.processor.model.integration.JacksonModuleEntryDto;
-import org.javahelpers.simple.builders.processor.model.method.ConstructorDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodCodeDto;
-import org.javahelpers.simple.builders.processor.model.type.NestedTypeDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.logging.ProcessingLogger;
 
 /**
  * Generates Jackson SimpleModules to register all generated builders.
@@ -94,6 +94,9 @@ public class JacksonModuleGenerator {
         targetPackage,
         new JacksonModuleEntryDto(
             builderDef.getBuildingTargetTypeName(), builderDef.getBuilderTypeName()));
+    logger.debug(
+        "Registered %s for Jackson module in package '%s'",
+        builderDef.getBuilderTypeName().getClassName(), targetPackage);
   }
 
   private String getTargetPackage(BuilderConfiguration config, BuilderDefinitionDto builderDef) {
@@ -112,7 +115,7 @@ public class JacksonModuleGenerator {
     if (!jacksonAvailable) {
       logger.warning(
           sourceElement,
-          "simple-builders: generateJacksonModule is enabled for %s, but Jackson dependencies (com.fasterxml.jackson.databind.module.SimpleModule) are not found on the classpath. Module generation skipped.",
+          "generateJacksonModule is enabled for %s, but Jackson dependencies (com.fasterxml.jackson.databind.module.SimpleModule) are not found on the classpath. Module generation skipped.",
           sourceElement.getSimpleName());
       return false;
     }
@@ -120,7 +123,7 @@ public class JacksonModuleGenerator {
     if (!config.shouldUseJacksonDeserializerAnnotation()) {
       logger.warning(
           sourceElement,
-          "simple-builders: generateJacksonModule is enabled but usingJacksonDeserializerAnnotation is disabled. "
+          "generateJacksonModule is enabled but usingJacksonDeserializerAnnotation is disabled. "
               + "This is a misconfiguration. Jackson Module will NOT be generated for %s.",
           sourceElement.getSimpleName());
       return false;
@@ -143,7 +146,7 @@ public class JacksonModuleGenerator {
     List<GenerationTargetClassDto> definitions = new ArrayList<>();
     if (!entriesByPackage.isEmpty()) {
       logger.info(
-          "simple-builders: Processing OVER. JacksonModuleEnabled: true, Packages: %d",
+          "Processing OVER. JacksonModuleEnabled: true, Packages: %d",
           entriesByPackage.keySet().size());
 
       for (String packageName : entriesByPackage.keySet()) {
@@ -176,7 +179,7 @@ public class JacksonModuleGenerator {
       classDef.addNestedType(createMixinInterface(entry));
       // The builder type appears as a literal in the @JsonDeserialize(builder = ...) member
       // and therefore must be imported explicitly.
-      classDef.addImport(entry.builderType());
+      classDef.addImport(entry.generatedType());
     }
 
     classDef.addConstructor(createConstructor(entries));
@@ -192,7 +195,7 @@ public class JacksonModuleGenerator {
 
     AnnotationDto jsonDeserialize = new AnnotationDto();
     jsonDeserialize.setAnnotationType(JSON_DESERIALIZE_TYPE);
-    jsonDeserialize.addMember("builder", entry.builderType().getClassName() + ".class");
+    jsonDeserialize.addMember("builder", entry.generatedType().getClassName() + ".class");
     mixin.addAnnotation(jsonDeserialize);
 
     return mixin;

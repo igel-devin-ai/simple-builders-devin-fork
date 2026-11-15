@@ -1,0 +1,229 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Andreas Igel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package org.javahelpers.codegen.testing;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.google.testing.compile.Compilation;
+import java.util.ArrayList;
+import java.util.List;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
+import org.junit.jupiter.api.Assertions;
+
+/**
+ * Assertion helpers for processor tests. Centralizes common positive and negative checks and
+ * compilation assertions for generated sources.
+ */
+public final class ProcessorAsserts {
+
+  private ProcessorAsserts() {}
+
+  /** Collapse all whitespace (spaces, tabs, newlines) to single spaces and trim. */
+  private static String normalizeWhitespace(String input) {
+    if (input == null) return null;
+    return input.replaceAll("[\\t\\n\\r\\s]+", "").trim();
+  }
+
+  /** Common interface for assertion records. */
+  public interface AssertRecord {
+    String search();
+
+    String message();
+  }
+
+  /** Coupling of a search string with an assertion message for positive contains checks. */
+  public static record ContainsAssertRecord(String search, String message)
+      implements AssertRecord {}
+
+  /** Coupling of a search string with an assertion message for negative contains checks. */
+  public static record NotContainsAssertRecord(String search, String message)
+      implements AssertRecord {}
+
+  /** Factory for positive contains check with default message. */
+  public static ContainsAssertRecord contains(String search) {
+    return new ContainsAssertRecord(search, String.format("content missing: '%s'", search));
+  }
+
+  /** Factory for negative contains check with default message. */
+  public static NotContainsAssertRecord notContains(String search) {
+    return new NotContainsAssertRecord(
+        search, String.format("content should not be found: '%s'", search));
+  }
+
+  /** Assert that generated code matches all provided checks (positive or negative). */
+  public static void assertingResult(String generatedCode, AssertRecord... checks) {
+    String normalizedGenerated = normalizeWhitespace(generatedCode);
+    List<String> failures = new ArrayList<>();
+
+    for (AssertRecord check : checks) {
+      if (isAssertNotFullfilled(check, normalizedGenerated)) {
+        failures.add(check.message());
+      }
+    }
+
+    if (!failures.isEmpty()) {
+      String combinedMessage = "\n" + String.join("\n", failures);
+      Assertions.fail(combinedMessage);
+    }
+  }
+
+  /** Convenience overload: accept plain strings and convert to NotContainsAssertRecord. */
+  public static void assertNotContaining(String generatedCode, String... searches) {
+    AssertRecord[] checks =
+        java.util.Arrays.stream(searches)
+            .map(ProcessorAsserts::notContains)
+            .toArray(AssertRecord[]::new);
+    assertingResult(generatedCode, checks);
+  }
+
+  /** Convenience overload: accept plain strings and convert to ContainsAssertRecord. */
+  public static void assertContaining(String generatedCode, String... searches) {
+    AssertRecord[] checks =
+        java.util.Arrays.stream(searches)
+            .map(ProcessorAsserts::contains)
+            .toArray(AssertRecord[]::new);
+    assertingResult(generatedCode, checks);
+  }
+
+  /**
+   * Asserts that the compilation's notes match the expected substrings in order and count.
+   *
+   * <p>Each expected substring is matched against the corresponding note message (by position). The
+   * note count must match exactly, so adding or removing any log message fails the test — making
+   * logging changes visible in code review and prompting documentation updates.
+   *
+   * @param compilation the compilation result
+   * @param expectedSubstrings the substring each note (in order) must contain; length must equal
+   *     the number of notes produced
+   */
+  public static void assertNotesInOrder(Compilation compilation, String... expectedSubstrings) {
+    List<String> notes = compilation.notes().stream().map(n -> n.getMessage(null)).toList();
+    assertEquals(
+        expectedSubstrings.length,
+        notes.size(),
+        "Log note count changed — update expectedSubstrings and docs. "
+            + "Expected %d, got %d. Actual notes:%n%s"
+                .formatted(expectedSubstrings.length, notes.size(), String.join("%n", notes)));
+    for (int i = 0; i < notes.size(); i++) {
+      int index = i;
+      Assertions.assertTrue(
+          notes.get(i).contains(expectedSubstrings[i]),
+          "Note %d mismatch.%n  Expected to contain: %s%n  Actual: %s"
+              .formatted(index, expectedSubstrings[index], notes.get(index)));
+    }
+  }
+
+  /**
+   * Asserts that at least one diagnostic of the given kind contains the text and that every
+   * matching diagnostic carries a source position ({@link Diagnostic#getSource()} non-null). javac
+   * renders element-attached diagnostics as {@code File.java:[line,col]}; diagnostics emitted
+   * without an element have no position and cannot be navigated back to the offending source.
+   *
+   * @param compilation the compilation result
+   * @param kind the diagnostic kind to inspect
+   * @param text substring each checked message must contain
+   */
+  public static void assertDiagnosticsHaveSourcePosition(
+      Compilation compilation, Diagnostic.Kind kind, String text) {
+    List<Diagnostic<? extends JavaFileObject>> matching =
+        compilation.diagnostics().stream()
+            .filter(d -> d.getKind() == kind)
+            .filter(d -> d.getMessage(null).contains(text))
+            .toList();
+    Assertions.assertFalse(
+        matching.isEmpty(), "Expected at least one " + kind + " containing '" + text + "'");
+    for (Diagnostic<? extends JavaFileObject> diagnostic : matching) {
+      Assertions.assertNotNull(
+          diagnostic.getSource(),
+          "Diagnostic carries no source position: " + diagnostic.getMessage(null));
+      Assertions.assertTrue(
+          diagnostic.getLineNumber() > 0,
+          "Diagnostic carries no line number: " + diagnostic.getMessage(null));
+    }
+  }
+
+  /**
+   * Asserts that at least one diagnostic of the given kind contains the text and that every
+   * matching diagnostic carries no source position ({@link Diagnostic#getSource()} null). Used to
+   * verify verbose mode emits warnings element-less so the javac position prefix does not break the
+   * hierarchical layout.
+   *
+   * @param compilation the compilation result
+   * @param kind the diagnostic kind to inspect
+   * @param text substring each checked message must contain
+   */
+  public static void assertDiagnosticsHaveNoSourcePosition(
+      Compilation compilation, Diagnostic.Kind kind, String text) {
+    List<Diagnostic<? extends JavaFileObject>> matching =
+        compilation.diagnostics().stream()
+            .filter(d -> d.getKind() == kind)
+            .filter(d -> d.getMessage(null).contains(text))
+            .toList();
+    Assertions.assertFalse(
+        matching.isEmpty(), "Expected at least one " + kind + " containing '" + text + "'");
+    for (Diagnostic<? extends JavaFileObject> diagnostic : matching) {
+      Assertions.assertNull(
+          diagnostic.getSource(),
+          "Diagnostic unexpectedly carries a source position: " + diagnostic.getMessage(null));
+    }
+  }
+
+  /**
+   * Asserts that no generated source file for the given type exists in the compilation.
+   *
+   * <p>The check is based on the simple type name: a file whose name ends with {@code
+   * <simpleName>.java} is considered the source of {@code simpleName}.
+   *
+   * @param compilation the compilation result
+   * @param simpleName the simple name of the type which should not have been generated
+   * @param message the failure message
+   */
+  public static void assertNoSourceGenerated(
+      Compilation compilation, String simpleName, String message) {
+    Assertions.assertTrue(
+        compilation.generatedSourceFiles().stream()
+            .noneMatch(f -> f.getName().endsWith(simpleName + ".java")),
+        message);
+  }
+
+  /**
+   * Asserts that the expected and actual strings are equal after normalizing whitespace.
+   *
+   * @param expected the expected string
+   * @param actual the actual string
+   */
+  public static void assertNormalizedEquals(String expected, String actual, String message) {
+    assertEquals(normalizeWhitespace(expected), normalizeWhitespace(actual), message);
+  }
+
+  private static boolean isAssertNotFullfilled(AssertRecord check, String normalizedGenerated) {
+    String normalizedSearch = normalizeWhitespace(check.search());
+    return (check instanceof ContainsAssertRecord
+            && !normalizedGenerated.contains(normalizedSearch))
+        || (check instanceof NotContainsAssertRecord
+            && normalizedGenerated.contains(normalizedSearch));
+  }
+}

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +23,13 @@
  */
 package org.javahelpers.simple.builders.processor;
 
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.assertGenerationSucceeded;
+import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -37,10 +38,6 @@ import org.junit.jupiter.api.Test;
  * implements feature #86: Supporting addToField for Sets/Lists.
  */
 class AddToCollectionTest {
-
-  private static Compilation compile(JavaFileObject... sources) {
-    return ProcessorTestUtils.createCompiler().compile(sources);
-  }
 
   @Test
   void add2Method_generatedForListField() {
@@ -162,7 +159,7 @@ class AddToCollectionTest {
   }
 
   @Test
-  void add2Method_ignoresSetterSuffix() {
+  void add2Method_ignoresSetterPrefix() {
     JavaFileObject dto =
         com.google.testing.compile.JavaFileObjects.forSourceLines(
             "test.PersonDto",
@@ -170,7 +167,7 @@ class AddToCollectionTest {
             "import java.util.List;",
             "@org.javahelpers.simple.builders.core.annotations.SimpleBuilder(",
             "  options = @org.javahelpers.simple.builders.core.annotations.SimpleBuilder.Options(",
-            "    setterSuffix = \"with\"",
+            "    setterPrefix = \"with\"",
             "  )",
             ")",
             "public class PersonDto {",
@@ -195,13 +192,13 @@ class AddToCollectionTest {
     String generatedCode = loadGeneratedSource(compilation, "PersonDtoBuilder");
     assertGenerationSucceeded(compilation, "PersonDtoBuilder", generatedCode);
 
-    // Verify regular setter respects setterSuffix
+    // Verify regular setter respects setterPrefix
     ProcessorAsserts.assertContaining(
         generatedCode, "public PersonDtoBuilder withName(String name)");
     ProcessorAsserts.assertContaining(
         generatedCode, "public PersonDtoBuilder withNicknames(List<String> nicknames)");
 
-    // Verify add2 method does NOT respect setterSuffix - always uses add2FieldName pattern
+    // Verify add2 method does NOT respect setterPrefix - always uses add2FieldName pattern
     ProcessorAsserts.assertContaining(
         generatedCode, "public PersonDtoBuilder add2Nicknames(String element)");
 

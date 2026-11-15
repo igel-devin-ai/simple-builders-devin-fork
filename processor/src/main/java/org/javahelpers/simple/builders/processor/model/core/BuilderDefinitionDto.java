@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,20 +30,23 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.processor.model.annotation.AnnotationDto;
-import org.javahelpers.simple.builders.processor.model.annotation.InterfaceName;
-import org.javahelpers.simple.builders.processor.model.imports.ImportStatement;
-import org.javahelpers.simple.builders.processor.model.imports.RegularImport;
-import org.javahelpers.simple.builders.processor.model.imports.StaticImport;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.annotation.InterfaceName;
+import org.javahelpers.codegen.model.core.ClassFieldDto;
+import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
+import org.javahelpers.codegen.model.imports.ImportStatement;
+import org.javahelpers.codegen.model.imports.RegularImport;
+import org.javahelpers.codegen.model.imports.StaticImport;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.ConstructorDto;
+import org.javahelpers.codegen.model.type.GenericParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.processing.CodegenDefinition;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.method.ConstructorDto;
 import org.javahelpers.simple.builders.processor.model.type.BuilderNestedTypeDto;
-import org.javahelpers.simple.builders.processor.model.type.GenericParameterDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameArray;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
 
 /**
  * Generation-side DTO holding all information for generating a builder.
@@ -53,7 +56,7 @@ import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
  * GenerationTargetClassDto} (rendering DTO) during finalization in {@code
  * BuilderDefinitionCreator.finalizeDefinition()}.
  */
-public class BuilderDefinitionDto {
+public class BuilderDefinitionDto implements CodegenDefinition {
 
   // --- Builder-specific fields ---
 
@@ -65,13 +68,13 @@ public class BuilderDefinitionDto {
    * constructor. Ordering in LinkedList is matching ordering of parameters in constructor call.
    * Instances of fields are added in LinkedList of all fields too.
    */
-  private final List<FieldDto> fieldsInConstructor = new LinkedList<>();
+  private final List<BuilderFieldDto> fieldsInConstructor = new LinkedList<>();
 
   /**
    * List of all fields of target DTO which are supported by builder. A field could be supported by
    * multiple functions in builder.
    */
-  private final List<FieldDto> fields = new LinkedList<>();
+  private final List<BuilderFieldDto> fields = new LinkedList<>();
 
   /** Configuration for builder generation. */
   private BuilderConfiguration configuration;
@@ -138,7 +141,13 @@ public class BuilderDefinitionDto {
     this.typeName = builderClassName;
   }
 
+  @Override
   public TypeName getTypeName() {
+    return getBuilderTypeName();
+  }
+
+  @Override
+  public TypeName targetTypeName() {
     return getBuilderTypeName();
   }
 
@@ -265,7 +274,7 @@ public class BuilderDefinitionDto {
    *
    * @param field to be added
    */
-  public void addField(FieldDto field) {
+  public void addField(BuilderFieldDto field) {
     fields.add(field);
   }
 
@@ -274,7 +283,7 @@ public class BuilderDefinitionDto {
    *
    * @param field the field to add to the constructor parameters
    */
-  public void addFieldInConstructor(FieldDto field) {
+  public void addFieldInConstructor(BuilderFieldDto field) {
     fieldsInConstructor.add(field);
   }
 
@@ -283,7 +292,7 @@ public class BuilderDefinitionDto {
    *
    * @param fields the list of fields to add to the constructor parameters
    */
-  public void addAllFieldsInConstructor(List<FieldDto> fields) {
+  public void addAllFieldsInConstructor(List<BuilderFieldDto> fields) {
     fieldsInConstructor.addAll(fields);
   }
 
@@ -292,7 +301,7 @@ public class BuilderDefinitionDto {
    *
    * @param fields the list of fields to add
    */
-  public void addAllFields(List<FieldDto> fields) {
+  public void addAllFields(List<BuilderFieldDto> fields) {
     this.fields.addAll(fields);
   }
 
@@ -301,7 +310,7 @@ public class BuilderDefinitionDto {
    *
    * @return list of fields
    */
-  public List<FieldDto> getSetterFieldsForBuilder() {
+  public List<BuilderFieldDto> getSetterFieldsForBuilder() {
     return fields;
   }
 
@@ -310,7 +319,7 @@ public class BuilderDefinitionDto {
    *
    * @return the ordered list of constructor parameter fields
    */
-  public List<FieldDto> getConstructorFieldsForBuilder() {
+  public List<BuilderFieldDto> getConstructorFieldsForBuilder() {
     return fieldsInConstructor;
   }
 
@@ -320,8 +329,8 @@ public class BuilderDefinitionDto {
    *
    * @return all fields in the builder (constructor fields first, then setter fields)
    */
-  public List<FieldDto> getAllFieldsForBuilder() {
-    LinkedList<FieldDto> all = new LinkedList<>();
+  public List<BuilderFieldDto> getAllFieldsForBuilder() {
+    LinkedList<BuilderFieldDto> all = new LinkedList<>();
     all.addAll(fieldsInConstructor);
     all.addAll(fields);
     return all;

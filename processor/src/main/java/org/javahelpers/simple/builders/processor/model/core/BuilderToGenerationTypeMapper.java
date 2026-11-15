@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,15 +28,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.core.ClassFieldDto;
+import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.ConstructorDto;
+import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
+import org.javahelpers.codegen.model.method.MethodCodeStringPlaceholder;
+import org.javahelpers.codegen.model.method.MethodCodeTypePlaceholder;
+import org.javahelpers.codegen.model.method.MethodDto;
+import org.javahelpers.codegen.model.type.NestedTypeDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.method.ConstructorDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodCodePlaceholder;
-import org.javahelpers.simple.builders.processor.model.method.MethodCodeStringPlaceholder;
-import org.javahelpers.simple.builders.processor.model.method.MethodCodeTypePlaceholder;
-import org.javahelpers.simple.builders.processor.model.method.MethodDto;
 import org.javahelpers.simple.builders.processor.model.type.BuilderNestedTypeDto;
-import org.javahelpers.simple.builders.processor.model.type.NestedTypeDto;
 
 /**
  * Maps generation-side DTOs ({@link BuilderDefinitionDto}, {@link BuilderMethodDto}, {@link
@@ -181,7 +183,7 @@ public class BuilderToGenerationTypeMapper {
    * Pair of a builder method and the field it originates from; {@code field} is {@code null} for
    * builder-level methods created by enhancers.
    */
-  private record FieldMethod(FieldDto field, BuilderMethodDto method) {}
+  private record FieldMethod(BuilderFieldDto field, BuilderMethodDto method) {}
 
   private static int compareFieldMethods(FieldMethod p1, FieldMethod p2) {
     BuilderMethodDto m1 = p1.method();
@@ -258,7 +260,7 @@ public class BuilderToGenerationTypeMapper {
    * Whether {@code method} is the direct setter of {@code field}: exactly one parameter of the
    * field's declared type.
    */
-  private static boolean isDirectFieldSetter(BuilderMethodDto method, FieldDto field) {
+  private static boolean isDirectFieldSetter(BuilderMethodDto method, BuilderFieldDto field) {
     return method.getParameters().size() == 1
         && method
             .getParameters()

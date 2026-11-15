@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,22 +24,22 @@
 
 package org.javahelpers.simple.builders.processor.generators.field;
 
-import static org.javahelpers.simple.builders.processor.analysis.JavaLangMapper.map2TypeName;
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.*;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.simple.builders.core.builders.HashMapBuilder;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameMap;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Generates Consumer-based methods for Map fields with map builder support.
@@ -105,7 +105,7 @@ public class MapConsumerGenerator implements MethodGenerator {
    */
   @Override
   public boolean appliesTo(
-      final FieldDto field, final TypeName dtoType, final ProcessingContext context) {
+      final BuilderFieldDto field, final TypeName dtoType, final BuilderProcessingContext context) {
     BuilderConfiguration configuration = context.getConfiguration();
     TypeName fieldType = field.getFieldType();
     return
@@ -118,7 +118,7 @@ public class MapConsumerGenerator implements MethodGenerator {
         // Map must be parameterized (has key/value types)
         && fieldTypeGeneric.isParameterized()
         // Field shouldn't have its own builder (higher priority)
-        && !fieldTypeGeneric.getBuilderType().isPresent()
+        && !context.resolveBuilderType(fieldTypeGeneric).isPresent()
         // Field shouldn't have empty constructor (higher priority)
         && !fieldTypeGeneric.hasEmptyConstructor();
   }
@@ -133,7 +133,9 @@ public class MapConsumerGenerator implements MethodGenerator {
    */
   @Override
   public List<BuilderMethodDto> generateMethods(
-      final FieldDto field, final TypeName builderType, final ProcessingContext context) {
+      final BuilderFieldDto field,
+      final TypeName builderType,
+      final BuilderProcessingContext context) {
     if (!(field.getFieldType() instanceof TypeNameMap fieldTypeGeneric
         && fieldTypeGeneric.isParameterized())) {
       return Collections.emptyList();

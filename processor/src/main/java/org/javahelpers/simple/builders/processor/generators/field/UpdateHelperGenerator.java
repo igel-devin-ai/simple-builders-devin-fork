@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 
 package org.javahelpers.simple.builders.processor.generators.field;
 
-import static org.javahelpers.simple.builders.processor.analysis.JavaLangMapper.map2TypeName;
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.TRACKED_VALUE_TYPE;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.addExampleChainFragmentTemplate;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.generateBuilderMethodName;
@@ -44,19 +44,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.UnaryOperator;
+import org.javahelpers.codegen.model.javadoc.JavadocCodeBlockDto;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNamePrimitive;
+import org.javahelpers.codegen.model.type.TypeNamePrimitive.PrimitiveTypeEnum;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.generators.util.JavadocConstants;
 import org.javahelpers.simple.builders.processor.generators.util.JavadocExampleValues;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocCodeBlockDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodParameterDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
-import org.javahelpers.simple.builders.processor.model.type.TypeNamePrimitive;
-import org.javahelpers.simple.builders.processor.model.type.TypeNamePrimitive.PrimitiveTypeEnum;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Generates update helper methods for builder fields.
@@ -143,13 +143,14 @@ public class UpdateHelperGenerator implements MethodGenerator {
   }
 
   @Override
-  public boolean appliesTo(FieldDto field, TypeName dtoType, ProcessingContext context) {
+  public boolean appliesTo(
+      BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     return context.getConfiguration().shouldGenerateUpdateHelpers();
   }
 
   @Override
   public List<BuilderMethodDto> generateMethods(
-      FieldDto field, TypeName builderType, ProcessingContext context) {
+      BuilderFieldDto field, TypeName builderType, BuilderProcessingContext context) {
     String originalFieldName = field.getOriginalFieldName();
     String parameterName = originalFieldName + "Updater";
     TypeNameGeneric updaterType =
@@ -206,17 +207,18 @@ public class UpdateHelperGenerator implements MethodGenerator {
    * Returns Javadoc guidance pointing to the builder-consumer overload when such a helper will be
    * generated for this field (nested DTO or collection of nested DTOs).
    */
-  private static String builderConsumerGuidance(FieldDto field, ProcessingContext context) {
+  private static String builderConsumerGuidance(
+      BuilderFieldDto field, BuilderProcessingContext context) {
     if (!context.getConfiguration().shouldGenerateBuilderConsumer()) {
       return "";
     }
     TypeName fieldType = field.getFieldType();
     String methodName = generateBuilderMethodName(field.getOriginalFieldName(), context);
-    if (fieldType.getBuilderType().isPresent()) {
+    if (context.resolveBuilderType(fieldType).isPresent()) {
       return "\n" + NESTED_DTO_GUIDANCE.formatted(methodName);
     }
     if (fieldType instanceof TypeNameGeneric genericType
-        && genericType.getElementBuilderType().isPresent()) {
+        && genericType.getInnerType().flatMap(context::resolveBuilderType).isPresent()) {
       return "\n" + COLLECTION_ELEMENT_DTO_GUIDANCE.formatted(methodName);
     }
     return "";
@@ -228,14 +230,15 @@ public class UpdateHelperGenerator implements MethodGenerator {
    * method-level example additionally requires an example value for setting the field first.
    */
   private static void addUpdateExample(
-      BuilderMethodDto methodDto, FieldDto field, ProcessingContext context) {
+      BuilderMethodDto methodDto, BuilderFieldDto field, BuilderProcessingContext context) {
     Optional<String> updateExpression = getUpdateExample(field.getFieldType());
     if (updateExpression.isEmpty()) {
       return;
     }
     addExampleChainFragmentTemplate(methodDto, "#{methodName}(" + updateExpression.get() + ")");
 
-    Optional<String> initialValue = JavadocExampleValues.getExampleValue(field.getFieldType());
+    Optional<String> initialValue =
+        JavadocExampleValues.getExampleValue(field.getFieldType(), context::resolveBuilderType);
     if (initialValue.isEmpty()) {
       return;
     }
