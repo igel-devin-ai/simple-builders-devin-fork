@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import org.javahelpers.codegen.testing.FormatterProfileTestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

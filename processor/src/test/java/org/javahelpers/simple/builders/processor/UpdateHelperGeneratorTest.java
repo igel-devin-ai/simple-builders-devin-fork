@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.testing.compile.Compilation;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -148,6 +148,9 @@ class UpdateHelperGeneratorTest {
             .count();
 
     assertTrue(conflictWarnings > 0, "Expected an update-helper/setter conflict warning");
+    // Conflict warnings must carry the element position so javac renders File.java:[line,col]
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Method conflict resolved");
     ProcessorAsserts.assertContaining(generated, "testUpdate(UnaryOperator<String> testUpdate)");
     ProcessorAsserts.assertNotContaining(
         generated, "testUpdate(UnaryOperator<String> testUpdater)");

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -37,10 +38,13 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.OptionState;
+import org.javahelpers.codegen.logging.ProcessingLogger;
+import org.javahelpers.codegen.model.core.PackageScopes;
+import org.javahelpers.codegen.processing.CompilerArgumentsReader;
 import org.javahelpers.simple.builders.processor.exceptions.BuilderException;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
-import org.javahelpers.simple.builders.processor.processing.logging.ProcessingLogger;
 
 /**
  * Reads builder configuration from annotated elements.
@@ -102,6 +106,82 @@ public class BuilderConfigurationReader {
   }
 
   /**
+   * Reads a complete BuilderConfiguration from compiler arguments.
+   *
+   * <p>This method reads all configuration options from compiler arguments like:
+   *
+   * <ul>
+   *   <li>{@code -Dsimplebuilder.generateFieldSupplier=true} (JVM system property, highest
+   *       precedence)
+   *   <li>{@code -Asimplebuilder.generateFieldSupplier=true} (compiler argument)
+   *   <li>{@code -AgenerateFieldSupplier=true} (bare option name, backward compatibility)
+   *   <li>{@code -Asimplebuilder.builderAccess=public}
+   *   <li>etc.
+   * </ul>
+   *
+   * <p>Options set via {@code @SimpleBuilder.Options} on the annotated type are not handled here;
+   * they are read by {@link BuilderConfigurationReader} and merged on top of this global
+   * configuration.
+   *
+   * <p>All values default to UNSET or DEFAULT if not specified in compiler arguments.
+   *
+   * <p><b>Adding a new option:</b> every {@link CompilerArgumentsEnum} constant is applied; those
+   * without a builder applier are no-ops in {@link CompilerArgumentsEnum#apply}, so wiring a new
+   * option means declaring the applier on the enum constant once — no change is needed here. The
+   * remaining checklist when adding a new option:
+   *
+   * <ol>
+   *   <li>{@code CompilerArgumentsEnum} — add the enum constant with its applier (or pass {@code
+   *       annotationOnly = true} if the option must not be set globally).
+   *   <li>{@code BuilderConfiguration} — add the field, builder method, merge logic, and a typed
+   *       accessor (e.g. {@code formattingModeEnum}) if enum conversion is needed. Set the default
+   *       in {@code BuilderConfiguration.DEFAULT}.
+   *   <li>{@code BuilderProcessingContext} — should NOT need a dedicated field or getter. The
+   *       resolved per-target config ({@code context.getConfiguration()}) and global config ({@code
+   *       context.getConfigurationReader().getGlobalConfiguration()}) carry all option values.
+   *       Special-casing outside {@code BuilderConfiguration} breaks the merge chain and bypasses
+   *       annotation overrides.
+   * </ol>
+   *
+   * @param reader the compiler arguments reader to read option values through
+   * @param logger the logger for debug output
+   * @return a BuilderConfiguration with values read from compiler arguments
+   */
+  public static BuilderConfiguration readCompilerConfiguration(
+      CompilerArgumentsReader reader, ProcessingLogger logger) {
+    BuilderConfiguration.Builder builder = BuilderConfiguration.builder();
+    Stream.of(CompilerArgumentsEnum.values())
+        .filter(option -> !option.isAnnotationOnly())
+        .forEach(option -> option.apply(builder, reader.readValue(option), logger));
+    if (reader.readBooleanValue(CompilerArgumentsEnum.VERBOSE)) {
+      builder.verbose(OptionState.ENABLED);
+    }
+    return builder.build();
+  }
+
+  /**
+   * Reads a complete BuilderConfiguration from an explicit options map — the same lookup SPI
+   * adapters can use on the options map their host framework hands them.
+   *
+   * @param options the compiler options map to read values from
+   * @param logger the logger for warnings on unrecognized values
+   * @return a BuilderConfiguration with values read from the options map
+   */
+  public static BuilderConfiguration readCompilerConfiguration(
+      Map<String, String> options, ProcessingLogger logger) {
+    BuilderConfiguration.Builder builder = BuilderConfiguration.builder();
+    Stream.of(CompilerArgumentsEnum.values())
+        .filter(option -> !option.isAnnotationOnly())
+        .forEach(
+            option ->
+                option.apply(builder, CompilerArgumentsReader.readValue(option, options), logger));
+    if (CompilerArgumentsReader.readBooleanValue(CompilerArgumentsEnum.VERBOSE, options, false)) {
+      builder.verbose(OptionState.ENABLED);
+    }
+    return builder.build();
+  }
+
+  /**
    * Resolves the complete builder configuration for an element by chaining all configuration
    * sources in priority order.
    *
@@ -143,6 +223,24 @@ public class BuilderConfigurationReader {
   }
 
   /**
+   * Resolves only the effective {@code builderGenerationPackages} scope for an element, without the
+   * access/package validation {@link #resolveConfiguration(Element)} performs. SPI adapters use
+   * this to decide whether planning can still produce a builder for the element.
+   *
+   * @param element the annotated element to resolve the generation scope for
+   * @return the effective package scopes (empty means unscoped)
+   */
+  public PackageScopes resolveBuilderGenerationPackages(Element element) {
+    BuilderConfiguration inheritedConfig = readFromScope(element, AnnotationScope.INHERITED);
+    BuilderConfiguration directConfig = readFromScope(element, AnnotationScope.DIRECT);
+    return BuilderConfiguration.DEFAULT
+        .merge(globalConfiguration)
+        .merge(inheritedConfig)
+        .merge(directConfig)
+        .builderGenerationPackages();
+  }
+
+  /**
    * Resolves the complete builder configuration for a {@code @SimpleBuilderFor} holder.
    *
    * <p>Unlike {@link #resolveConfiguration(Element)}, no template annotations of the target type
@@ -164,7 +262,8 @@ public class BuilderConfigurationReader {
     logger.debugStartOperation(
         "Resolving configuration for @SimpleBuilderFor target: %s", elementName);
 
-    BuilderConfiguration optionsConfig = extractOptionsFromAnnotationMirror(annotationInstance);
+    BuilderConfiguration optionsConfig =
+        extractOptionsFromAnnotationMirror(annotationInstance, element);
 
     BuilderConfiguration result =
         BuilderConfiguration.DEFAULT.merge(globalConfiguration).merge(optionsConfig);
@@ -191,7 +290,7 @@ public class BuilderConfigurationReader {
 
     for (AnnotationMirror mirror : mirrors) {
       if (isSimpleBuilderAnnotation(mirror)) {
-        simpleBuilderConfig = extractSimpleBuilderConfiguration(mirror);
+        simpleBuilderConfig = extractSimpleBuilderConfiguration(mirror, element);
       } else if (customTemplateConfig == null) {
         BuilderConfiguration templateConfig = extractCustomTemplateConfiguration(mirror);
         if (templateConfig != null) {
@@ -215,11 +314,12 @@ public class BuilderConfigurationReader {
    * inline {@code options()} from the usage, so inline options override the template defaults.
    */
   private BuilderConfiguration extractSimpleBuilderConfiguration(
-      AnnotationMirror simpleBuilderMirror) {
+      AnnotationMirror simpleBuilderMirror, Element element) {
     TypeElement simpleBuilderType =
         (TypeElement) simpleBuilderMirror.getAnnotationType().asElement();
     BuilderConfiguration templateDefaults = extractTemplateConfigurationFromType(simpleBuilderType);
-    BuilderConfiguration inlineOptions = extractOptionsFromAnnotationMirror(simpleBuilderMirror);
+    BuilderConfiguration inlineOptions =
+        extractOptionsFromAnnotationMirror(simpleBuilderMirror, element);
     return mergeNullable(templateDefaults, inlineOptions);
   }
 
@@ -244,7 +344,7 @@ public class BuilderConfigurationReader {
     if (templateMetaMirror == null) {
       return null;
     }
-    return extractOptionsFromAnnotationMirror(templateMetaMirror);
+    return extractOptionsFromAnnotationMirror(templateMetaMirror, annotationType);
   }
 
   /**
@@ -270,7 +370,7 @@ public class BuilderConfigurationReader {
    *     are set
    */
   private BuilderConfiguration extractOptionsFromAnnotationMirror(
-      AnnotationMirror annotationMirror) {
+      AnnotationMirror annotationMirror, Element element) {
     if (annotationMirror == null) {
       return null;
     }
@@ -298,7 +398,7 @@ public class BuilderConfigurationReader {
     }
 
     // Parse the options annotation using AnnotationMirror (can't use reflection here)
-    return parseOptionsFromMirror(optionsMirror);
+    return parseOptionsFromMirror(optionsMirror, element);
   }
 
   /** Merges two nullable configurations, preferring the override when both are present. */
@@ -317,13 +417,16 @@ public class BuilderConfigurationReader {
    * Parses SimpleBuilder.Options from AnnotationMirror. Only contains explicitly set values (not
    * defaults).
    */
-  private BuilderConfiguration parseOptionsFromMirror(AnnotationMirror optionsMirror) {
+  private BuilderConfiguration parseOptionsFromMirror(
+      AnnotationMirror optionsMirror, Element element) {
     Map<? extends ExecutableElement, ? extends AnnotationValue> values =
         optionsMirror.getElementValues();
 
     BuilderConfiguration.Builder builder = BuilderConfiguration.builder();
 
-    values.entrySet().forEach(entry -> applyOption(builder, entry.getKey(), entry.getValue()));
+    values
+        .entrySet()
+        .forEach(entry -> applyOption(builder, entry.getKey(), entry.getValue(), element));
 
     return builder.build();
   }
@@ -331,12 +434,14 @@ public class BuilderConfigurationReader {
   private void applyOption(
       BuilderConfiguration.Builder builder,
       ExecutableElement key,
-      AnnotationValue annotationValue) {
+      AnnotationValue annotationValue,
+      Element element) {
     String name = key.getSimpleName().toString();
     Object value = annotationValue.getValue();
     CompilerArgumentsEnum option = CompilerArgumentsEnum.fromOptionName(name);
     if (isNotABuilderOption(option)) {
-      logger.warning("Unknown configuration option '%s' with value '%s' - ignoring", name, value);
+      logger.warning(
+          element, "Unknown configuration option '%s' with value '%s' - ignoring", name, value);
       return;
     }
     option.apply(builder, value, logger);

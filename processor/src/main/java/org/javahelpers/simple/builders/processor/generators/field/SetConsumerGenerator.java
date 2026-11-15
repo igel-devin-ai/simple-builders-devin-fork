@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,24 +24,25 @@
 
 package org.javahelpers.simple.builders.processor.generators.field;
 
-import static org.javahelpers.simple.builders.processor.analysis.JavaLangMapper.map2TypeName;
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.*;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.simple.builders.core.builders.HashSetBuilder;
 import org.javahelpers.simple.builders.core.builders.HashSetBuilderWithElementBuilders;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameSet;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Generates Consumer-based methods for Set fields with collection builder support.
@@ -95,7 +96,8 @@ public class SetConsumerGenerator implements MethodGenerator {
   }
 
   @Override
-  public boolean appliesTo(FieldDto field, TypeName dtoType, ProcessingContext context) {
+  public boolean appliesTo(
+      BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     if (!context.getConfiguration().shouldGenerateBuilderConsumer()) {
       return false;
     }
@@ -105,7 +107,7 @@ public class SetConsumerGenerator implements MethodGenerator {
       return false;
     }
     // Don't apply if field itself has a builder (higher priority)
-    if (field.getFieldType().getBuilderType().isPresent()) {
+    if (context.resolveBuilderType(field.getFieldType()).isPresent()) {
       return false;
     }
     return context.getConfiguration().shouldUseHashSetBuilder()
@@ -114,14 +116,14 @@ public class SetConsumerGenerator implements MethodGenerator {
 
   @Override
   public List<BuilderMethodDto> generateMethods(
-      FieldDto field, TypeName builderType, ProcessingContext context) {
+      BuilderFieldDto field, TypeName builderType, BuilderProcessingContext context) {
     if (!(field.getFieldType() instanceof TypeNameSet fieldTypeGeneric
         && fieldTypeGeneric.isParameterized())) {
       return Collections.emptyList();
     }
 
     TypeName elementType = fieldTypeGeneric.getElementType();
-    Optional<ResolvedBuilder> elementBuilder = fieldTypeGeneric.getElementResolvedBuilder();
+    Optional<ResolvedBuilder> elementBuilder = context.resolveBuilderType(elementType);
 
     if (elementBuilder.isPresent()
         && context.getConfiguration().shouldUseHashSetBuilderWithElementBuilders()) {
@@ -147,7 +149,7 @@ public class SetConsumerGenerator implements MethodGenerator {
               Map.of(),
               builderType,
               context);
-      addExampleToSetConsumerWithSimpleValue(method, elementType);
+      addExampleToSetConsumerWithSimpleValue(method, elementType, context::resolveBuilderType);
       return List.of(method);
     }
 
@@ -174,8 +176,10 @@ public class SetConsumerGenerator implements MethodGenerator {
    * @param elementType the element type
    */
   private void addExampleToSetConsumerWithSimpleValue(
-      BuilderMethodDto method, TypeName elementType) {
+      BuilderMethodDto method,
+      TypeName elementType,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     addExampleChainFragmentTemplate(
-        method, "#{methodName}(t -> t.add(#{exampleValue}))", elementType);
+        method, "#{methodName}(t -> t.add(#{exampleValue}))", elementType, builderResolver);
   }
 }

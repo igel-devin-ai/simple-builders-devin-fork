@@ -1,23 +1,41 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Andreas Igel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package org.javahelpers.simple.builders.processor;
 
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.contains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.junit.jupiter.api.Test;
 
 class ReadmeExampleTest {
-
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation);
-    return compilation;
-  }
 
   @Test
   void basicUsage_personBuilder_example() {
@@ -64,9 +82,9 @@ class ReadmeExampleTest {
             """);
 
     // Test 1: Builder generation (without usage)
-    Compilation compilation = compileSources(person);
+    Compilation compilation = compile(person);
     String generatedCode = loadGeneratedSource(compilation, builderClassName);
-    ProcessorAsserts.assertGenerationSucceeded(compilation, builderClassName, generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, builderClassName, generatedCode);
 
     // Fixed expected strings based on README usage snippet
     ProcessorAsserts.assertingResult(
@@ -79,7 +97,7 @@ class ReadmeExampleTest {
         contains("public Person build()"));
 
     // Test 2: Usage compilation (with usage)
-    Compilation compilationWithUsage = compileSources(person, usage);
+    Compilation compilationWithUsage = compile(person, usage);
 
     // Validate the full usage too
     assertGenerationSucceeded(compilationWithUsage, "PersonBuilder");
@@ -171,10 +189,10 @@ class ReadmeExampleTest {
             }
             """);
 
-    Compilation compilation = compileSources(project, task, statusEnum);
+    Compilation compilation = compile(project, task, statusEnum);
 
     String projectBuilder = loadGeneratedSource(compilation, "ProjectBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ProjectBuilder", projectBuilder);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ProjectBuilder", projectBuilder);
 
     // Assert key capabilities corresponding to README usage
     ProcessorAsserts.assertingResult(
@@ -190,7 +208,7 @@ class ReadmeExampleTest {
 
     // Also validate TaskBuilder exists and typical fluent API
     String taskBuilder = loadGeneratedSource(compilation, "TaskBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "TaskBuilder", taskBuilder);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "TaskBuilder", taskBuilder);
     ProcessorAsserts.assertingResult(
         taskBuilder,
         contains("public static TaskBuilder create()"),
@@ -200,7 +218,7 @@ class ReadmeExampleTest {
         contains("public Task build()"));
 
     // Validate the full usage too
-    Compilation compilationWithUsage = compileSources(project, task, statusEnum, usage);
+    Compilation compilationWithUsage = compile(project, task, statusEnum, usage);
     assertGenerationSucceeded(compilationWithUsage, "TaskBuilder");
   }
 
@@ -209,7 +227,7 @@ class ReadmeExampleTest {
    * source (build() and static create()).
    */
   public static void assertGenerationSucceeded(Compilation compilation, String builderSimpleName) {
-    ProcessorAsserts.assertGenerationSucceeded(
+    BuilderAsserts.assertGenerationSucceeded(
         compilation, builderSimpleName, loadGeneratedSource(compilation, builderSimpleName));
   }
 }

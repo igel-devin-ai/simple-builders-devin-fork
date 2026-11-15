@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,22 +24,22 @@
 
 package org.javahelpers.simple.builders.processor.generators.field;
 
-import static org.javahelpers.simple.builders.processor.analysis.JavaLangMapper.map2TypeName;
-import static org.javahelpers.simple.builders.processor.analysis.TypeNameAnalyser.*;
+import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
+import static org.javahelpers.codegen.analysis.TypeNameAnalyser.*;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.*;
 
 import java.util.List;
 import java.util.Optional;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.generators.util.JavadocConstants;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodParameterDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameArray;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Generates Consumer-based methods for String and {@code Optional<String>} fields using
@@ -88,12 +88,13 @@ public class StringBuilderConsumerGenerator implements MethodGenerator {
   }
 
   @Override
-  public boolean appliesTo(FieldDto field, TypeName dtoType, ProcessingContext context) {
+  public boolean appliesTo(
+      BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     if (!context.getConfiguration().shouldGenerateBuilderConsumer()) {
       return false;
     }
     // Don't apply if field has a builder or empty constructor (higher priority)
-    if (field.getFieldType().getBuilderType().isPresent()
+    if (context.resolveBuilderType(field.getFieldType()).isPresent()
         || field.getFieldType().hasEmptyConstructor()) {
       return false;
     }
@@ -106,7 +107,7 @@ public class StringBuilderConsumerGenerator implements MethodGenerator {
 
   @Override
   public List<BuilderMethodDto> generateMethods(
-      FieldDto field, TypeName builderType, ProcessingContext context) {
+      BuilderFieldDto field, TypeName builderType, BuilderProcessingContext context) {
     String transform =
         isOptionalString(field.getFieldType())
             ? "Optional.of(builder.toString())"
@@ -134,7 +135,7 @@ public class StringBuilderConsumerGenerator implements MethodGenerator {
       String fieldJavadoc,
       String transform,
       TypeName builderType,
-      ProcessingContext context) {
+      BuilderProcessingContext context) {
     TypeName stringBuilderType = map2TypeName(StringBuilder.class);
     TypeNameGeneric consumerType = createConsumerType(stringBuilderType);
     MethodParameterDto parameter = new MethodParameterDto();

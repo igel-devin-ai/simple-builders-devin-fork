@@ -1,7 +1,32 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Andreas Igel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.assertContaining;
+import static org.javahelpers.codegen.testing.CodegenTestUtils.readSource;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
@@ -9,14 +34,6 @@ import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
 class JacksonModuleMultiPackageTest {
-
-  private static String extractContent(JavaFileObject fileObject) {
-    try {
-      return fileObject.getCharContent(false).toString();
-    } catch (Exception e) {
-      return fileObject.toString();
-    }
-  }
 
   @Test
   void generateJacksonModule_WithMultiplePackages_ShouldGenerateMultipleModules() {
@@ -55,7 +72,7 @@ class JacksonModuleMultiPackageTest {
     // Verify module in pkg.one
     JavaFileObject module1 =
         compilation.generatedSourceFile("pkg.one.SimpleBuildersJacksonModule").orElseThrow();
-    String pkgOneContent = extractContent(module1);
+    String pkgOneContent = readSource(module1);
     assertContaining(
         pkgOneContent,
         "package pkg.one;",
@@ -70,7 +87,7 @@ class JacksonModuleMultiPackageTest {
     // Verify module in pkg.two
     JavaFileObject module2 =
         compilation.generatedSourceFile("pkg.two.SimpleBuildersJacksonModule").orElseThrow();
-    String pkgTwoContent = extractContent(module2);
+    String pkgTwoContent = readSource(module2);
     assertContaining(
         pkgTwoContent,
         "package pkg.two;",
@@ -128,7 +145,7 @@ class JacksonModuleMultiPackageTest {
     // Verify module in pkg.target (not pkg.source)
     JavaFileObject module3 =
         compilation.generatedSourceFile("pkg.target.SimpleBuildersJacksonModule").orElseThrow();
-    String pkgTargetContent = extractContent(module3);
+    String pkgTargetContent = readSource(module3);
     assertContaining(
         pkgTargetContent,
         "package pkg.target;",

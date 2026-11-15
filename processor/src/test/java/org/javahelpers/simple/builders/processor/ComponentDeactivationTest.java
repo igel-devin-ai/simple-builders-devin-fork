@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,8 @@ package org.javahelpers.simple.builders.processor;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +62,7 @@ class ComponentDeactivationTest {
             .compile(TEST_DTO_SOURCE);
 
     String testBuilder = ProcessorTestUtils.loadGeneratedSource(testCompilation, "TestDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
+    BuilderAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
 
     ProcessorAsserts.assertNotContaining(testBuilder, "conditional(BooleanSupplier");
     ProcessorAsserts.assertNotContaining(testBuilder, "conditional(");
@@ -75,7 +76,7 @@ class ComponentDeactivationTest {
             .compile(TEST_DTO_SOURCE);
 
     String testBuilder = ProcessorTestUtils.loadGeneratedSource(testCompilation, "TestDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
+    BuilderAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
 
     ProcessorAsserts.assertNotContaining(testBuilder, "stringFormat(");
     ProcessorAsserts.assertNotContaining(testBuilder, "varArgs(");
@@ -89,7 +90,7 @@ class ComponentDeactivationTest {
             .compile(TEST_DTO_SOURCE);
 
     String testBuilder = ProcessorTestUtils.loadGeneratedSource(testCompilation, "TestDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
+    BuilderAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
 
     ProcessorAsserts.assertNotContaining(testBuilder, "nameConsumer(");
     ProcessorAsserts.assertNotContaining(testBuilder, "ageConsumer(");
@@ -105,7 +106,7 @@ class ComponentDeactivationTest {
             .compile(TEST_DTO_SOURCE);
 
     String testBuilder = ProcessorTestUtils.loadGeneratedSource(testCompilation, "TestDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
+    BuilderAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
 
     ProcessorAsserts.assertNotContaining(testBuilder, "stringFormat(");
     ProcessorAsserts.assertNotContaining(testBuilder, "varArgs(");
@@ -121,7 +122,7 @@ class ComponentDeactivationTest {
             .compile(TEST_DTO_SOURCE);
 
     String testBuilder = ProcessorTestUtils.loadGeneratedSource(testCompilation, "TestDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
+    BuilderAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
 
     ProcessorAsserts.assertNotContaining(testBuilder, "stringFormat(");
     ProcessorAsserts.assertNotContaining(testBuilder, "stringBuilderConsumer(");
@@ -135,7 +136,7 @@ class ComponentDeactivationTest {
             .compile(TEST_DTO_SOURCE);
 
     String testBuilder = ProcessorTestUtils.loadGeneratedSource(testCompilation, "TestDtoBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
+    BuilderAsserts.assertGenerationSucceeded(testCompilation, "TestDtoBuilder", testBuilder);
 
     // Should still generate normally since non-existent generator has no effect
   }

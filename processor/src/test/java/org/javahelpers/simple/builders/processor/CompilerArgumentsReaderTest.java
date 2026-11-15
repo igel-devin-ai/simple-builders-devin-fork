@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,13 +30,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.OptionState;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.OptionState;
+import org.javahelpers.codegen.processing.CompilerArgumentsReader;
+import org.javahelpers.codegen.testing.CapturingProcessingLogger;
+import org.javahelpers.codegen.testing.ProcessingEnvironmentStub;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
+import org.javahelpers.simple.builders.processor.processing.BuilderConfigurationReader;
 import org.javahelpers.simple.builders.processor.processing.CompilerArgumentsEnum;
-import org.javahelpers.simple.builders.processor.processing.CompilerArgumentsReader;
-import org.javahelpers.simple.builders.processor.testing.CapturingProcessingLogger;
-import org.javahelpers.simple.builders.processor.testing.ProcessingEnvironmentStub;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -197,14 +198,68 @@ class CompilerArgumentsReaderTest {
         "Should return false for: " + value);
   }
 
-  /** Test: readBuilderConfiguration with no arguments returns all UNSET/DEFAULT values. */
+  /** Test: the static readBooleanValue resolves an options map without an environment. */
   @Test
-  void readBuilderConfiguration_NoArguments_ReturnsDefaults() {
+  void readBooleanValue_ExplicitOptionsMap_ResolvesLikeEnvironment() {
+    assertTrue(
+        CompilerArgumentsReader.readBooleanValue(
+            CompilerArgumentsEnum.USING_MAPSTRUCT_INTEGRATION, Map.of(), true));
+
+    assertFalse(
+        CompilerArgumentsReader.readBooleanValue(
+            CompilerArgumentsEnum.USING_MAPSTRUCT_INTEGRATION,
+            Map.of("usingMapStructIntegration", "DISABLED"),
+            true));
+
+    assertTrue(
+        CompilerArgumentsReader.readBooleanValue(
+            CompilerArgumentsEnum.USING_MAPSTRUCT_INTEGRATION,
+            Map.of("simplebuilder.usingMapStructIntegration", "invalid"),
+            true));
+  }
+
+  /** Test: the static readBooleanValue honors the -D > -A > bare-option precedence. */
+  @Test
+  void readBooleanValue_ExplicitOptionsMap_SystemPropertyWins() {
+    System.setProperty("simplebuilder.usingMapStructIntegration", "DISABLED");
+    try {
+      assertFalse(
+          CompilerArgumentsReader.readBooleanValue(
+              CompilerArgumentsEnum.USING_MAPSTRUCT_INTEGRATION,
+              Map.of(
+                  "simplebuilder.usingMapStructIntegration",
+                  "ENABLED",
+                  "usingMapStructIntegration",
+                  "ENABLED"),
+              true));
+    } finally {
+      System.clearProperty("simplebuilder.usingMapStructIntegration");
+    }
+  }
+
+  /** Test: the prefixed compiler argument beats the bare option name. */
+  @Test
+  void readBooleanValue_ExplicitOptionsMap_CompilerArgumentBeatsBareOption() {
+    assertFalse(
+        CompilerArgumentsReader.readBooleanValue(
+            CompilerArgumentsEnum.USING_MAPSTRUCT_INTEGRATION,
+            Map.of(
+                "simplebuilder.usingMapStructIntegration",
+                "DISABLED",
+                "usingMapStructIntegration",
+                "ENABLED"),
+            true));
+  }
+
+  /** Test: readCompilerConfiguration with no arguments returns all UNSET/DEFAULT values. */
+  @Test
+  void readCompilerConfiguration_NoArguments_ReturnsDefaults() {
     ProcessingEnvironment env = ProcessingEnvironmentStub.createEmpty();
     CompilerArgumentsReader reader = new CompilerArgumentsReader(env);
 
     BuilderConfiguration config =
-        reader.readBuilderConfiguration(CapturingProcessingLogger.create().logger());
+        BuilderConfigurationReader.readCompilerConfiguration(
+            reader, CapturingProcessingLogger.create().logger());
 
     assertNotNull(config, "Configuration should not be null");
     assertEquals(OptionState.UNSET, config.generateFieldSupplier());
@@ -214,7 +269,7 @@ class CompilerArgumentsReaderTest {
     assertEquals(AccessModifier.DEFAULT, config.getBuilderConstructorAccess());
     assertEquals(AccessModifier.DEFAULT, config.getMethodAccess());
     assertNull(config.getBuilderSuffix(), "Builder suffix should be null when not set");
-    assertNull(config.getSetterSuffix(), "Setter suffix should be null when not set");
+    assertNull(config.getSetterPrefix(), "Setter prefix should be null when not set");
     assertTrue(
         config.getBuilderGenerationPackagesSet().isEmpty(),
         "Builder generation packages should be empty when not set");
@@ -223,9 +278,9 @@ class CompilerArgumentsReaderTest {
         "Builder usage packages should be empty when not set");
   }
 
-  /** Test: readBuilderConfiguration reads all options correctly. */
+  /** Test: readCompilerConfiguration reads all options correctly. */
   @Test
-  void readBuilderConfiguration_AllOptionsSet_ReadsCorrectly() {
+  void readCompilerConfiguration_AllOptionsSet_ReadsCorrectly() {
     ProcessingEnvironment env =
         ProcessingEnvironmentStub.builder()
             .put("simplebuilder.generateFieldSupplier", "true")
@@ -238,14 +293,15 @@ class CompilerArgumentsReaderTest {
             .put("simplebuilder.generateUpdateHelpers", "enabled")
             .put("simplebuilder.copyTypeAnnotations", "enabled")
             .put("simplebuilder.builderSuffix", "Factory")
-            .put("simplebuilder.setterSuffix", "with")
+            .put("simplebuilder.setterPrefix", "with")
             .put("simplebuilder.builderGenerationPackages", "a.b, c.d")
             .put("simplebuilder.builderUsagePackages", "x.y")
             .build();
     CompilerArgumentsReader reader = new CompilerArgumentsReader(env);
 
     BuilderConfiguration config =
-        reader.readBuilderConfiguration(CapturingProcessingLogger.create().logger());
+        BuilderConfigurationReader.readCompilerConfiguration(
+            reader, CapturingProcessingLogger.create().logger());
 
     assertEquals(OptionState.ENABLED, config.generateFieldSupplier());
     assertEquals(OptionState.DISABLED, config.generateFieldConsumer());
@@ -257,14 +313,14 @@ class CompilerArgumentsReaderTest {
     assertEquals(OptionState.ENABLED, config.generateUpdateHelpers());
     assertEquals(OptionState.ENABLED, config.copyTypeAnnotations());
     assertEquals("Factory", config.getBuilderSuffix());
-    assertEquals("with", config.getSetterSuffix());
+    assertEquals("with", config.getSetterPrefix());
     assertEquals(Set.of("a.b", "c.d"), config.getBuilderGenerationPackagesSet());
     assertEquals(Set.of("x.y"), config.getBuilderUsagePackagesSet());
   }
 
-  /** Test: readBuilderConfiguration handles mixed valid and invalid values. */
+  /** Test: readCompilerConfiguration handles mixed valid and invalid values. */
   @Test
-  void readBuilderConfiguration_MixedValidInvalid_HandlesGracefully() {
+  void readCompilerConfiguration_MixedValidInvalid_HandlesGracefully() {
     ProcessingEnvironment env =
         ProcessingEnvironmentStub.builder()
             .put("simplebuilder.generateFieldSupplier", "invalid")
@@ -274,7 +330,8 @@ class CompilerArgumentsReaderTest {
     CompilerArgumentsReader reader = new CompilerArgumentsReader(env);
 
     BuilderConfiguration config =
-        reader.readBuilderConfiguration(CapturingProcessingLogger.create().logger());
+        BuilderConfigurationReader.readCompilerConfiguration(
+            reader, CapturingProcessingLogger.create().logger());
 
     assertEquals(
         OptionState.UNSET, config.generateFieldSupplier(), "Invalid option should be UNSET");
@@ -286,24 +343,25 @@ class CompilerArgumentsReaderTest {
         OptionState.ENABLED, config.generateFieldConsumer(), "Valid option should be ENABLED");
   }
 
-  /** Test: readBuilderConfiguration with empty string values. */
+  /** Test: readCompilerConfiguration with empty string values. */
   @Test
-  void readBuilderConfiguration_EmptyStringValues_HandlesGracefully() {
+  void readCompilerConfiguration_EmptyStringValues_HandlesGracefully() {
     ProcessingEnvironment env =
         ProcessingEnvironmentStub.builder()
             .put("simplebuilder.generateFieldSupplier", "")
             .put("simplebuilder.builderAccess", "")
             .put("simplebuilder.builderSuffix", "")
-            .put("simplebuilder.setterSuffix", "")
+            .put("simplebuilder.setterPrefix", "")
             .build();
     CompilerArgumentsReader reader = new CompilerArgumentsReader(env);
 
     BuilderConfiguration config =
-        reader.readBuilderConfiguration(CapturingProcessingLogger.create().logger());
+        BuilderConfigurationReader.readCompilerConfiguration(
+            reader, CapturingProcessingLogger.create().logger());
 
     assertEquals(OptionState.UNSET, config.generateFieldSupplier(), "Empty should be UNSET");
     assertEquals(AccessModifier.DEFAULT, config.getBuilderAccess(), "Empty should be DEFAULT");
     assertEquals("", config.getBuilderSuffix(), "Empty string should be preserved for suffix");
-    assertEquals("", config.getSetterSuffix(), "Empty string should be preserved for suffix");
+    assertEquals("", config.getSetterPrefix(), "Empty string should be preserved for prefix");
   }
 }

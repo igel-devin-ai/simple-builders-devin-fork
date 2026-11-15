@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,7 @@ class StrictModeTest {
     Compilation compilation = createCompiler().compile(dto(), collidingBuilder());
 
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningContaining("Failed to generate builder");
+    assertThat(compilation).hadWarningContaining("Failed to generate target");
   }
 
   @Test
@@ -79,6 +79,6 @@ class StrictModeTest {
             .compile(dto(), collidingBuilder());
 
     assertThat(compilation).failed();
-    assertThat(compilation).hadErrorContaining("Failed to generate builder");
+    assertThat(compilation).hadErrorContaining("Failed to generate target");
   }
 }

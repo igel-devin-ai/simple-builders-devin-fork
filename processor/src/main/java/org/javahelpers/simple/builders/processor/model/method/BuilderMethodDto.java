@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,12 +30,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.processor.model.annotation.AnnotationDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocCodeBlockDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
-import org.javahelpers.simple.builders.processor.model.type.GenericParameterDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.javadoc.JavadocCodeBlockDto;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.MethodCodeDto;
+import org.javahelpers.codegen.model.method.MethodDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.GenericParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
 
 /**
  * BuilderMethodDto containing all information for generating a method in the builder class,

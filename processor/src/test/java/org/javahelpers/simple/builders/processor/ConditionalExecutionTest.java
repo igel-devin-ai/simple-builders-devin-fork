@@ -1,24 +1,42 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Andreas Igel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package org.javahelpers.simple.builders.processor;
 
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.contains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
 /** Tests for conditional execution feature in generated builders. */
 class ConditionalExecutionTest {
-
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation);
-    return compilation;
-  }
 
   @Test
   void conditionalMethod_generatedInBuilder() {
@@ -40,9 +58,9 @@ class ConditionalExecutionTest {
             }
             """);
 
-    Compilation compilation = compileSources(person);
+    Compilation compilation = compile(person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify complete method signature with exact types
     ProcessorAsserts.assertContaining(
@@ -101,9 +119,9 @@ class ConditionalExecutionTest {
             }
             """);
 
-    Compilation compilation = compileSources(user);
+    Compilation compilation = compile(user);
     String generatedCode = loadGeneratedSource(compilation, "UserBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
 
     // Verify conditional method has correct signature for UserBuilder
     ProcessorAsserts.assertContaining(
@@ -152,9 +170,9 @@ class ConditionalExecutionTest {
             }
             """);
 
-    Compilation compilation = compileSources(config);
+    Compilation compilation = compile(config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
     // Verify complete signature with ConfigBuilder return type
     ProcessorAsserts.assertContaining(
@@ -201,9 +219,9 @@ class ConditionalExecutionTest {
             }
             """);
 
-    Compilation compilation = compileSources(settings);
+    Compilation compilation = compile(settings);
     String generatedCode = loadGeneratedSource(compilation, "SettingsBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "SettingsBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "SettingsBuilder", generatedCode);
 
     // Verify positive-only overload signature
     ProcessorAsserts.assertContaining(

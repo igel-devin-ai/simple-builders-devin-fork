@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,11 @@
 package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.assertContaining;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.assertGenerationSucceeded;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.assertNoBuilderGenerated;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.assertNotContaining;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNotContaining;
+import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
+import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertNoBuilderGenerated;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
@@ -46,10 +47,6 @@ import org.junit.jupiter.api.Test;
  * href="https://github.com/java-helpers/simple-builders/issues/244">issue #244</a>.
  */
 class BuilderAnnotationInheritanceTest {
-
-  private Compilation compile(JavaFileObject... sourceFiles) {
-    return ProcessorTestUtils.createCompiler().compile(sourceFiles);
-  }
 
   /**
    * An unannotated subclass of a class annotated with {@code @SimpleBuilder} must itself get a

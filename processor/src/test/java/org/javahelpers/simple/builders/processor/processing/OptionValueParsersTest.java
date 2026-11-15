@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,9 +27,10 @@ package org.javahelpers.simple.builders.processor.processing;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.core.enums.OptionState;
-import org.javahelpers.simple.builders.processor.testing.CapturingProcessingLogger;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.enums.OptionState;
+import org.javahelpers.codegen.processing.OptionValueParsers;
+import org.javahelpers.codegen.testing.CapturingProcessingLogger;
 import org.junit.jupiter.api.Test;
 
 /**

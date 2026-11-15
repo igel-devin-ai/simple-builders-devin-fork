@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -57,8 +57,7 @@ public class AnnotationValidator {
 
     if (annotatedElement.getModifiers().contains(Modifier.ABSTRACT)) {
       throw new BuilderException(
-          annotatedElement,
-          "The " + SimpleBuilder.class.getSimpleName() + " should not be abstract");
+          annotatedElement, "The target class for generating a builder should not be abstract");
     }
 
     // Only allow @SimpleBuilder on top-level classes

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,23 +28,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
-import org.javahelpers.simple.builders.core.enums.AccessModifier;
-import org.javahelpers.simple.builders.processor.analysis.JavaLangMapper;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.analysis.JavaLangMapper;
+import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.GenericParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameList;
+import org.javahelpers.codegen.model.type.TypeNameMap;
+import org.javahelpers.codegen.model.type.TypeNameSet;
+import org.javahelpers.codegen.model.type.TypeNameVariable;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodParameterDto;
-import org.javahelpers.simple.builders.processor.model.type.BuilderInstantiation;
-import org.javahelpers.simple.builders.processor.model.type.GenericParameterDto;
+import org.javahelpers.simple.builders.processor.model.type.PrefillCall;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameList;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameMap;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameSet;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameVariable;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Utility class providing common functionality for method generators.
@@ -84,12 +85,25 @@ public final class MethodGeneratorUtil {
    * @param context the processing context containing the configuration with the method name prefix
    * @return the method name with prefix applied
    */
-  public static String generateBuilderMethodName(String fieldName, ProcessingContext context) {
-    String suffix = context.getConfiguration().getSetterSuffix();
-    if (suffix == null || suffix.isEmpty()) {
+  public static String generateBuilderMethodName(
+      String fieldName, BuilderProcessingContext context) {
+    return generateBuilderMethodName(fieldName, context.getConfiguration().getSetterPrefix());
+  }
+
+  /**
+   * Generates a builder method name by prepending the given setter prefix to the capitalized field
+   * name — the same name derivation the context-based overload resolves from {@code setterPrefix},
+   * for callers without a {@link BuilderProcessingContext} (e.g. SPI adapters).
+   *
+   * @param fieldName the field name
+   * @param setterPrefix the configured setter prefix, or {@code null}/empty for none
+   * @return the method name with prefix applied
+   */
+  public static String generateBuilderMethodName(String fieldName, String setterPrefix) {
+    if (setterPrefix == null || setterPrefix.isEmpty()) {
       return fieldName;
     }
-    return suffix + StringUtils.capitalize(fieldName);
+    return setterPrefix + StringUtils.capitalize(fieldName);
   }
 
   /**
@@ -98,7 +112,7 @@ public final class MethodGeneratorUtil {
    * @param context the processing context
    * @return the AccessModifier for method access, or null for package-private
    */
-  public static AccessModifier getMethodAccessModifier(ProcessingContext context) {
+  public static AccessModifier getMethodAccessModifier(BuilderProcessingContext context) {
     return context.getConfiguration().getMethodAccess();
   }
 
@@ -112,7 +126,7 @@ public final class MethodGeneratorUtil {
    * @return a new {@link BuilderMethodDto} with name and modifier set
    */
   public static BuilderMethodDto createBuilderMethod(
-      String fieldName, TypeName returnType, ProcessingContext context) {
+      String fieldName, TypeName returnType, BuilderProcessingContext context) {
     BuilderMethodDto method =
         new BuilderMethodDto(generateBuilderMethodName(fieldName, context), returnType);
     method.setModifier(getMethodAccessModifier(context));
@@ -157,11 +171,11 @@ public final class MethodGeneratorUtil {
    * @return the method DTO for the setter
    */
   public static BuilderMethodDto createBuilderMethodForFieldWithTransform(
-      FieldDto field,
+      BuilderFieldDto field,
       String transform,
       TypeName parameterType,
       TypeName builderType,
-      ProcessingContext context) {
+      BuilderProcessingContext context) {
 
     MethodParameterDto parameter = new MethodParameterDto();
     parameter.setParameterName(field.getOriginalFieldName());
@@ -217,13 +231,13 @@ public final class MethodGeneratorUtil {
    * @return the method DTO for the consumer
    */
   public static BuilderMethodDto createFieldConsumerWithBuilder(
-      FieldDto field,
+      BuilderFieldDto field,
       ResolvedBuilder fieldBuilder,
       String existingValueConstructorArgs,
       String emptyConstructorArgs,
       Map<String, TypeName> additionalTemplateArguments,
       TypeName parentBuilderType,
-      ProcessingContext context) {
+      BuilderProcessingContext context) {
     TypeName fieldBuilderType = fieldBuilder.typeName();
     TypeNameGeneric consumerType = createConsumerType(fieldBuilderType);
     MethodParameterDto parameter = new MethodParameterDto();
@@ -275,14 +289,13 @@ public final class MethodGeneratorUtil {
   }
 
   /**
-   * Creates the private prefilling method backing a {@link BuilderInstantiation.PrefillCall}:
-   * obtains an empty builder and calls one field function per prefilled property of the value.
+   * Creates the private prefilling method backing a {@link PrefillCall}: obtains an empty builder
+   * and calls one field function per prefilled property of the value.
    *
    * @param prefillCall the resolved field-prefilling instantiation
    * @return the method DTO for the prefilling method
    */
-  public static BuilderMethodDto createFieldPrefillMethod(
-      BuilderInstantiation.PrefillCall prefillCall) {
+  public static BuilderMethodDto createFieldPrefillMethod(PrefillCall prefillCall) {
     MethodParameterDto parameter = new MethodParameterDto();
     parameter.setParameterName("value");
     parameter.setParameterTypeName(prefillCall.sourceType());
@@ -291,22 +304,22 @@ public final class MethodGeneratorUtil {
     methodDto.setStatic(true);
     methodDto.setOrdering(2100); // last: private helpers go below toString
     methodDto.setMethodName(prefillCall.methodName());
-    methodDto.setReturnType(prefillCall.builderType());
+    methodDto.setReturnType(prefillCall.generatedType());
     methodDto.addParameter(parameter);
     StringBuilder code = new StringBuilder();
     code.append("$builderType:T builder = ")
-        .append(prefillCall.funcForEmptyBuilder().instantiationCode("$builderType:T", ""))
+        .append(prefillCall.funcForEmptyInstance().instantiationCode("$builderType:T", ""))
         .append(";\n");
-    for (BuilderInstantiation.PrefillCall.Field prefilledField : prefillCall.prefilledFields()) {
+    for (PrefillCall.Field prefilledField : prefillCall.prefilledFields()) {
       code.append("builder.")
-          .append(prefillCall.builderMethodFor(prefilledField))
+          .append(prefillCall.fieldMethodFor(prefilledField))
           .append("(value.")
           .append(prefilledField.accessor())
           .append(");\n");
     }
     code.append("return builder;");
     methodDto.setCode(code.toString());
-    methodDto.addArgument("builderType", prefillCall.builderType());
+    methodDto.addArgument("builderType", prefillCall.generatedType());
     return methodDto;
   }
 
@@ -365,11 +378,11 @@ public final class MethodGeneratorUtil {
    * @return the method DTO for the consumer
    */
   public static BuilderMethodDto createFieldConsumerWithElementBuilders(
-      FieldDto field,
+      BuilderFieldDto field,
       TypeName collectionBuilderType,
       ResolvedBuilder elementBuilder,
       TypeName returnBuilderType,
-      ProcessingContext context) {
+      BuilderProcessingContext context) {
     // The collection builder receives a supplier for element builders: the resolved
     // instantiation path as a method reference
     String elementSupplier =
@@ -397,7 +410,10 @@ public final class MethodGeneratorUtil {
    * @return the method DTO for the simple field consumer
    */
   public static BuilderMethodDto createSimpleFieldConsumer(
-      FieldDto field, TypeName fieldType, TypeName builderType, ProcessingContext context) {
+      BuilderFieldDto field,
+      TypeName fieldType,
+      TypeName builderType,
+      BuilderProcessingContext context) {
     TypeNameGeneric consumerType = createConsumerType(fieldType);
     MethodParameterDto parameter = new MethodParameterDto();
     parameter.setParameterName(field.getOriginalFieldName() + SUFFIX_CONSUMER);
@@ -449,8 +465,12 @@ public final class MethodGeneratorUtil {
    * @param methodDto the method DTO to add the fragment to
    * @param fieldType the field type to get an example value for
    */
-  public static void addExampleChainFragment(BuilderMethodDto methodDto, TypeName fieldType) {
-    addExampleChainFragmentTemplate(methodDto, "#{methodName}(#{exampleValue})", fieldType);
+  public static void addExampleChainFragment(
+      BuilderMethodDto methodDto,
+      TypeName fieldType,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+    addExampleChainFragmentTemplate(
+        methodDto, "#{methodName}(#{exampleValue})", fieldType, builderResolver);
   }
 
   /**
@@ -468,9 +488,11 @@ public final class MethodGeneratorUtil {
    * @param elementType the element type to get an example value for
    */
   public static void addExampleChainFragmentVarArgs(
-      BuilderMethodDto methodDto, TypeName elementType) {
+      BuilderMethodDto methodDto,
+      TypeName elementType,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     addExampleChainFragmentTemplate(
-        methodDto, "#{methodName}(#{exampleValue}, #{exampleValue})", elementType);
+        methodDto, "#{methodName}(#{exampleValue}, #{exampleValue})", elementType, builderResolver);
   }
 
   /**
@@ -488,12 +510,15 @@ public final class MethodGeneratorUtil {
    * @param fieldType the field type to get an example value for
    */
   public static void addExampleChainFragmentWithSupplier(
-      BuilderMethodDto methodDto, TypeName fieldType) {
+      BuilderMethodDto methodDto,
+      TypeName fieldType,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     if (fieldType.hasEmptyConstructor()) {
       addExampleChainFragmentTemplate(
           methodDto, "#{methodName}(" + fieldType.getClassName() + "::new)");
     } else {
-      addExampleChainFragmentTemplate(methodDto, "#{methodName}(() -> #{exampleValue})", fieldType);
+      addExampleChainFragmentTemplate(
+          methodDto, "#{methodName}(() -> #{exampleValue})", fieldType, builderResolver);
     }
   }
 
@@ -517,11 +542,15 @@ public final class MethodGeneratorUtil {
    * @param fieldType the field type to get an example value for (can be {@code null})
    */
   public static void addExampleChainFragmentTemplate(
-      BuilderMethodDto methodDto, String template, TypeName fieldType) {
+      BuilderMethodDto methodDto,
+      String template,
+      TypeName fieldType,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     String fragment = template.replace("#{methodName}", methodDto.getMethodName());
 
     if (fieldType != null) {
-      Optional<String> exampleValue = JavadocExampleValues.getExampleValue(fieldType);
+      Optional<String> exampleValue =
+          JavadocExampleValues.getExampleValue(fieldType, builderResolver);
       if (exampleValue.isEmpty()) {
         return;
       }

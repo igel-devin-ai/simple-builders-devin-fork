@@ -1,16 +1,40 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Andreas Igel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package org.javahelpers.simple.builders.processor;
 
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.contains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.notContains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.notContains;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createMockAnnotation;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -34,12 +58,6 @@ import org.junit.jupiter.api.Test;
  * @see <a href="https://github.com/java-helpers/simple-builders/issues/92">Issue #92</a>
  */
 class TypeUseAnnotationTest {
-
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation);
-    return compilation;
-  }
 
   @Test
   void typeUseAnnotations_onListElements_copiedToBuilderMethods() {
@@ -69,9 +87,9 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, person);
+    Compilation compilation = compile(notNullAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are preserved in builder field
     ProcessorAsserts.assertingResult(
@@ -114,9 +132,9 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, product);
+    Compilation compilation = compile(notNullAnnotation, product);
     String generatedCode = loadGeneratedSource(compilation, "ProductBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are preserved
     ProcessorAsserts.assertingResult(
@@ -159,9 +177,9 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, config);
+    Compilation compilation = compile(notNullAnnotation, config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are preserved
     ProcessorAsserts.assertingResult(
@@ -204,9 +222,9 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, validAnnotation, data);
+    Compilation compilation = compile(notNullAnnotation, validAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
     // Verify that both TYPE_USE annotations are preserved
     ProcessorAsserts.assertingResult(
@@ -247,9 +265,9 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, container);
+    Compilation compilation = compile(notNullAnnotation, container);
     String generatedCode = loadGeneratedSource(compilation, "ContainerBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ContainerBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ContainerBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are preserved in nested generics
     ProcessorAsserts.assertingResult(
@@ -302,9 +320,9 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(paramAnnotation, typeUseAnnotation, data);
+    Compilation compilation = compile(paramAnnotation, typeUseAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
     // The @ParamOnly annotation comes from the constructor parameter.
     // It should NOT appear on the field type in the builder.
@@ -356,9 +374,9 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, person);
+    Compilation compilation = compile(notNullAnnotation, person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify that TYPE_USE annotations are NOT preserved in builder field
     ProcessorAsserts.assertingResult(
@@ -401,9 +419,9 @@ class TypeUseAnnotationTest {
             }
             """);
 
-    Compilation compilation = compileSources(hybridAnnotation, data);
+    Compilation compilation = compile(hybridAnnotation, data);
     String generatedCode = loadGeneratedSource(compilation, "DataBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "DataBuilder", generatedCode);
 
     // Verify deduplication
     ProcessorAsserts.assertingResult(

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -97,7 +97,7 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
             usingExistingBuilders = OptionState.DISABLED,
             usingFieldFunctionPrefill = OptionState.DISABLED,
             builderSuffix = "Builder",
-            setterSuffix = "",
+            setterPrefix = "",
             formattingMode = "lightweight"))
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE)

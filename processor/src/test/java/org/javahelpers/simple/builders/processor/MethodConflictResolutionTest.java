@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2025 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,18 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package org.javahelpers.simple.builders.processor;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.assertGenerationSucceeded;
+import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 
 import com.google.testing.compile.Compilation;
+import java.util.List;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -69,10 +71,6 @@ import org.junit.jupiter.api.Test;
  * </ul>
  */
 class MethodConflictResolutionTest {
-
-  private Compilation compile(JavaFileObject... files) {
-    return ProcessorTestUtils.createCompiler().compile(files);
-  }
 
   @Test
   void shouldHandleMultipleFieldsWithoutConflicts() {
@@ -230,6 +228,9 @@ class MethodConflictResolutionTest {
 
     assert builderFieldConflictCount > 0
         : "Expected builder field conflict warning for duplicate 'name' fields with different types";
+    // Conflict warnings must carry the element position so javac renders File.java:[line,col]
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Builder field conflict");
 
     // Assert specific methods exist in generated code
     // Note: Both fields try to create supplier methods with same signature:
@@ -308,6 +309,12 @@ class MethodConflictResolutionTest {
 
     assert builderFieldConflictCount > 0
         : "Expected builder field conflict warning for duplicate 'name' fields";
+    // Conflict warnings must carry the element position so javac renders File.java:[line,col]
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Builder field conflict");
+    // The deferred location marker is a verbose-mode artifact and must not appear in default mode
+    ProcessorTestUtils.assertNoWarningContaining(
+        compilation, "Location of the warning(s) reported above");
 
     // Assert specific methods exist in generated code
     // Note: firstName, lastName fields have no generated methods because they have no getters
@@ -397,6 +404,9 @@ class MethodConflictResolutionTest {
 
     assert lowerPriorityDroppedCount > 0
         : "Expected warning about lower priority method (80) being dropped in favor of higher priority (100)";
+    // Conflict warnings must carry the element position so javac renders File.java:[line,col]
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Method conflict resolved");
 
     // Verify that only the higher priority method exists (the direct setter from Supplier field)
     // The auto-generated supplier method from String field should have been dropped
@@ -409,5 +419,59 @@ class MethodConflictResolutionTest {
         .filter(d -> d.getMessage(null).contains("Method conflict"))
         .forEach(
             d -> System.out.println("✓ Lower priority dropped correctly: " + d.getMessage(null)));
+  }
+
+  /**
+   * In verbose mode warnings must be emitted without element attachment — javac would otherwise
+   * prepend {@code File.java:[line,col]} mid-line and break the hierarchical layout. Instead the
+   * processor reports one {@code Location of the warning(s) reported above} marker per warned class
+   * at round end, carrying the class's source position.
+   */
+  @Test
+  void shouldDeferWarningLocationsInVerboseMode() {
+    // Given: A DTO with a builder field conflict, compiled in verbose mode
+    String packageName = "test";
+    String className = "VerboseClash";
+
+    JavaFileObject sourceFile =
+        ProcessorTestUtils.simpleBuilderClass(
+            packageName,
+            className,
+            """
+                private String name;
+                private java.util.Optional<String> nameOptional;
+
+                public String getName() { return name; }
+                public void setName(String name) { this.name = name; }
+
+                public java.util.Optional<String> getNameOptional() { return nameOptional; }
+                // Same setter name with a different field type produces a field conflict
+                public void setName(java.util.Optional<String> name) { this.nameOptional = name; }
+            """);
+
+    // When
+    Compilation compilation =
+        ProcessorTestUtils.createCompiler().withOptions("-Averbose=true").compile(sourceFile);
+
+    // Then - Should compile successfully
+    assertThat(compilation).succeeded();
+
+    // In verbose mode warnings are emitted without element attachment so the javac position
+    // prefix does not break the hierarchical layout
+    ProcessorAsserts.assertDiagnosticsHaveNoSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Builder field conflict");
+    ProcessorAsserts.assertDiagnosticsHaveNoSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "Method conflict resolved");
+
+    // ...and one location marker per warned class carries the source position instead
+    List<Diagnostic<? extends JavaFileObject>> locationMarkers =
+        compilation.diagnostics().stream()
+            .filter(d -> d.getKind() == Diagnostic.Kind.WARNING)
+            .filter(d -> d.getMessage(null).contains("Location of the warning(s) reported above"))
+            .toList();
+    Assertions.assertEquals(
+        1, locationMarkers.size(), "Expected exactly one warning location marker for the class");
+    Assertions.assertNotNull(locationMarkers.get(0).getSource());
+    Assertions.assertTrue(locationMarkers.get(0).getLineNumber() > 0);
   }
 }

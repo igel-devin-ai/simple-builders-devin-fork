@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,15 +30,15 @@ import java.util.List;
 import java.util.ServiceLoader;
 import javax.annotation.processing.ProcessingEnvironment;
 import org.apache.commons.collections4.CollectionUtils;
+import org.javahelpers.codegen.logging.PerformanceTracker;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.generators.BuilderEnhancer;
 import org.javahelpers.simple.builders.processor.generators.Generator;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
-import org.javahelpers.simple.builders.processor.processing.logging.PerformanceTracker;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Unified registry that manages all generators (both method generators and builder enhancers).
@@ -59,7 +59,7 @@ public class GeneratorRegistry {
 
   private final List<MethodGenerator> methodGenerators;
   private final List<BuilderEnhancer> builderEnhancers;
-  private final ProcessingContext context;
+  private final BuilderProcessingContext context;
   private final ComponentFilter componentFilter;
   private final PerformanceTracker performanceTracker;
 
@@ -69,7 +69,7 @@ public class GeneratorRegistry {
    * @param context the processing context for configuration and utilities
    * @param processingEnv the processing environment for reading compiler arguments
    */
-  public GeneratorRegistry(ProcessingContext context, ProcessingEnvironment processingEnv) {
+  public GeneratorRegistry(BuilderProcessingContext context, ProcessingEnvironment processingEnv) {
     this.context = context;
     this.methodGenerators = new ArrayList<>();
     this.builderEnhancers = new ArrayList<>();
@@ -94,30 +94,35 @@ public class GeneratorRegistry {
    * @return list of all generated methods from all applicable generators
    */
   public List<BuilderMethodDto> generateAllMethods(
-      FieldDto field, TypeName dtoType, TypeName builderType) {
+      BuilderFieldDto field, TypeName dtoType, TypeName builderType) {
     List<BuilderMethodDto> allMethods = new ArrayList<>();
 
     context.debugStartOperation("Processing method generators");
     for (MethodGenerator generator : methodGenerators) {
       if (generator.appliesTo(field, dtoType, context)) {
         try {
-          context.debug(
-              "Applying: %s (priority: %d)",
-              generator.getClass().getSimpleName(), generator.getPriority());
-
           String genName = generator.getClass().getSimpleName();
           performanceTracker.startGenerator();
           List<BuilderMethodDto> generatedMethods =
               generator.generateMethods(field, builderType, context);
           performanceTracker.endGenerator(genName);
 
+          context.debug(
+              "Applied: %s (priority: %d): +%d methods",
+              genName,
+              generator.getPriority(),
+              generatedMethods == null ? 0 : generatedMethods.size());
+
           if (CollectionUtils.isNotEmpty(generatedMethods)) {
             allMethods.addAll(generatedMethods);
           }
         } catch (Exception e) {
           context.error(
+              context.getCurrentTask().element(),
               "Failed to apply method generator %s to field %s: %s",
-              generator.getClass().getName(), field.getFieldNameInBuilder(), e.getMessage());
+              generator.getClass().getName(),
+              field.getFieldNameInBuilder(),
+              e.getMessage());
         }
       }
     }
@@ -138,17 +143,21 @@ public class GeneratorRegistry {
     for (BuilderEnhancer enhancer : builderEnhancers) {
       if (enhancer.appliesTo(builderDto, dtoType, context)) {
         try {
-          context.debug(
-              "Applying: %s (priority: %d)",
-              enhancer.getClass().getSimpleName(), enhancer.getPriority());
-
+          int[] before = contentCounts(builderDto);
           String enhName = enhancer.getClass().getSimpleName();
           performanceTracker.startEnhancer();
           enhancer.enhanceBuilder(builderDto, context);
           performanceTracker.endEnhancer(enhName);
           appliedEnhancers++;
+
+          context.debug(
+              "Applied: %s (priority: %d)%s",
+              enhName,
+              enhancer.getPriority(),
+              describeContribution(contentCounts(builderDto), before));
         } catch (Exception e) {
           context.error(
+              context.getCurrentTask().element(),
               "Failed to apply enhancer %s to builder %s: %s",
               enhancer.getClass().getName(),
               builderDto.getBuilderTypeName().getClassName(),
@@ -157,11 +166,41 @@ public class GeneratorRegistry {
       }
     }
 
-    if (appliedEnhancers > 0) {
-      context.debugEndOperation("Applied %d builder enhancers", appliedEnhancers);
-    } else {
-      context.debugEndOperation();
+    context.debugEndOperation("Applied %d builder enhancers", appliedEnhancers);
+  }
+
+  /** Counts the content slots of a builder definition an enhancer can contribute to. */
+  private static int[] contentCounts(BuilderDefinitionDto builderDto) {
+    return new int[] {
+      builderDto.getMethods().size(),
+      builderDto.getConstructors().size(),
+      builderDto.getNestedTypes().size(),
+      builderDto.getClassAnnotations().size(),
+      builderDto.getInterfaces().size(),
+      builderDto.getClassJavadoc() == null ? 0 : 1
+    };
+  }
+
+  /**
+   * Renders what an enhancer added, e.g. {@code ": +2 methods, +1 constructor"}, or an empty string
+   * when it changed nothing measurable.
+   */
+  private static String describeContribution(int[] after, int[] before) {
+    String[] labels = {"methods", "constructors", "nested types", "annotations", "interfaces"};
+    StringBuilder contribution = new StringBuilder();
+    for (int i = 0; i < labels.length; i++) {
+      if (after[i] > before[i]) {
+        contribution
+            .append(contribution.isEmpty() ? ": +" : ", +")
+            .append(after[i] - before[i])
+            .append(' ')
+            .append(labels[i]);
+      }
     }
+    if (after[5] > before[5]) {
+      contribution.append(contribution.isEmpty() ? ": " : ", ").append("javadoc added");
+    }
+    return contribution.toString();
   }
 
   /**

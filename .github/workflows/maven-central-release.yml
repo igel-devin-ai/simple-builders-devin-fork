@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up JDK 17
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           java-version: '17'
           distribution: 'zulu'
@@ -63,6 +63,10 @@ jobs:
           CURRENT_VERSION="${CURRENT_VERSION//$'\r'/}"
           CURRENT_VERSION="${CURRENT_VERSION// /}"
 
+          # All POMs must share the root version, otherwise a module would be
+          # released and bumped from a stale version.
+          .github/scripts/project-version.sh --verify
+
           if [[ "$CURRENT_VERSION" != *-SNAPSHOT ]]; then
             echo "::error::Current POM version is '$CURRENT_VERSION', expected a -SNAPSHOT version. main must always be on a snapshot version."
             exit 1
@@ -85,14 +89,10 @@ jobs:
           VERSION=${{ steps.version.outputs.VERSION }}
           echo "Setting version to $VERSION"
 
-          # Update parent POM
-          mvn versions:set -DnewVersion=$VERSION -DgenerateBackupPoms=false
-
-          # Update ALL module POMs. The modules have no <parent> element, so
-          # each must be set individually. Only core and processor are deployed
-          # to Maven Central, but all modules must share the same version for
-          # the reactor build to work correctly.
-          mvn versions:set -DnewVersion=$VERSION -DgenerateBackupPoms=false -pl core,processor,example,example-custom-generator
+          # Update ALL POMs (root and every module, including profile-only
+          # ones). Only the deployable artifacts are deployed to Maven Central, but
+          # all modules must share the same version.
+          .github/scripts/project-version.sh --set "$VERSION"
 
       - name: Update reproducible build timestamp
         run: |
@@ -100,7 +100,7 @@ jobs:
           TIMESTAMP="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
           echo "Setting project.build.outputTimestamp to $TIMESTAMP for release $VERSION"
           # Pin archive entry timestamps to the release moment for reproducible builds.
-          mvn versions:set-property -Dproperty=project.build.outputTimestamp -DnewVersion="$TIMESTAMP" -DgenerateBackupPoms=false -pl core,processor
+          mvn versions:set-property -Dproperty=project.build.outputTimestamp -DnewVersion="$TIMESTAMP" -DgenerateBackupPoms=false -pl core,codegen-core,codegen-roaster,simple-processor,codegen-testing,processor
 
       - name: Commit version changes
         id: commit
@@ -114,7 +114,7 @@ jobs:
           # update to main goes through a reviewed pull request instead of a
           # direct push that bypasses branch protection.
           git checkout -B "$BRANCH"
-          git add pom.xml core/pom.xml processor/pom.xml example/pom.xml example-custom-generator/pom.xml
+          git add -- pom.xml '*/pom.xml'
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
           # Only commit if there are changes. Note: no "[skip ci]" so the
@@ -148,7 +148,7 @@ jobs:
       - name: Generate SBOM (CycloneDX)
         run: |
           # Emit a CycloneDX SBOM (JSON + XML) for each published module.
-          mvn -B -Prelease -pl core,processor \
+          mvn -B -Prelease -pl core,codegen-core,codegen-roaster,simple-processor,codegen-testing,processor \
             org.cyclonedx:cyclonedx-maven-plugin:makeBom -DskipTests
 
       - name: Deploy (stage) to Maven Central
@@ -162,7 +162,7 @@ jobs:
           # (autoPublish defaults to false). A maintainer must review and
           # manually publish the staged deployment, so nothing is auto-released
           # to Maven Central without human approval.
-          mvn -B deploy -Prelease -pl core,processor -Dcentral.autoPublish=false
+          mvn -B deploy -Prelease -pl core,codegen-core,codegen-roaster,simple-processor,codegen-testing,processor -Dcentral.autoPublish=false
 
       # Generates a signed build-provenance attestation for the released JARs. This is
       # GitHub's official attestation action; the resulting SLSA attestation is stored in
@@ -264,12 +264,11 @@ jobs:
           echo "Next snapshot version: $NEXT_VERSION"
 
           # Set all POMs to the next snapshot version.
-          mvn versions:set -DnewVersion=$NEXT_VERSION -DgenerateBackupPoms=false
-          mvn versions:set -DnewVersion=$NEXT_VERSION -DgenerateBackupPoms=false -pl core,processor,example,example-custom-generator
+          .github/scripts/project-version.sh --set "$NEXT_VERSION"
 
           # Commit as a second commit on the release branch. The tag (already
           # created and pushed on the first commit) is unaffected by this commit.
-          git add pom.xml core/pom.xml processor/pom.xml example/pom.xml example-custom-generator/pom.xml
+          git add -- pom.xml '*/pom.xml'
           git commit -m "release: prepare next version $NEXT_VERSION"
 
           # Force-push the updated branch so the remote has both commits.

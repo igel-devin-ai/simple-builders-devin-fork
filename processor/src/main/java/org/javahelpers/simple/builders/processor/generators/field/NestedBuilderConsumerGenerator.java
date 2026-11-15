@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,12 +31,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Generates Consumer-based methods for fields whose type has a @SimpleBuilder annotation.
@@ -89,17 +89,18 @@ public class NestedBuilderConsumerGenerator implements MethodGenerator {
   }
 
   @Override
-  public boolean appliesTo(FieldDto field, TypeName dtoType, ProcessingContext context) {
+  public boolean appliesTo(
+      BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     if (!context.getConfiguration().shouldGenerateBuilderConsumer()) {
       return false;
     }
-    return field.getFieldType().getBuilderType().isPresent();
+    return context.resolveBuilderType(field.getFieldType()).isPresent();
   }
 
   @Override
   public List<BuilderMethodDto> generateMethods(
-      FieldDto field, TypeName builderType, ProcessingContext context) {
-    Optional<ResolvedBuilder> fieldBuilderOpt = field.getFieldType().getResolvedBuilder();
+      BuilderFieldDto field, TypeName builderType, BuilderProcessingContext context) {
+    Optional<ResolvedBuilder> fieldBuilderOpt = context.resolveBuilderType(field.getFieldType());
     if (fieldBuilderOpt.isEmpty() || fieldBuilderOpt.get().funcForPrefilledBuilder().isEmpty()) {
       return Collections.emptyList();
     }

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,17 +28,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameList;
+import org.javahelpers.codegen.model.type.TypeNameMap;
+import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameArray;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameGeneric;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameList;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameMap;
-import org.javahelpers.simple.builders.processor.model.type.TypeNameSet;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Generates varargs helper methods for List, Set, and Map fields.
@@ -88,7 +88,8 @@ public class VarArgsHelperGenerator implements MethodGenerator {
   }
 
   @Override
-  public boolean appliesTo(FieldDto field, TypeName dtoType, ProcessingContext context) {
+  public boolean appliesTo(
+      BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     if (!context.getConfiguration().shouldGenerateVarArgsHelpers()) {
       return false;
     }
@@ -99,7 +100,7 @@ public class VarArgsHelperGenerator implements MethodGenerator {
 
   @Override
   public List<BuilderMethodDto> generateMethods(
-      FieldDto field, TypeName builderType, ProcessingContext context) {
+      BuilderFieldDto field, TypeName builderType, BuilderProcessingContext context) {
 
     TypeName fieldType = field.getFieldType();
     TypeName parameterType = null;
@@ -136,7 +137,10 @@ public class VarArgsHelperGenerator implements MethodGenerator {
    * @return the method DTO for the setter
    */
   private BuilderMethodDto createFieldSetterByVarArgs(
-      FieldDto field, TypeName parameterType, TypeName builderType, ProcessingContext context) {
+      BuilderFieldDto field,
+      TypeName parameterType,
+      TypeName builderType,
+      BuilderProcessingContext context) {
     String baseExpression;
     TypeName fieldType = field.getFieldType();
 
@@ -160,16 +164,21 @@ public class VarArgsHelperGenerator implements MethodGenerator {
     // Add code block imports and example fragments for collection factory methods
     if (fieldType instanceof TypeNameList listType) {
       method.getMethodCodeDto().addCodeBlockImport(List.class);
-      MethodGeneratorUtil.addExampleChainFragmentVarArgs(method, listType.getElementType());
+      MethodGeneratorUtil.addExampleChainFragmentVarArgs(
+          method, listType.getElementType(), context::resolveBuilderType);
     } else if (fieldType instanceof TypeNameSet setType) {
       method.getMethodCodeDto().addCodeBlockImport(Set.class);
-      MethodGeneratorUtil.addExampleChainFragmentVarArgs(method, setType.getElementType());
+      MethodGeneratorUtil.addExampleChainFragmentVarArgs(
+          method, setType.getElementType(), context::resolveBuilderType);
     } else if (fieldType instanceof TypeNameMap mapType) {
       method.getMethodCodeDto().addCodeBlockImport(Map.class);
       // For maps, only add example if key type is String
       if (mapType.getKeyType().getClassName().equals("String")) {
         MethodGeneratorUtil.addExampleChainFragmentTemplate(
-            method, "#{methodName}(Map.entry(\"key\", #{exampleValue}))", mapType.getValueType());
+            method,
+            "#{methodName}(Map.entry(\"key\", #{exampleValue}))",
+            mapType.getValueType(),
+            context::resolveBuilderType);
       }
     }
 

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,25 +24,19 @@
 
 package org.javahelpers.simple.builders.processor;
 
-import static org.javahelpers.simple.builders.processor.testing.ProcessorAsserts.contains;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.compile;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
-import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.printDiagnosticsOnVerbose;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import javax.tools.JavaFileObject;
-import org.javahelpers.simple.builders.processor.testing.ProcessorAsserts;
+import org.javahelpers.codegen.testing.ProcessorAsserts;
+import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.junit.jupiter.api.Test;
 
 /** Tests for null constraint handling in generated builders. */
 class NullConstraintTest {
-
-  private Compilation compileSources(JavaFileObject... sources) {
-    Compilation compilation = createCompiler().compile(sources);
-    printDiagnosticsOnVerbose(compilation);
-    return compilation;
-  }
 
   @Test
   void constructorFieldWithoutNotNull_noValidationGenerated() {
@@ -70,9 +64,9 @@ class NullConstraintTest {
             }
             """);
 
-    Compilation compilation = compileSources(person);
+    Compilation compilation = compile(person);
     String generatedCode = loadGeneratedSource(compilation, "PersonBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "PersonBuilder", generatedCode);
 
     // Verify NO validation for constructor field without @NotNull (can be left unset → null passed)
     // The update helper's unset guard uses the same isSet() condition, so the full required-field
@@ -126,9 +120,9 @@ class NullConstraintTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, user);
+    Compilation compilation = compile(notNullAnnotation, user);
     String generatedCode = loadGeneratedSource(compilation, "UserBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "UserBuilder", generatedCode);
 
     // Verify non-null constructor field validation (must be set AND can't be null)
     ProcessorAsserts.assertingResult(
@@ -181,9 +175,9 @@ class NullConstraintTest {
             }
             """);
 
-    Compilation compilation = compileSources(notNullAnnotation, product);
+    Compilation compilation = compile(notNullAnnotation, product);
     String generatedCode = loadGeneratedSource(compilation, "ProductBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ProductBuilder", generatedCode);
 
     // Verify setter field has validation in build() to catch nulls from suppliers/providers
     ProcessorAsserts.assertingResult(
@@ -239,9 +233,9 @@ class NullConstraintTest {
             }
             """);
 
-    Compilation compilation = compileSources(nonNullAnnotation, account);
+    Compilation compilation = compile(nonNullAnnotation, account);
     String generatedCode = loadGeneratedSource(compilation, "AccountBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "AccountBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "AccountBuilder", generatedCode);
 
     // Verify both constructor fields have isSet() check and null value check
     ProcessorAsserts.assertingResult(
@@ -309,9 +303,9 @@ class NullConstraintTest {
             }
             """);
 
-    Compilation compilation = compileSources(jakartaNotNull, lombokNonNull, entity);
+    Compilation compilation = compile(jakartaNotNull, lombokNonNull, entity);
     String generatedCode = loadGeneratedSource(compilation, "EntityBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "EntityBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "EntityBuilder", generatedCode);
 
     // Verify constructor field has validation in build() (must be set AND can't be null)
     ProcessorAsserts.assertingResult(
@@ -354,9 +348,9 @@ class NullConstraintTest {
             }
             """);
 
-    Compilation compilation = compileSources(config);
+    Compilation compilation = compile(config);
     String generatedCode = loadGeneratedSource(compilation, "ConfigBuilder");
-    ProcessorAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
+    BuilderAsserts.assertGenerationSucceeded(compilation, "ConfigBuilder", generatedCode);
 
     // Verify constructor primitive field has validation (must be set AND can't be null)
     ProcessorAsserts.assertingResult(

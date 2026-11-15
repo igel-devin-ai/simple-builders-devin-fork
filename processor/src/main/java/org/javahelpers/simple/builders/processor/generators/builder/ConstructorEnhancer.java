@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,16 +24,16 @@
 
 package org.javahelpers.simple.builders.processor.generators.builder;
 
+import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.method.ConstructorDto;
+import org.javahelpers.codegen.model.method.MethodCodeDto;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.simple.builders.processor.generators.BuilderEnhancer;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
-import org.javahelpers.simple.builders.processor.model.core.FieldDto;
-import org.javahelpers.simple.builders.processor.model.javadoc.JavadocDto;
-import org.javahelpers.simple.builders.processor.model.method.ConstructorDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodCodeDto;
-import org.javahelpers.simple.builders.processor.model.method.MethodParameterDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.model.type.TypeNamePrimitive;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Enhancer that adds builder constructors.
@@ -59,12 +59,12 @@ public class ConstructorEnhancer implements BuilderEnhancer {
 
   @Override
   public boolean appliesTo(
-      BuilderDefinitionDto builderDto, TypeName dtoType, ProcessingContext context) {
+      BuilderDefinitionDto builderDto, TypeName dtoType, BuilderProcessingContext context) {
     return true; // Constructors are always needed
   }
 
   @Override
-  public void enhanceBuilder(BuilderDefinitionDto builderDto, ProcessingContext context) {
+  public void enhanceBuilder(BuilderDefinitionDto builderDto, BuilderProcessingContext context) {
     builderDto.addConstructor(createEmptyConstructor(builderDto));
     builderDto.addConstructor(createFromInstanceConstructor(builderDto));
   }
@@ -97,7 +97,7 @@ public class ConstructorEnhancer implements BuilderEnhancer {
     constructor.setMethodCodeDto(codeDto);
 
     // Initialize fields from instance
-    for (FieldDto field : builderDto.getAllFieldsForBuilder()) {
+    for (BuilderFieldDto field : builderDto.getAllFieldsForBuilder()) {
       String fieldName = field.getFieldNameInBuilder();
 
       // getGetterName() returns Optional<String>

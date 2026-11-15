@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2026 Andreas Igel
+ * Copyright (c) 2025-2026 Andreas Igel
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,9 @@
  */
 package org.javahelpers.simple.builders.processor.generators;
 
+import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.simple.builders.processor.model.core.BuilderDefinitionDto;
-import org.javahelpers.simple.builders.processor.model.type.TypeName;
-import org.javahelpers.simple.builders.processor.processing.ProcessingContext;
+import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
 
 /**
  * Interface for enhancing or modifying generated builders beyond the basic field-based methods.
@@ -72,7 +72,8 @@ public non-sealed interface BuilderEnhancer extends Generator {
    * @param context the processing context for configuration and utilities
    * @return true if this enhancer should be applied to this builder
    */
-  boolean appliesTo(BuilderDefinitionDto builderDto, TypeName dtoType, ProcessingContext context);
+  boolean appliesTo(
+      BuilderDefinitionDto builderDto, TypeName dtoType, BuilderProcessingContext context);
 
   /**
    * Enhances the builder by adding or modifying its structure.
@@ -91,5 +92,5 @@ public non-sealed interface BuilderEnhancer extends Generator {
    * @param builderDto the builder to enhance (modifiable)
    * @param context the processing context for configuration and utilities
    */
-  void enhanceBuilder(BuilderDefinitionDto builderDto, ProcessingContext context);
+  void enhanceBuilder(BuilderDefinitionDto builderDto, BuilderProcessingContext context);
 }
