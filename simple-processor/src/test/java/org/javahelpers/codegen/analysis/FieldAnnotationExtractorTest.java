@@ -25,6 +25,8 @@
 package org.javahelpers.codegen.analysis;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
+import static org.javahelpers.codegen.testing.ElementTestUtils.field;
+import static org.javahelpers.codegen.testing.ElementTestUtils.typeElement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,60 +37,32 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.processing.AnnotationProcessingContext;
 import org.javahelpers.codegen.testing.CapturingProcessingLogger;
 import org.javahelpers.codegen.testing.CodegenTestUtils;
+import org.javahelpers.codegen.testing.ProbeProcessor;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link FieldAnnotationExtractor} against elements captured from a compilation. */
 class FieldAnnotationExtractorTest {
 
-  private static class ProbeProcessor extends AbstractProcessor {
-    private final BiConsumer<RoundEnvironment, TypeMappingContext> probe;
-    private boolean ran;
-
-    ProbeProcessor(BiConsumer<RoundEnvironment, TypeMappingContext> probe) {
-      this.probe = probe;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-      return SourceVersion.latestSupported();
-    }
-
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-      return Set.of("*");
-    }
-
-    @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-      if (ran || roundEnv.processingOver()) {
-        return false;
-      }
-      ran = true;
-      probe.accept(
-          roundEnv,
-          new AnnotationProcessingContext(
-              CapturingProcessingLogger.create().logger(), processingEnv));
-      return false;
-    }
+  private static TypeMappingContext context(ProcessingEnvironment processingEnv) {
+    return new AnnotationProcessingContext(
+        CapturingProcessingLogger.create().logger(), processingEnv);
   }
 
-  private static VariableElement field(TypeElement dto, String fieldName) {
-    return dto.getEnclosedElements().stream()
-        .filter(VariableElement.class::isInstance)
-        .map(VariableElement.class::cast)
-        .filter(e -> e.getSimpleName().toString().equals(fieldName))
-        .findFirst()
-        .orElseThrow();
+  private static Compilation compile(
+      BiConsumer<RoundEnvironment, ProcessingEnvironment> probe, String... sources) {
+    JavaFileObject[] files =
+        java.util.Arrays.stream(sources)
+            .map(CodegenTestUtils::forSource)
+            .toArray(JavaFileObject[]::new);
+    return CodegenTestUtils.createCompiler(new ProbeProcessor(probe)).compile(files);
   }
 
   private static final String DTO_SOURCE =
@@ -105,35 +79,32 @@ class FieldAnnotationExtractorTest {
       }
       """;
 
-  private static final String ANNOTATION_SOURCES =
+  private static final String DEFAULT_ANNOTATION_SOURCE =
       """
       package test;
       public @interface Default { String value(); }
       """;
 
-  private static final String NONNULL_SOURCE =
+  private static final String NONNULL_ANNOTATION_SOURCE =
       """
       package test;
       public @interface NonNull {}
       """;
 
-  private Compilation compile(BiConsumer<RoundEnvironment, TypeMappingContext> probe) {
-    return CodegenTestUtils.createCompiler(new ProbeProcessor(probe))
-        .compile(
-            CodegenTestUtils.forSource(DTO_SOURCE),
-            CodegenTestUtils.forSource(ANNOTATION_SOURCES),
-            CodegenTestUtils.forSource(NONNULL_SOURCE));
+  private Compilation compileDto(BiConsumer<RoundEnvironment, ProcessingEnvironment> probe) {
+    return compile(probe, DTO_SOURCE, DEFAULT_ANNOTATION_SOURCE, NONNULL_ANNOTATION_SOURCE);
   }
 
   @Test
   void extractDeprecatedAnnotation_findsDeprecatedField() {
     AtomicReference<Optional<AnnotationDto>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
-            (roundEnv, ctx) ->
+        compileDto(
+            (roundEnv, processingEnv) ->
                 result.set(
                     FieldAnnotationExtractor.extractDeprecatedAnnotation(
-                        field(ctx.getTypeElement("test.Dto"), "legacy"), ctx)));
+                        field(typeElement(processingEnv, "test.Dto"), "legacy"),
+                        context(processingEnv))));
 
     assertThat(compilation).succeeded();
     assertTrue(result.get().isPresent());
@@ -148,11 +119,12 @@ class FieldAnnotationExtractorTest {
   void extractDeprecatedAnnotation_emptyForPlainField() {
     AtomicReference<Optional<AnnotationDto>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
-            (roundEnv, ctx) ->
+        compileDto(
+            (roundEnv, processingEnv) ->
                 result.set(
                     FieldAnnotationExtractor.extractDeprecatedAnnotation(
-                        field(ctx.getTypeElement("test.Dto"), "plain"), ctx)));
+                        field(typeElement(processingEnv, "test.Dto"), "plain"),
+                        context(processingEnv))));
 
     assertThat(compilation).succeeded();
     assertTrue(result.get().isEmpty());
@@ -162,11 +134,12 @@ class FieldAnnotationExtractorTest {
   void extractAnnotations_returnsMemberValues() {
     AtomicReference<List<AnnotationDto>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
-            (roundEnv, ctx) ->
+        compileDto(
+            (roundEnv, processingEnv) ->
                 result.set(
                     FieldAnnotationExtractor.extractAnnotations(
-                        field(ctx.getTypeElement("test.Dto"), "mode"), ctx)));
+                        field(typeElement(processingEnv, "test.Dto"), "mode"),
+                        context(processingEnv))));
 
     assertThat(compilation).succeeded();
     assertEquals(1, result.get().size());
@@ -180,9 +153,9 @@ class FieldAnnotationExtractorTest {
     AtomicReference<Boolean> nonNull = new AtomicReference<>();
     AtomicReference<Boolean> plain = new AtomicReference<>();
     Compilation compilation =
-        compile(
-            (roundEnv, ctx) -> {
-              TypeElement dto = ctx.getTypeElement("test.Dto");
+        compileDto(
+            (roundEnv, processingEnv) -> {
+              var dto = typeElement(processingEnv, "test.Dto");
               nonNull.set(FieldAnnotationExtractor.hasNonNullConstraint(field(dto, "required")));
               plain.set(FieldAnnotationExtractor.hasNonNullConstraint(field(dto, "plain")));
             });
@@ -196,11 +169,11 @@ class FieldAnnotationExtractorTest {
   void extractAnnotationValue_matchesAnnotationBySimpleName() {
     AtomicReference<Optional<String>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
-            (roundEnv, ctx) ->
+        compileDto(
+            (roundEnv, processingEnv) ->
                 result.set(
                     FieldAnnotationExtractor.extractAnnotationValue(
-                        field(ctx.getTypeElement("test.Dto"), "mode"), Set.of("Default"))));
+                        field(typeElement(processingEnv, "test.Dto"), "mode"), Set.of("Default"))));
 
     assertThat(compilation).succeeded();
     assertEquals(Optional.of("GENERAL"), result.get());
@@ -211,6 +184,14 @@ class FieldAnnotationExtractorTest {
     assertEquals(
         "\"GENERAL\"",
         FieldAnnotationExtractor.formatDefaultExpression("GENERAL", TypeName.of(String.class)));
+  }
+
+  @Test
+  void formatDefaultExpression_quotesCharValues() {
+    assertEquals(
+        "'A'",
+        FieldAnnotationExtractor.formatDefaultExpression(
+            "A", org.javahelpers.codegen.model.type.TypeNamePrimitive.CHAR));
   }
 
   @Test

@@ -137,4 +137,46 @@ class CodegenTestUtilsTest {
     assertThrows(
         AssertionError.class, () -> CodegenTestUtils.loadGeneratedSource(compilation, "Missing"));
   }
+
+  @Test
+  void assertNoWarningContaining_passesWithoutMatchingWarning() {
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(
+                new ProbeProcessor(
+                    (roundEnv, env) ->
+                        env.getMessager()
+                            .printMessage(javax.tools.Diagnostic.Kind.WARNING, "a warning")))
+            .compile(CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
+
+    assertThat(compilation).succeeded();
+    CodegenTestUtils.assertNoWarningContaining(compilation, "never emitted");
+    assertThrows(
+        AssertionError.class,
+        () -> CodegenTestUtils.assertNoWarningContaining(compilation, "warning"));
+  }
+
+  @Test
+  void readSource_readsForSourceContent() {
+    JavaFileObject file = CodegenTestUtils.forSource("package test;\npublic class Dto {}\n");
+    assertEquals("package test;\npublic class Dto {}\n", CodegenTestUtils.readSource(file));
+  }
+
+  @Test
+  void printDiagnosticsAndSources_emitToSystemOut() {
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(new EmittingProcessor())
+            .compile(CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
+
+    assertThat(compilation).succeeded();
+    var captured = new java.io.ByteArrayOutputStream();
+    var original = System.out;
+    try {
+      System.setOut(new java.io.PrintStream(captured));
+      CodegenTestUtils.printDiagnostics(compilation);
+      CodegenTestUtils.printGeneratedSources(compilation);
+    } finally {
+      System.setOut(original);
+    }
+    assertTrue(captured.toString().contains("Generated"));
+  }
 }

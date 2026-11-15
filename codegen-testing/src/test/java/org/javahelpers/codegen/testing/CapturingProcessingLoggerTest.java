@@ -70,4 +70,16 @@ class CapturingProcessingLoggerTest {
 
     assertThrows(AssertionError.class, () -> capturing.assertMessage("NOTE: never emitted"));
   }
+
+  @Test
+  void assertMessageMatching_passesForPredicateMatch() {
+    CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
+
+    capturing.logger().warning("warn %s", "42");
+
+    capturing.assertMessageMatching(m -> m.contains("42"), "expected a message containing 42");
+    assertThrows(
+        AssertionError.class,
+        () -> capturing.assertMessageMatching(m -> m.contains("99"), "missing"));
+  }
 }

@@ -25,6 +25,7 @@
 package org.javahelpers.codegen.testing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -53,5 +54,16 @@ class ProcessingEnvironmentStubTest {
     ProcessingEnvironment env =
         ProcessingEnvironmentStub.builder().put("a", "1").put("b", "2").build();
     assertEquals(Map.of("a", "1", "b", "2"), env.getOptions());
+  }
+
+  @Test
+  void unsupportedAccessors_returnNull() {
+    ProcessingEnvironment env = ProcessingEnvironmentStub.createEmpty();
+    assertNull(env.getMessager());
+    assertNull(env.getFiler());
+    assertNull(env.getElementUtils());
+    assertNull(env.getTypeUtils());
+    assertEquals(javax.lang.model.SourceVersion.latestSupported(), env.getSourceVersion());
+    assertEquals(java.util.Locale.getDefault().getLanguage(), env.getLocale().getLanguage());
   }
 }

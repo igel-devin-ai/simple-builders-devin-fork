@@ -339,10 +339,13 @@
                 </goals>
                 <configuration>
                   <excludes>
-                    <!-- Exclude DTOs (model package) from coverage -->
+                    <!-- Exclude DTOs (model packages) and enums from coverage: no logic to test -->
                     <exclude>**/codegen/model/**</exclude>
+                    <exclude>**/processor/model/**</exclude>
+                    <exclude>**/enums/**</exclude>
                     <!-- Exclude exception classes from coverage (simple constructors) -->
                     <exclude>**/*Exception.*</exclude>
+                    <exclude>**/exceptions/**</exclude>
                     <!-- Exclude constants-only holders -->
                     <exclude>**/JavadocConstants.*</exclude>
                   </excludes>

@@ -31,6 +31,9 @@ import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.notContains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.testing.compile.Compilation;
+import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ProcessorAsserts} — asserting the assertion helpers themselves. */
@@ -79,5 +82,94 @@ class ProcessorAssertsTest {
     assertThrows(
         AssertionError.class,
         () -> assertNormalizedEquals("public class Foo {}", "public class Bar {}", "mismatch"));
+  }
+
+  @Test
+  void assertNotesInOrder_matchesEmittedNotesExactly() {
+    Compilation compilation =
+        compileWithDiagnostics(
+            (env, dto) -> {
+              env.getMessager().printMessage(Diagnostic.Kind.NOTE, "first note");
+              env.getMessager().printMessage(Diagnostic.Kind.NOTE, "second note");
+            });
+
+    ProcessorAsserts.assertNotesInOrder(compilation, "first note", "second note");
+    assertThrows(
+        AssertionError.class, () -> ProcessorAsserts.assertNotesInOrder(compilation, "first note"));
+    assertThrows(
+        AssertionError.class,
+        () -> ProcessorAsserts.assertNotesInOrder(compilation, "first note", "other"));
+  }
+
+  @Test
+  void assertDiagnosticsHaveSourcePosition_passesForElementAttachedWarnings() {
+    Compilation compilation =
+        compileWithDiagnostics(
+            (env, dto) ->
+                env.getMessager().printMessage(Diagnostic.Kind.WARNING, "warning on element", dto));
+
+    ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "warning on element");
+  }
+
+  @Test
+  void assertDiagnosticsHaveSourcePosition_failsForElementLessWarnings() {
+    Compilation compilation =
+        compileWithDiagnostics(
+            (env, dto) ->
+                env.getMessager().printMessage(Diagnostic.Kind.WARNING, "floating warning"));
+
+    assertThrows(
+        AssertionError.class,
+        () ->
+            ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+                compilation, Diagnostic.Kind.WARNING, "floating warning"));
+    assertThrows(
+        AssertionError.class,
+        () ->
+            ProcessorAsserts.assertDiagnosticsHaveSourcePosition(
+                compilation, Diagnostic.Kind.WARNING, "not emitted"));
+  }
+
+  @Test
+  void assertDiagnosticsHaveNoSourcePosition_passesForElementLessWarnings() {
+    Compilation compilation =
+        compileWithDiagnostics(
+            (env, dto) ->
+                env.getMessager().printMessage(Diagnostic.Kind.WARNING, "floating warning"));
+
+    ProcessorAsserts.assertDiagnosticsHaveNoSourcePosition(
+        compilation, Diagnostic.Kind.WARNING, "floating warning");
+  }
+
+  @Test
+  void assertNoSourceGenerated_failsWhenFileExists() {
+    Compilation compilation =
+        compileWithDiagnostics(
+            (env, dto) -> {
+              try {
+                var file = env.getFiler().createSourceFile("test.Generated");
+                try (var writer = file.openWriter()) {
+                  writer.write("package test;\npublic class Generated {}\n");
+                }
+              } catch (java.io.IOException e) {
+                throw new IllegalStateException(e);
+              }
+            });
+
+    ProcessorAsserts.assertNoSourceGenerated(compilation, "Other", "no other file expected");
+    assertThrows(
+        AssertionError.class,
+        () -> ProcessorAsserts.assertNoSourceGenerated(compilation, "Generated", "boom"));
+  }
+
+  private static Compilation compileWithDiagnostics(
+      java.util.function.BiConsumer<javax.annotation.processing.ProcessingEnvironment, TypeElement>
+          emitter) {
+    return CodegenTestUtils.createCompiler(
+            new ProbeProcessor(
+                (roundEnv, env) ->
+                    emitter.accept(env, ElementTestUtils.typeElement(env, "test.Dto"))))
+        .compile(CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
   }
 }

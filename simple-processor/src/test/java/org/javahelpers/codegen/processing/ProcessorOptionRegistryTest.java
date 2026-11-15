@@ -24,25 +24,79 @@
 
 package org.javahelpers.codegen.processing;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
+import org.javahelpers.codegen.testing.ProcessingEnvironmentStub;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ProcessorOptionRegistry}. */
 class ProcessorOptionRegistryTest {
 
-  private static ProcessorOptionRegistry minimalRegistry() {
-    return ProcessorOptionRegistry.builder().options(Set.of()).build();
+  private static CompilerOption option(String name) {
+    return new CompilerOption() {
+      @Override
+      public String getOptionName() {
+        return name;
+      }
+
+      @Override
+      public String getCompilerArgument() {
+        return "testdomain." + name;
+      }
+    };
   }
 
   @Test
-  void reader_returnsReaderForEnvironment() {
-    assertNotNull(minimalRegistry().reader(null));
+  void supportedOptions_includesOptionAndArgumentNames() {
+    ProcessorOptionRegistry registry =
+        new ProcessorOptionRegistry(List.of(option("alpha"), option("beta")));
+    assertTrue(
+        registry
+            .supportedOptions()
+            .containsAll(List.of("alpha", "testdomain.alpha", "beta", "testdomain.beta")));
   }
 
   @Test
-  void formatterProfile_withoutConfiguredOption_returnsNull() {
-    assertNull(minimalRegistry().formatterProfile(new CompilerArgumentsReader(null)));
+  void builder_wiresVerboseAndFormatterProfile() {
+    ProcessorOptionRegistry registry =
+        ProcessorOptionRegistry.builder()
+            .options(List.of(option("alpha")))
+            .verboseOption(option("verbose"))
+            .formatterProfileOption(option("formatter"))
+            .build();
+    assertTrue(registry.supportedOptions().containsAll(List.of("verbose", "formatter", "alpha")));
+
+    assertTrue(
+        registry.isVerboseRequested(
+            new CompilerArgumentsReader(
+                ProcessingEnvironmentStub.create(Map.of("testdomain.verbose", "true")))));
+    assertEquals(
+        "compact",
+        registry.formatterProfile(
+            new CompilerArgumentsReader(
+                ProcessingEnvironmentStub.create(Map.of("formatter", " compact ")))));
+  }
+
+  @Test
+  void defaults_noVerboseAndNoProfile() {
+    ProcessorOptionRegistry registry = new ProcessorOptionRegistry(List.of());
+    CompilerArgumentsReader reader =
+        new CompilerArgumentsReader(ProcessingEnvironmentStub.create(Map.of()));
+    assertFalse(registry.isVerboseRequested(reader));
+    assertNull(registry.formatterProfile(reader));
+  }
+
+  @Test
+  void reader_wrapsProcessingEnvironment() {
+    ProcessorOptionRegistry registry = new ProcessorOptionRegistry(List.of());
+    assertTrue(
+        registry
+            .reader(ProcessingEnvironmentStub.create(Map.of("verbose", "true")))
+            .readBooleanValue(option("verbose")));
   }
 }

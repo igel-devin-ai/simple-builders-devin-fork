@@ -28,14 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.javahelpers.codegen.CodeGenerationException;
-import org.javahelpers.codegen.GeneratedSourceFile;
-import org.javahelpers.codegen.GenerationEnvironment;
-import org.javahelpers.codegen.GenerationIssueReporter;
 import org.javahelpers.codegen.SourceFormatter;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.FormattingMode;
-import org.javahelpers.codegen.logging.NoOpPerformanceTracker;
-import org.javahelpers.codegen.logging.PerformanceTracker;
 import org.javahelpers.codegen.logging.ProcessingLogger;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.method.ConstructorDto;
@@ -46,6 +41,7 @@ import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.roaster.exceptions.RoasterMapperException;
 import org.javahelpers.codegen.testing.CapturingProcessingLogger;
+import org.javahelpers.codegen.testing.TestingGenerationEnvironment;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -58,35 +54,6 @@ import org.junit.jupiter.api.Test;
  * round.
  */
 class RoasterCodeGeneratorResilienceTest {
-
-  /**
-   * Minimal {@link GenerationEnvironment} built only from codegen-core types: issues surface on the
-   * logger as warnings, timing is not tracked, and {@code createSourceFile} returns {@code null} so
-   * the file-write step fails deterministically on it.
-   */
-  private static GenerationEnvironment stubEnvironment(ProcessingLogger logger) {
-    return new GenerationEnvironment() {
-      @Override
-      public ProcessingLogger getLogger() {
-        return logger;
-      }
-
-      @Override
-      public PerformanceTracker getPerformanceTracker() {
-        return new NoOpPerformanceTracker();
-      }
-
-      @Override
-      public GenerationIssueReporter getIssueReporter() {
-        return logger::warning;
-      }
-
-      @Override
-      public GeneratedSourceFile createSourceFile(CharSequence qualifiedName) {
-        return null;
-      }
-    };
-  }
 
   /** Placeholder subtype the mapper does not know how to render, forcing a mapping failure. */
   private static final class UnsupportedPlaceholder extends MethodCodePlaceholder<String> {
@@ -111,7 +78,8 @@ class RoasterCodeGeneratorResilienceTest {
     classDef.addConstructor(constructor);
 
     ProcessingLogger logger = CapturingProcessingLogger.create().logger();
-    RoasterCodeGenerator generator = new RoasterCodeGenerator(stubEnvironment(logger));
+    RoasterCodeGenerator generator =
+        new RoasterCodeGenerator(TestingGenerationEnvironment.createUnwritable(logger));
 
     SourceFormatter formatter = new RoasterSourceFormatter(logger, FormattingMode.NONE);
     CodeGenerationException thrown =
@@ -137,7 +105,8 @@ class RoasterCodeGeneratorResilienceTest {
     classDef.addMethod(duplicateSignatureMethod("second"));
 
     CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
-    RoasterCodeGenerator generator = new RoasterCodeGenerator(stubEnvironment(capturing.logger()));
+    RoasterCodeGenerator generator =
+        new RoasterCodeGenerator(TestingGenerationEnvironment.createUnwritable(capturing.logger()));
 
     SourceFormatter formatter = new RoasterSourceFormatter(capturing.logger(), FormattingMode.NONE);
     // generation itself succeeds; only the file-write step fails on the stub's null source file
