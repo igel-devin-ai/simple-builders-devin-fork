@@ -238,6 +238,159 @@ class BuilderProcessorTest {
   }
 
   @Test
+  void shouldGenerateBuilderForNestedPropertyTypeInSameClass() {
+    // Given: a property whose type is a static nested class of the DTO itself
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private Status status;
+
+              public Status getStatus() { return status; }
+              public void setStatus(Status status) { this.status = status; }
+
+              public static class Status {}
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(source);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: the nested type keeps its enclosing qualifier
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "OrderDto.Status");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Status;");
+  }
+
+  @Test
+  void shouldGenerateBuilderForNestedPropertyTypeInOtherClass() {
+    // Given: a property whose type is a static nested class of another class
+    JavaFileObject address =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            public class OtherClass {
+              public static class Address {}
+            }
+            """);
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private OtherClass.Address address;
+
+              public OtherClass.Address getAddress() { return address; }
+              public void setAddress(OtherClass.Address address) { this.address = address; }
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(address, source);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: the nested type keeps its enclosing qualifier
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "OtherClass.Address");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Address;");
+  }
+
+  @Test
+  void shouldGenerateBuilderForDeeplyNestedPropertyType() {
+    // Given: a property typed as a doubly nested class (Outer.Middle.Inner)
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private Outer.Middle.Inner value;
+
+              public Outer.Middle.Inner getValue() { return value; }
+              public void setValue(Outer.Middle.Inner value) { this.value = value; }
+            }
+            """);
+    JavaFileObject outer =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            public class Outer {
+              public static class Middle {
+                public static class Inner {}
+              }
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(source, outer);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: the full qualifier chain is kept and a legal nested import is emitted
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "import test.Outer.Middle.Inner;");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Outer.Middle;");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Inner;");
+  }
+
+  @Test
+  void shouldGenerateBuilderForGenericNestedPropertyType() {
+    // Given: a property typed as a generic nested class (Outer.Pair<String>)
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private Outer.Pair<String> pair;
+
+              public Outer.Pair<String> getPair() { return pair; }
+              public void setPair(Outer.Pair<String> pair) { this.pair = pair; }
+            }
+            """);
+    JavaFileObject outer =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            public class Outer {
+              public static class Pair<T> {}
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(source, outer);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: generic nested type resolves with its enclosing qualifier and type arguments
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "import test.Outer.Pair;");
+    ProcessorAsserts.assertContaining(generatedCode, "Pair<String>");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Pair;");
+  }
+
+  @Test
   void shouldWarnWhenAnnotatedConstructorIsNotAccessible() {
     // Given: a private constructor explicitly selected via @SimpleBuilderConstructor
     String source =

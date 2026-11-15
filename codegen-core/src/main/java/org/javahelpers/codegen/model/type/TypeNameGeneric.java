@@ -45,6 +45,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class TypeNameGeneric extends TypeName {
   private final List<TypeName> innerTypeArguments;
 
+  /** The raw (outer) type before generic parameterization; preserves nested-type structure. */
+  private final TypeName outerType;
+
   /**
    * Creates a {@code TypeNameGeneric} based on another {@code TypeName} as outer type and a list of
    * inner type arguments.
@@ -54,6 +57,7 @@ public class TypeNameGeneric extends TypeName {
    */
   public TypeNameGeneric(TypeName outerType, List<TypeName> innerTypeArguments) {
     super(outerType.getPackageName(), outerType.getClassName());
+    this.outerType = outerType;
     this.innerTypeArguments = List.copyOf(innerTypeArguments);
   }
 
@@ -67,6 +71,7 @@ public class TypeNameGeneric extends TypeName {
    */
   public TypeNameGeneric(String packageName, String className, List<TypeName> innerTypeArguments) {
     super(packageName, className);
+    this.outerType = new TypeName(packageName, className);
     this.innerTypeArguments = List.copyOf(innerTypeArguments);
   }
 
@@ -79,6 +84,7 @@ public class TypeNameGeneric extends TypeName {
    */
   public TypeNameGeneric(TypeName outerType, TypeName... innerTypeArguments) {
     super(outerType.getPackageName(), outerType.getClassName());
+    this.outerType = outerType;
     this.innerTypeArguments = List.of(innerTypeArguments);
   }
 
@@ -92,6 +98,7 @@ public class TypeNameGeneric extends TypeName {
    */
   public TypeNameGeneric(String packageName, String className, TypeName... innerTypeArguments) {
     super(packageName, className);
+    this.outerType = new TypeName(packageName, className);
     this.innerTypeArguments = List.of(innerTypeArguments);
   }
 
@@ -101,7 +108,12 @@ public class TypeNameGeneric extends TypeName {
    * @return the raw type
    */
   public TypeName getRawType() {
-    return new TypeName(getPackageName(), getClassName());
+    return outerType;
+  }
+
+  @Override
+  public boolean isNestedType() {
+    return outerType.isNestedType();
   }
 
   /**

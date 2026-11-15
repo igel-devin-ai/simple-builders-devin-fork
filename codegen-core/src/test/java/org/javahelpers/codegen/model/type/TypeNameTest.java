@@ -24,6 +24,7 @@
 
 package org.javahelpers.codegen.model.type;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -70,5 +71,35 @@ class TypeNameTest {
     assertTrue(longType.isAnyOf(Integer.class, Long.class, Float.class, Double.class));
     assertFalse(longType.isAnyOf(Integer.class, Float.class));
     assertFalse(new TypeName("java.lang", "String").isAnyOf(Integer.class, Long.class));
+  }
+
+  @Test
+  void nestedType_exposesEnclosingTypeAndQualifiedName() {
+    TypeNameNested inner = new TypeNameNested(new TypeName("test", "Outer"), "Inner");
+
+    assertEquals("Outer.Inner", inner.getClassName());
+    assertEquals("test.Outer.Inner", inner.getFullQualifiedName());
+    assertTrue(inner.isNestedType());
+    assertFalse(new TypeName("test", "Plain").isNestedType());
+  }
+
+  @Test
+  void nestedType_supportsArbitraryDepth() {
+    TypeNameNested middle = new TypeNameNested(new TypeName("test", "Outer"), "Middle");
+    TypeNameNested deep = new TypeNameNested(middle, "Inner");
+
+    assertEquals("Outer.Middle.Inner", deep.getClassName());
+    assertEquals("test.Outer.Middle.Inner", deep.getFullQualifiedName());
+    assertEquals("Outer.Middle", deep.getEnclosingType().getClassName());
+  }
+
+  @Test
+  void genericType_preservesNestedFlag() {
+    TypeNameNested pair = new TypeNameNested(new TypeName("test", "Outer"), "Pair");
+    TypeNameGeneric pairOfString =
+        new TypeNameGeneric(pair, List.of(new TypeName("java.lang", "String")));
+
+    assertTrue(pairOfString.isNestedType());
+    assertEquals("test.Outer.Pair", pairOfString.getRawType().getFullQualifiedName());
   }
 }
