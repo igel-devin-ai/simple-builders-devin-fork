@@ -592,9 +592,12 @@ public final class JavaLangMapper {
               @Override
               public TypeName visitDeclared(DeclaredType t, Void p) {
                 TypeElement elementOfParameter = (TypeElement) context.asElement(typeOfParameter);
-                String simpleClassName = elementOfParameter.getSimpleName().toString();
                 String packageName = context.getPackageName(elementOfParameter);
-                TypeName rawType = new TypeName(packageName, simpleClassName);
+                // Use the qualified name relative to the package so nested types keep their
+                // enclosing-class qualifier (e.g. "Outer.Inner"), matching mapToTypeName
+                String qualifiedName = elementOfParameter.getQualifiedName().toString();
+                String className = Strings.CS.removeStart(qualifiedName, packageName + ".");
+                TypeName rawType = new TypeName(packageName, className);
                 if (elementOfParameter.getKind() == ElementKind.ENUM) {
                   rawType.setEnumType(true);
                 }

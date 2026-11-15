@@ -62,7 +62,13 @@ public final class RoasterMapper {
     } else if (typeName instanceof TypeNameGeneric genericType) {
       mappedType = mapGenericType(genericType);
     } else {
-      mappedType = typeName.getClassName();
+      // For nested classes (className contains '.', e.g. "Outer.Inner") Roaster would split a
+      // bare "Outer.Inner" into package "Outer" + class "Inner". Passing the full qualified name
+      // makes it emit the correct "import pkg.Outer.Inner" and use "Inner" in code.
+      mappedType =
+          typeName.getClassName().contains(".")
+              ? typeName.getFullQualifiedName()
+              : typeName.getClassName();
     }
 
     return prependTypeUseAnnotations(mappedType, typeName.getAnnotations());
