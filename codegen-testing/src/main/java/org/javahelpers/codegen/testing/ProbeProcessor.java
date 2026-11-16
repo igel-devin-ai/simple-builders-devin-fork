@@ -65,6 +65,9 @@ public class ProbeProcessor extends AbstractProcessor {
    * @param sources the compilation units to compile
    * @return whatever the probe produced
    */
+  @SuppressWarnings(
+      "java:S3516") // the result is produced by the probe callback inside the compilation — static
+  // analysis sees {@code result} as never mutated
   public static <T> T probe(
       BiFunction<RoundEnvironment, ProcessingEnvironment, T> probe, JavaFileObject... sources) {
     AtomicReference<T> result = new AtomicReference<>();

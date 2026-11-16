@@ -168,29 +168,43 @@ class CodegenTestUtilsTest {
             .compile(CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
 
     assertThat(compilation).succeeded();
-    var captured = new StringBuilder();
-    java.util.logging.Handler captureHandler =
-        new java.util.logging.Handler() {
-          @Override
-          public void publish(java.util.logging.LogRecord record) {
-            captured.append(record.getMessage()).append('\n');
-          }
-
-          @Override
-          public void flush() {}
-
-          @Override
-          public void close() {}
-        };
-    java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(CodegenTestUtils.class.getName());
-    log.addHandler(captureHandler);
-    try {
+    String captured;
+    try (CapturingLogHandler handler =
+        new CapturingLogHandler(
+            java.util.logging.Logger.getLogger(CodegenTestUtils.class.getName()))) {
       CodegenTestUtils.printDiagnostics(compilation);
       CodegenTestUtils.printGeneratedSources(compilation);
-    } finally {
-      log.removeHandler(captureHandler);
+      captured = handler.output();
     }
-    assertTrue(captured.toString().contains("Generated"));
+    assertTrue(captured.contains("Generated"));
+  }
+
+  /** JUL handler capturing log records; detaches itself from its logger on {@link #close()}. */
+  private static final class CapturingLogHandler extends java.util.logging.Handler
+      implements AutoCloseable {
+    private final StringBuilder records = new StringBuilder();
+    private final java.util.logging.Logger logger;
+
+    private CapturingLogHandler(java.util.logging.Logger logger) {
+      this.logger = logger;
+      logger.addHandler(this);
+    }
+
+    @Override
+    public void publish(java.util.logging.LogRecord record) {
+      records.append(record.getMessage()).append('\n');
+    }
+
+    @Override
+    public void flush() {}
+
+    @Override
+    public void close() {
+      logger.removeHandler(this);
+    }
+
+    private String output() {
+      return records.toString();
+    }
   }
 }
