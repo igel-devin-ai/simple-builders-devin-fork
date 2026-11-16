@@ -198,6 +198,68 @@ public class MinimalCodegenProcessorTest {
     }
   }
 
+  /**
+   * MinimalProcessor whose analysis always fails — and without a configured logger prefix, so the
+   * simple class name becomes the diagnostic prefix.
+   */
+  static class FailingProcessor extends MinimalProcessor {
+    FailingProcessor() {
+      super(
+          CodegenProcessorConfiguration.builder()
+              .elementCollector(ElementCollector.builder().selector(GenerateBuilder.class).build())
+              .build());
+    }
+
+    @Override
+    protected List<MinimalTargetDefinition> analyse(
+        CodegenTask<CodegenConfiguration> task, AnnotationProcessingContext ctx) {
+      throw new IllegalStateException("boom");
+    }
+  }
+
+  /** MinimalProcessor whose analysis produces nothing. */
+  static class EmptyProcessor extends MinimalProcessor {
+    @Override
+    protected List<MinimalTargetDefinition> analyse(
+        CodegenTask<CodegenConfiguration> task, AnnotationProcessingContext ctx) {
+      return List.of();
+    }
+  }
+
+  /** MinimalProcessor whose planning produces no tasks. */
+  static class NoTasksProcessor extends MinimalProcessor {
+    @Override
+    protected List<CodegenTask<CodegenConfiguration>> planTasks(
+        ElementGroups collected, AnnotationProcessingContext ctx) {
+      return List.of();
+    }
+  }
+
+  /** Verbose compiler option understood by {@link VerboseProcessor}. */
+  private static final CompilerOption VERBOSE =
+      new CompilerOption() {
+        @Override
+        public String getOptionName() {
+          return "verbose";
+        }
+
+        @Override
+        public String getCompilerArgument() {
+          return "verbose";
+        }
+      };
+
+  /** MinimalProcessor with the verbose option declared — {@code -Averbose=true} switches logger. */
+  static class VerboseProcessor extends MinimalProcessor {
+    VerboseProcessor() {
+      super(
+          CodegenProcessorConfiguration.builder()
+              .elementCollector(ElementCollector.builder().selector(GenerateBuilder.class).build())
+              .optionRegistry(ProcessorOptionRegistry.builder().verboseOption(VERBOSE).build())
+              .build());
+    }
+  }
+
   @Test
   void minimalProcessorGeneratesDelegatingBuilder() {
     // Given
@@ -331,6 +393,110 @@ public class MinimalCodegenProcessorTest {
             .map(d -> d.getMessage(null))
             .anyMatch(m -> m.contains("requires Java 99 or higher")),
         () -> "expected unsupported-JDK error: " + compilation.errors());
+  }
+
+  /**
+   * An exception thrown by {@code analyse} is reported per task — strict mode (the default)
+   * promotes it to an error carrying the processor's class name as prefix.
+   */
+  @Test
+  void failsWhenAnalysisThrows() {
+    JavaFileObject source =
+        CodegenTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.codegen.processing.MinimalCodegenProcessorTest.GenerateBuilder;
+            @GenerateBuilder
+            public class Person {
+              public void setName(String name) {}
+            }
+            """);
+
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(new FailingProcessor()).compile(source);
+
+    assertThat(compilation).failed();
+    assertTrue(
+        compilation.errors().stream()
+            .map(d -> d.getMessage(null))
+            .anyMatch(
+                m ->
+                    m.contains("Failed to generate target - boom")
+                        && m.contains("FailingProcessor")),
+        () -> "expected per-task failure error: " + compilation.errors());
+  }
+
+  /**
+   * An empty {@code analyse} result is legal — the round produces no targets and the compilation
+   * still succeeds.
+   */
+  @Test
+  void succeedsWhenAnalysisIsEmpty() {
+    JavaFileObject source =
+        CodegenTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.codegen.processing.MinimalCodegenProcessorTest.GenerateBuilder;
+            @GenerateBuilder
+            public class Person {
+              public void setName(String name) {}
+            }
+            """);
+
+    Compilation compilation = CodegenTestUtils.createCompiler(new EmptyProcessor()).compile(source);
+
+    assertThat(compilation).succeeded();
+  }
+
+  /**
+   * An empty {@code planTasks} result ends the round without work — the compilation still succeeds.
+   */
+  @Test
+  void succeedsWhenNoTasksPlanned() {
+    JavaFileObject source =
+        CodegenTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.codegen.processing.MinimalCodegenProcessorTest.GenerateBuilder;
+            @GenerateBuilder
+            public class Person {
+              public void setName(String name) {}
+            }
+            """);
+
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(new NoTasksProcessor()).compile(source);
+
+    assertThat(compilation).succeeded();
+  }
+
+  /** {@code -Averbose=true} switches the logger to verbose output — generation still works. */
+  @Test
+  void generatesInVerboseMode() {
+    JavaFileObject source =
+        CodegenTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.codegen.processing.MinimalCodegenProcessorTest.GenerateBuilder;
+            @GenerateBuilder
+            public class Person {
+              public void setName(String name) {}
+            }
+            """);
+
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(new VerboseProcessor())
+            .withOptions("-Averbose=true")
+            .compile(source);
+
+    assertThat(compilation).succeeded();
+    String generatedCode =
+        CodegenTestUtils.readSource(
+            compilation.generatedFiles().stream()
+                .filter(f -> f.getName().endsWith("PersonBuilder.java"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no PersonBuilder.java generated")));
+    assertTrue(generatedCode.contains("public PersonBuilder name(String name)"));
   }
 
   private static Path writeDto(Path workDir, String sourceRootName) throws IOException {

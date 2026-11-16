@@ -75,6 +75,11 @@ class FieldAnnotationExtractorTest {
         private String mode;
         @test.NonNull
         private String required;
+        private @test.NonNull String typed;
+        @test.Rich(tags = {"alpha", "beta"}, type = String.class, cond = test.ItemCondition.BAD)
+        private String rich;
+        @test.Rich(tags = {})
+        private String richEmpty;
         private String plain;
       }
       """;
@@ -88,11 +93,37 @@ class FieldAnnotationExtractorTest {
   private static final String NONNULL_ANNOTATION_SOURCE =
       """
       package test;
+      @java.lang.annotation.Target({
+        java.lang.annotation.ElementType.FIELD,
+        java.lang.annotation.ElementType.TYPE_USE
+      })
       public @interface NonNull {}
       """;
 
+  private static final String ITEM_CONDITION_SOURCE =
+      """
+      package test;
+      public enum ItemCondition { GOOD, BAD }
+      """;
+
+  private static final String RICH_ANNOTATION_SOURCE =
+      """
+      package test;
+      public @interface Rich {
+        String[] tags() default {};
+        Class<?> type() default Void.class;
+        ItemCondition cond() default ItemCondition.GOOD;
+      }
+      """;
+
   private Compilation compileDto(BiConsumer<RoundEnvironment, ProcessingEnvironment> probe) {
-    return compile(probe, DTO_SOURCE, DEFAULT_ANNOTATION_SOURCE, NONNULL_ANNOTATION_SOURCE);
+    return compile(
+        probe,
+        DTO_SOURCE,
+        DEFAULT_ANNOTATION_SOURCE,
+        NONNULL_ANNOTATION_SOURCE,
+        ITEM_CONDITION_SOURCE,
+        RICH_ANNOTATION_SOURCE);
   }
 
   @Test
@@ -212,5 +243,118 @@ class FieldAnnotationExtractorTest {
     assertEquals(
         "List.of()",
         FieldAnnotationExtractor.formatDefaultExpression("List.of()", TypeName.of(List.class)));
+  }
+
+  @Test
+  void extractDeprecatedAnnotation_nullElement_returnsEmpty() {
+    assertTrue(FieldAnnotationExtractor.extractDeprecatedAnnotation(null, null).isEmpty());
+  }
+
+  @Test
+  void extractDeprecatedAnnotation_ignoresOtherAnnotations() {
+    // 'mode' carries @Default but not @Deprecated — the mirror scan must fall through
+    AtomicReference<Optional<AnnotationDto>> result = new AtomicReference<>();
+    Compilation compilation =
+        compileDto(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    FieldAnnotationExtractor.extractDeprecatedAnnotation(
+                        field(typeElement(processingEnv, "test.Dto"), "mode"),
+                        context(processingEnv))));
+
+    assertThat(compilation).succeeded();
+    assertTrue(result.get().isEmpty());
+  }
+
+  /**
+   * Type-use annotations live on the {@code TypeMirror}, not the element — {@code
+   * extractAnnotations} on the field's type must find them.
+   */
+  @Test
+  void extractAnnotations_onTypeMirror_findsTypeUseAnnotation() {
+    AtomicReference<List<AnnotationDto>> result = new AtomicReference<>();
+    Compilation compilation =
+        compileDto(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    FieldAnnotationExtractor.extractAnnotations(
+                        field(typeElement(processingEnv, "test.Dto"), "typed").asType(),
+                        context(processingEnv))));
+
+    assertThat(compilation).succeeded();
+    assertEquals(1, result.get().size());
+    assertEquals("NonNull", result.get().get(0).getAnnotationType().getClassName());
+  }
+
+  /**
+   * Enum constants, class literals and arrays are the non-trivial branches of {@code
+   * formatAnnotationValue}: enums get fully qualified, classes print as {@code .class}, arrays as
+   * {@code {...}}.
+   */
+  @Test
+  void extractAnnotations_formatsEnumClassAndArrayMembers() {
+    AtomicReference<List<AnnotationDto>> result = new AtomicReference<>();
+    Compilation compilation =
+        compileDto(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    FieldAnnotationExtractor.extractAnnotations(
+                        field(typeElement(processingEnv, "test.Dto"), "rich"),
+                        context(processingEnv))));
+
+    assertThat(compilation).succeeded();
+    assertEquals(1, result.get().size());
+    AnnotationDto rich = result.get().get(0);
+    assertEquals("test.ItemCondition.BAD", rich.getMembers().get("cond"));
+    assertTrue(
+        rich.getMembers().get("type").endsWith("String.class"),
+        () -> "type member: " + rich.getMembers().get("type"));
+    assertEquals("{\"alpha\", \"beta\"}", rich.getMembers().get("tags"));
+  }
+
+  @Test
+  void extractAnnotations_emptyArrayMember_formatsAsEmptyBraces() {
+    AtomicReference<List<AnnotationDto>> result = new AtomicReference<>();
+    Compilation compilation =
+        compileDto(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    FieldAnnotationExtractor.extractAnnotations(
+                        field(typeElement(processingEnv, "test.Dto"), "richEmpty"),
+                        context(processingEnv))));
+
+    assertThat(compilation).succeeded();
+    assertEquals(1, result.get().size());
+    assertEquals("{}", result.get().get(0).getMembers().get("tags"));
+  }
+
+  @Test
+  void extractAnnotationValue_emptyWhenAnnotationHasNoValueMember() {
+    AtomicReference<Optional<String>> result = new AtomicReference<>();
+    Compilation compilation =
+        compileDto(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    FieldAnnotationExtractor.extractAnnotationValue(
+                        field(typeElement(processingEnv, "test.Dto"), "required"),
+                        Set.of("NonNull"))));
+
+    assertThat(compilation).succeeded();
+    assertTrue(result.get().isEmpty());
+  }
+
+  @Test
+  void extractAnnotationValue_emptyWhenNoNameMatches() {
+    AtomicReference<Optional<String>> result = new AtomicReference<>();
+    Compilation compilation =
+        compileDto(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    FieldAnnotationExtractor.extractAnnotationValue(
+                        field(typeElement(processingEnv, "test.Dto"), "required"),
+                        Set.of("Other"))));
+
+    assertThat(compilation).succeeded();
+    assertTrue(result.get().isEmpty());
   }
 }

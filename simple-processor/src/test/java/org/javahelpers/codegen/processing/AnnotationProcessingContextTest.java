@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.testing.compile.Compilation;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -59,7 +60,7 @@ class AnnotationProcessingContextTest {
         public String getName() { return name; }
       }
       class Base {
-        public void inherited() {}
+        void inherited() {}
       }
       """;
 
@@ -227,5 +228,112 @@ class AnnotationProcessingContextTest {
     assertThat(compilation).succeeded();
     assertNotNull(tracker.get());
     assertEquals("NoOpPerformanceTracker", tracker.get().getClass().getSimpleName());
+  }
+
+  /**
+   * The element-attached and single-argument logging delegates forward to the logger — strict
+   * reporting promotes to error, lenient stays a warning.
+   */
+  @Test
+  void loggingDelegates_fullSurface() {
+    CapturingProcessingLogger capture = CapturingProcessingLogger.createDebugEnabled();
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(
+                new ProbeProcessor(
+                    (roundEnv, env) -> {
+                      TypeElement dto = typeElement(env, "test.Dto");
+                      AnnotationProcessingContext ctx =
+                          new AnnotationProcessingContext(capture.logger(), env);
+                      ctx.info("plain info");
+                      ctx.debugEndOperation();
+                      ctx.debugEndOperation("closing %s", "op");
+                      ctx.warning(dto, "warn %s", "elem");
+                      ctx.error(dto, "err %s", "elem");
+                      ctx.reportBasedOnStrictMode(dto, "strict %s", "elem");
+                      ctx.reportBasedOnStrictMode("strict %s", "flat");
+                      AnnotationProcessingContext lenient =
+                          new AnnotationProcessingContext(
+                              capture.logger(),
+                              env,
+                              AnnotationProcessingOptions.builder()
+                                  .strictModeEnabled(false)
+                                  .build());
+                      lenient.reportBasedOnStrictMode(dto, "lenient %s", "elem");
+                      lenient.reportBasedOnStrictMode("lenient %s", "flat");
+                    }))
+            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
+    assertThat(compilation).succeeded();
+    for (String expected :
+        List.of(
+            "plain info",
+            "closing op",
+            "warn elem",
+            "err elem",
+            "strict elem",
+            "strict flat",
+            "lenient elem",
+            "lenient flat")) {
+      assertTrue(
+          capture.messages().stream().anyMatch(m -> m.contains(expected)),
+          () -> "missing log line: " + expected);
+    }
+  }
+
+  @Test
+  void getTypeElement_nullTypeName_returnsNull() {
+    AtomicReference<TypeElement> result = new AtomicReference<>();
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(
+                new ProbeProcessor(
+                    (roundEnv, env) -> result.set(context(env).getTypeElement((TypeName) null))))
+            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
+    assertThat(compilation).succeeded();
+    assertNull(result.get());
+  }
+
+  /**
+   * With no current task, a member that is neither public nor private is not reachable from the
+   * generated package — the task's output package is the only grant.
+   */
+  @Test
+  void isAccessibleFromGeneratedPackage_packagePrivateWithoutTask_denied() {
+    AtomicReference<Boolean> result = new AtomicReference<>();
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(
+                new ProbeProcessor(
+                    (roundEnv, env) -> {
+                      AnnotationProcessingContext ctx = context(env);
+                      TypeElement dto = typeElement(env, "test.Base");
+                      result.set(ctx.isAccessibleFromGeneratedPackage(method(dto, "inherited")));
+                    }))
+            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
+    assertThat(compilation).succeeded();
+    assertEquals(false, result.get());
+  }
+
+  /**
+   * {@code performanceTrackingEnabled} switches the context to the real tracker writing the report.
+   */
+  @Test
+  void performanceTracker_activeWhenEnabled() {
+    AtomicReference<Object> tracker = new AtomicReference<>();
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(
+                new ProbeProcessor(
+                    (roundEnv, env) ->
+                        tracker.set(
+                            new AnnotationProcessingContext(
+                                    CapturingProcessingLogger.create().logger(),
+                                    env,
+                                    AnnotationProcessingOptions.builder()
+                                        .performanceTrackingEnabled(true)
+                                        .phaseHierarchy(
+                                            new org.javahelpers.codegen.logging.PhaseHierarchy(
+                                                List.of(), Map.of()))
+                                        .build())
+                                .getPerformanceTracker())))
+            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
+    assertThat(compilation).succeeded();
+    assertEquals("ActivePerformanceTracker", tracker.get().getClass().getSimpleName());
   }
 }

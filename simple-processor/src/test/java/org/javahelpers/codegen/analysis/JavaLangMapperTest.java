@@ -30,6 +30,8 @@ import static org.javahelpers.codegen.testing.ElementTestUtils.parameter;
 import static org.javahelpers.codegen.testing.ElementTestUtils.typeElement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.testing.compile.Compilation;
 import java.util.List;
@@ -42,8 +44,10 @@ import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.GenericParameterDto;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
+import org.javahelpers.codegen.model.type.TypeNameNested;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.codegen.processing.AnnotationProcessingContext;
@@ -337,5 +341,161 @@ class JavaLangMapperTest {
     assertThat(compilation).succeeded();
     assertEquals("TypeNameArray", result.get().get(0).getClass().getSimpleName());
     assertEquals("T", result.get().get(1).getClassName());
+  }
+
+  @Test
+  void mapToTypeName_nullElement_returnsNull() {
+    assertNull(JavaLangMapper.mapToTypeName(null, null));
+    assertNull(JavaLangMapper.map2TypeName((TypeElement) null, null));
+  }
+
+  /**
+   * Every primitive kind has its own switch branch — map them all in one DTO to cover the whole
+   * {@code visitPrimitive} dispatch.
+   */
+  @Test
+  void map2MethodParameter_mapsAllPrimitiveKinds() {
+    AtomicReference<List<TypeName>> result = new AtomicReference<>();
+    Compilation compilation =
+        compile(
+            (roundEnv, processingEnv) -> {
+              TypeElement dto = typeElement(processingEnv, "test.Dto");
+              AnnotationProcessingContext ctx = context(processingEnv);
+              result.set(
+                  List.of(
+                      paramType(dto, "setB", 0, ctx),
+                      paramType(dto, "setBy", 0, ctx),
+                      paramType(dto, "setS", 0, ctx),
+                      paramType(dto, "setI", 0, ctx),
+                      paramType(dto, "setL", 0, ctx),
+                      paramType(dto, "setC", 0, ctx),
+                      paramType(dto, "setF", 0, ctx),
+                      paramType(dto, "setD", 0, ctx)));
+            },
+            """
+            package test;
+            public class Dto {
+              public void setB(boolean b) {}
+              public void setBy(byte b) {}
+              public void setS(short s) {}
+              public void setI(int i) {}
+              public void setL(long l) {}
+              public void setC(char c) {}
+              public void setF(float f) {}
+              public void setD(double d) {}
+            }
+            """);
+
+    assertThat(compilation).succeeded();
+    List<String> expected =
+        List.of("BOOLEAN", "BYTE", "SHORT", "INT", "LONG", "CHAR", "FLOAT", "DOUBLE");
+    for (int i = 0; i < expected.size(); i++) {
+      assertInstanceOf(TypeNamePrimitive.class, result.get().get(i));
+      assertEquals(expected.get(i), ((TypeNamePrimitive) result.get().get(i)).getType().name());
+    }
+  }
+
+  /**
+   * A parameter type that is a concrete non-JDK class with a public no-arg constructor is marked
+   * {@code hasEmptyConstructor} — the builder can instantiate it for nested construction.
+   */
+  @Test
+  void map2MethodParameter_marksTypeWithEmptyConstructor() {
+    AtomicReference<TypeName> result = new AtomicReference<>();
+    Compilation compilation =
+        compile(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    paramType(
+                        typeElement(processingEnv, "test.Dto"),
+                        "setAddress",
+                        0,
+                        context(processingEnv))),
+            """
+            package test;
+            public class Address {
+              public Address() {}
+            }
+            """,
+            """
+            package test;
+            public class Dto {
+              public void setAddress(Address a) {}
+            }
+            """);
+
+    assertThat(compilation).succeeded();
+    assertTrue(result.get().hasEmptyConstructor());
+  }
+
+  /**
+   * A static nested class maps to {@link TypeNameNested} — the qualified class name keeps the
+   * {@code Outer.Inner} form.
+   */
+  @Test
+  void map2MethodParameter_nestedType_mapsTypeNameNested() {
+    AtomicReference<TypeName> result = new AtomicReference<>();
+    Compilation compilation =
+        compile(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    paramType(
+                        typeElement(processingEnv, "test.Dto"),
+                        "setInner",
+                        0,
+                        context(processingEnv))),
+            """
+            package test;
+            public class Outer {
+              public static class Inner {}
+            }
+            """,
+            """
+            package test;
+            public class Dto {
+              public void setInner(Outer.Inner i) {}
+            }
+            """);
+
+    assertThat(compilation).succeeded();
+    assertInstanceOf(TypeNameNested.class, result.get());
+    assertEquals("Outer.Inner", result.get().getClassName());
+  }
+
+  /**
+   * A {@code Map} implementation without a {@code Map}-parameter copy constructor cannot offer the
+   * generated map helpers — it falls back to a plain generic type name instead of {@code
+   * TypeNameMap}.
+   */
+  @Test
+  void map2MethodParameter_fallsBackWhenMapLacksCopyConstructor() {
+    AtomicReference<TypeName> result = new AtomicReference<>();
+    Compilation compilation =
+        compile(
+            (roundEnv, processingEnv) ->
+                result.set(
+                    paramType(
+                        typeElement(processingEnv, "test.Dto"),
+                        "setLookup",
+                        0,
+                        context(processingEnv))),
+            """
+            package test;
+            public class WeirdMap<K, V> extends java.util.AbstractMap<K, V> {
+              @Override
+              public java.util.Set<java.util.Map.Entry<K, V>> entrySet() {
+                return java.util.Set.of();
+              }
+            }
+            """,
+            """
+            package test;
+            public class Dto {
+              public void setLookup(WeirdMap<String, Integer> lookup) {}
+            }
+            """);
+
+    assertThat(compilation).succeeded();
+    assertInstanceOf(TypeNameGeneric.class, result.get());
   }
 }

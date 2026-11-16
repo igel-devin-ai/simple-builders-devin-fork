@@ -27,6 +27,10 @@ package org.javahelpers.codegen.processing;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.AnnotationMirror;
@@ -40,10 +44,116 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.TypeMirror;
 import org.javahelpers.codegen.testing.CapturingProcessingLogger;
+import org.javahelpers.codegen.testing.CodegenTestUtils;
+import org.javahelpers.codegen.testing.ProbeProcessor;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ElementCollector}. */
 class ElementCollectorTest {
+
+  /** Direct-selection annotation for the round tests. */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Selected {}
+
+  /** Opt-out annotation for the round tests. */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Skipped {}
+
+  /** Meta-marker annotation for the round tests. */
+  @Target(ElementType.ANNOTATION_TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Marker {}
+
+  private static final String DTO_SOURCE =
+      """
+      package test;
+      import org.javahelpers.codegen.processing.ElementCollectorTest.Selected;
+      import org.javahelpers.codegen.processing.ElementCollectorTest.Skipped;
+      import org.javahelpers.codegen.processing.ElementCollectorTest.TemplateHolder;
+      @Selected
+      public class Beta {}
+      @Selected @Skipped
+      class Alpha {}
+      @TemplateHolder.Template
+      class Gamma {}
+      """;
+
+  /**
+   * Holds the template annotation so the compiled source can reference it as a nested type of a
+   * classpath-visible class.
+   */
+  public static class TemplateHolder {
+    /** Annotation meta-marked with {@link Marker}. */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Marker
+    public @interface Template {}
+  }
+
+  /**
+   * Elements carrying the opt-out annotation are dropped from a direct selection — and a debug line
+   * explains the drop.
+   */
+  @Test
+  void collect_optOutAnnotationRemovesSelected() {
+    ElementCollector collector =
+        ElementCollector.builder()
+            .selector(
+                selector ->
+                    selector
+                        .groupName("selected")
+                        .annotationTypes(Selected.class)
+                        .optOutAnnotation(Skipped.class))
+            .build();
+    CapturingProcessingLogger capture = CapturingProcessingLogger.createDebugEnabled();
+
+    ElementGroups groups =
+        ProbeProcessor.probe(
+            (roundEnv, env) -> collector.collect(Set.of(), roundEnv, capture.logger()),
+            CodegenTestUtils.forSource(DTO_SOURCE));
+
+    List<String> names =
+        groups.byGroup("selected").stream()
+            .map(element -> element.getSimpleName().toString())
+            .toList();
+    assertEquals(List.of("Beta"), names);
+    assertTrue(
+        capture.messages().stream()
+            .anyMatch(message -> message.contains("Skipping element 'Alpha'")),
+        () -> "expected opt-out debug line: " + capture.messages());
+  }
+
+  /**
+   * An annotation type meta-annotated with the marker selects elements too — the only way
+   * user-defined annotation types can be discovered.
+   */
+  @Test
+  void collect_metaMarkerSelectsTemplateAnnotated() {
+    ElementCollector collector =
+        ElementCollector.builder()
+            .selector(selector -> selector.groupName("templated").metaMarker(Marker.class))
+            .build();
+
+    ElementGroups groups =
+        ProbeProcessor.probe(
+            (roundEnv, env) ->
+                collector.collect(
+                    Set.of(
+                        env.getElementUtils()
+                            .getTypeElement(
+                                "org.javahelpers.codegen.processing.ElementCollectorTest.TemplateHolder.Template")),
+                    roundEnv,
+                    CapturingProcessingLogger.create().logger()),
+            CodegenTestUtils.forSource(DTO_SOURCE));
+
+    List<String> names =
+        groups.byGroup("templated").stream()
+            .map(element -> element.getSimpleName().toString())
+            .toList();
+    assertEquals(List.of("Gamma"), names);
+  }
 
   @Test
   void collect_nonAnnotationTypeElementsAreSkipped() {
