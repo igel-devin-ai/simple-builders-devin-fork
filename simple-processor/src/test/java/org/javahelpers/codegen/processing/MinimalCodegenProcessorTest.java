@@ -26,17 +26,26 @@ package org.javahelpers.codegen.processing;
 import static com.google.testing.compile.CompilationSubject.assertThat;
 import static org.javahelpers.codegen.testing.CodegenTestUtils.loadGeneratedSource;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNormalizedEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.testing.compile.Compilation;
+import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.javahelpers.codegen.analysis.JavaLangAnalyser;
@@ -50,6 +59,7 @@ import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.testing.CodegenTestUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * A complete codegen processor in minimal form — only the domain members that have no generic
@@ -78,17 +88,24 @@ public class MinimalCodegenProcessorTest {
     }
   }
 
-  /** A processor that generates a builder delegating to the target type's setters. */
-  static class MinimalProcessor
+  /**
+   * A processor that generates a builder delegating to the target type's setters. Public so javac's
+   * {@code -processor} mechanism can instantiate it.
+   */
+  public static class MinimalProcessor
       extends AbstractCodegenProcessor<
           AnnotationProcessingContext, CodegenConfiguration, MinimalTargetDefinition> {
 
-    MinimalProcessor() {
-      super(
+    public MinimalProcessor() {
+      this(
           CodegenProcessorConfiguration.builder()
               .elementCollector(ElementCollector.builder().selector(GenerateBuilder.class).build())
               .loggerPrefix("minimal")
               .build());
+    }
+
+    MinimalProcessor(CodegenProcessorConfiguration configuration) {
+      super(configuration);
     }
 
     @Override
@@ -169,6 +186,18 @@ public class MinimalCodegenProcessorTest {
     }
   }
 
+  /** MinimalProcessor variant declaring an unreachable minimum source level. */
+  static class StrictJdkProcessor extends MinimalProcessor {
+    StrictJdkProcessor() {
+      super(
+          CodegenProcessorConfiguration.builder()
+              .elementCollector(ElementCollector.builder().selector(GenerateBuilder.class).build())
+              .loggerPrefix("minimal")
+              .requiredSourceVersion("RELEASE_99")
+              .build());
+    }
+  }
+
   @Test
   void minimalProcessorGeneratesDelegatingBuilder() {
     // Given
@@ -211,5 +240,146 @@ public class MinimalCodegenProcessorTest {
         }""",
         generatedCode,
         "generated PersonBuilder must match the expected source");
+  }
+
+  /**
+   * A stale builder left in the generated-sources output is this processor's own previous output —
+   * it must be regenerated silently instead of producing the "already exists" warning.
+   *
+   * <p>Runs through real javac (not compile-testing) because the check compares the element's
+   * source location against the real {@code -s} output directory — the Filer's virtualized
+   * locations cannot express that setup.
+   */
+  @Test
+  void regeneratesOwnPreviousOutput(@TempDir Path workDir) throws IOException {
+    Path generatedSources = workDir.resolve("generated-sources");
+    Path stale = generatedSources.resolve("test").resolve("PersonBuilder.java");
+    Files.createDirectories(stale.getParent());
+    Files.writeString(
+        stale,
+        """
+        package test;
+        public class PersonBuilder {
+          // leftover of a previous compilation
+        }
+        """);
+
+    Path source = writeDto(workDir, "src");
+
+    List<String> diagnostics = compileWithJavac(source, generatedSources, generatedSources);
+    assertTrue(
+        diagnostics.stream().noneMatch(d -> d.contains("already exists")),
+        () -> "unexpected 'already exists' warning: " + diagnostics);
+
+    String regenerated = Files.readString(stale);
+    assertTrue(
+        regenerated.contains("public PersonBuilder name(String name)"),
+        () -> "stale file was not regenerated: " + regenerated);
+  }
+
+  /**
+   * A hand-written class under the target's qualified name is not the processor's own output — the
+   * clash must still surface the "already exists" warning.
+   */
+  @Test
+  void warnsOnManualTargetClash(@TempDir Path workDir) throws IOException {
+    Path generatedSources = workDir.resolve("generated-sources");
+    Files.createDirectories(generatedSources);
+    Path sourceRoot = workDir.resolve("src");
+    Path manual = sourceRoot.resolve("test").resolve("PersonBuilder.java");
+    Files.createDirectories(manual.getParent());
+    Files.writeString(
+        manual,
+        """
+        package test;
+        public class PersonBuilder {
+          // hand-written class clashing with the generation target
+        }
+        """);
+
+    Path source = writeDto(workDir, "src");
+
+    List<String> diagnostics = compileWithJavac(source, generatedSources, sourceRoot);
+    assertTrue(
+        diagnostics.stream().anyMatch(d -> d.contains("already exists")),
+        () -> "expected 'already exists' warning: " + diagnostics);
+  }
+
+  /**
+   * A {@code requiredSourceVersion} the running JDK cannot meet must report the graceful error and
+   * skip processing.
+   */
+  @Test
+  void reportsErrorOnUnsupportedJdk() {
+    JavaFileObject source =
+        CodegenTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.codegen.processing.MinimalCodegenProcessorTest.GenerateBuilder;
+            @GenerateBuilder
+            public class Person {
+              public void setName(String name) {}
+            }
+            """);
+
+    Compilation compilation =
+        CodegenTestUtils.createCompiler(new StrictJdkProcessor()).compile(source);
+
+    assertThat(compilation).failed();
+    assertTrue(
+        compilation.errors().stream()
+            .map(d -> d.getMessage(null))
+            .anyMatch(m -> m.contains("requires Java 99 or higher")),
+        () -> "expected unsupported-JDK error: " + compilation.errors());
+  }
+
+  private static Path writeDto(Path workDir, String sourceRootName) throws IOException {
+    Path source = sourceRootName.isEmpty() ? workDir : workDir.resolve(sourceRootName);
+    source = source.resolve("test").resolve("Person.java");
+    Files.createDirectories(source.getParent());
+    Files.writeString(
+        source,
+        """
+        package test;
+        import org.javahelpers.codegen.processing.MinimalCodegenProcessorTest.GenerateBuilder;
+
+        @GenerateBuilder
+        public class Person {
+          private String name;
+          public void setName(String name) { this.name = name; }
+        }
+        """);
+    return source;
+  }
+
+  /**
+   * Runs javac on {@code source} with the {@link MinimalProcessor}, {@code -s} pointing at {@code
+   * generatedSources} and {@code -sourcepath} at {@code sourcePath}; returns all diagnostics.
+   */
+  private static List<String> compileWithJavac(Path source, Path generatedSources, Path sourcePath)
+      throws IOException {
+    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+    try (StandardJavaFileManager fileManager =
+        compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8)) {
+      JavaCompiler.CompilationTask task =
+          compiler.getTask(
+              null,
+              fileManager,
+              diagnostics,
+              List.of(
+                  "-d",
+                  source.getParent().getParent().resolve("classes").toString(),
+                  "-s",
+                  generatedSources.toString(),
+                  "-sourcepath",
+                  sourcePath.toString(),
+                  "-processor",
+                  MinimalProcessor.class.getName()),
+              null,
+              fileManager.getJavaFileObjects(source));
+      task.call();
+    }
+    return diagnostics.getDiagnostics().stream().map(d -> d.getMessage(null)).toList();
   }
 }
