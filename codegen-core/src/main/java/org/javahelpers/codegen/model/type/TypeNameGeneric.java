@@ -23,6 +23,7 @@
  */
 package org.javahelpers.codegen.model.type;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -111,7 +112,7 @@ public class TypeNameGeneric extends TypeName {
   public TypeNameGeneric(Class<?> outerType, Class<?>... innerTypeArguments) {
     this(
         TypeName.of(outerType),
-        java.util.Arrays.stream(innerTypeArguments).map(TypeName::of).toArray(TypeName[]::new));
+        Arrays.stream(innerTypeArguments).map(TypeName::of).toArray(TypeName[]::new));
   }
 
   /**

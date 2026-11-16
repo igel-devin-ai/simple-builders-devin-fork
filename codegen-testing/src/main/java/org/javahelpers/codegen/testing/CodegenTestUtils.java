@@ -29,11 +29,16 @@ import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
+import javax.annotation.processing.RoundEnvironment;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Assertions;
 
@@ -69,6 +74,47 @@ public final class CodegenTestUtils {
    */
   public static Compiler createCompiler(Processor... processors) {
     return Compiler.javac().withProcessors(processors);
+  }
+
+  /**
+   * Compiles the given sources with a {@link ProbeProcessor} running {@code probe} in the first
+   * processing round and returns the compilation.
+   *
+   * @param probe callback receiving the {@link RoundEnvironment} and {@link ProcessingEnvironment}
+   * @param sources the source files to compile
+   * @return the compilation result
+   */
+  public static Compilation probe(
+      BiConsumer<RoundEnvironment, ProcessingEnvironment> probe, JavaFileObject... sources) {
+    return createCompiler(new ProbeProcessor(probe)).compile(sources);
+  }
+
+  /**
+   * Compiles the given source texts (via {@link #forSource}) with a {@link ProbeProcessor} running
+   * {@code probe} in the first processing round and returns the compilation.
+   *
+   * @param probe callback receiving the {@link RoundEnvironment} and {@link ProcessingEnvironment}
+   * @param sources the Java source texts to compile
+   * @return the compilation result
+   */
+  public static Compilation probe(
+      BiConsumer<RoundEnvironment, ProcessingEnvironment> probe, String... sources) {
+    return probe(
+        probe,
+        Arrays.stream(sources).map(CodegenTestUtils::forSource).toArray(JavaFileObject[]::new));
+  }
+
+  /**
+   * Compiles the given source texts (via {@link #forSource}) with a {@link ProbeProcessor} running
+   * {@code probe} in the first processing round and returns the compilation.
+   *
+   * @param probe callback receiving the {@link RoundEnvironment} and {@link ProcessingEnvironment}
+   * @param sources the Java source texts to compile
+   * @return the compilation result
+   */
+  public static Compilation probe(
+      BiConsumer<RoundEnvironment, ProcessingEnvironment> probe, List<String> sources) {
+    return probe(probe, sources.toArray(String[]::new));
   }
 
   /**

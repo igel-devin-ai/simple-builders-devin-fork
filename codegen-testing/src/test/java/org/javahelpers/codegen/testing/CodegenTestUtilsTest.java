@@ -30,47 +30,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.testing.compile.Compilation;
-import java.util.Set;
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CodegenTestUtils} — the compile-testing helpers themselves. */
 class CodegenTestUtilsTest {
-
-  /** Emits one fixed generated source file so {@code loadGeneratedSource} has something to read. */
-  private static class EmittingProcessor extends AbstractProcessor {
-    private boolean ran;
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-      return SourceVersion.latestSupported();
-    }
-
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-      return Set.of("*");
-    }
-
-    @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-      if (!ran && !roundEnv.processingOver()) {
-        ran = true;
-        try {
-          var file = processingEnv.getFiler().createSourceFile("test.Generated");
-          try (var writer = file.openWriter()) {
-            writer.write("package test;\npublic class Generated {}\n");
-          }
-        } catch (java.io.IOException e) {
-          throw new IllegalStateException(e);
-        }
-      }
-      return false;
-    }
-  }
 
   @Test
   void forSource_derivesQualifiedNameFromSource() {
@@ -118,8 +82,9 @@ class CodegenTestUtilsTest {
   @Test
   void loadGeneratedSource_readsEmittedFile() {
     Compilation compilation =
-        CodegenTestUtils.createCompiler(new EmittingProcessor())
-            .compile(CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
+        CodegenTestUtils.probe(
+            (roundEnv, env) -> emitGeneratedSource(env),
+            CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
 
     assertThat(compilation).succeeded();
     assertEquals(
@@ -140,19 +105,18 @@ class CodegenTestUtilsTest {
 
   @Test
   void assertNoWarningContaining_passesWithoutMatchingWarning() {
+    final String warningMessage = "a warning";
     Compilation compilation =
-        CodegenTestUtils.createCompiler(
-                new ProbeProcessor(
-                    (roundEnv, env) ->
-                        env.getMessager()
-                            .printMessage(javax.tools.Diagnostic.Kind.WARNING, "a warning")))
-            .compile(CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
+        CodegenTestUtils.probe(
+            (roundEnv, env) ->
+                env.getMessager().printMessage(javax.tools.Diagnostic.Kind.WARNING, warningMessage),
+            CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
 
     assertThat(compilation).succeeded();
     CodegenTestUtils.assertNoWarningContaining(compilation, "never emitted");
     assertThrows(
         AssertionError.class,
-        () -> CodegenTestUtils.assertNoWarningContaining(compilation, "warning"));
+        () -> CodegenTestUtils.assertNoWarningContaining(compilation, warningMessage));
   }
 
   @Test
@@ -164,8 +128,9 @@ class CodegenTestUtilsTest {
   @Test
   void printDiagnosticsAndSources_emitToLog() {
     Compilation compilation =
-        CodegenTestUtils.createCompiler(new EmittingProcessor())
-            .compile(CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
+        CodegenTestUtils.probe(
+            (roundEnv, env) -> emitGeneratedSource(env),
+            CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
 
     assertThat(compilation).succeeded();
     String captured;
@@ -176,35 +141,23 @@ class CodegenTestUtilsTest {
       CodegenTestUtils.printGeneratedSources(compilation);
       captured = handler.output();
     }
-    assertTrue(captured.contains("Generated"));
+    assertTrue(captured.contains("Compilation Diagnostics"));
+    assertTrue(captured.contains("Generated Source Files"));
+    assertTrue(captured.contains("Generated.java"));
+    assertTrue(captured.contains("public class Generated"));
   }
 
-  /** JUL handler capturing log records; detaches itself from its logger on {@link #close()}. */
-  private static final class CapturingLogHandler extends java.util.logging.Handler
-      implements AutoCloseable {
-    private final StringBuilder records = new StringBuilder();
-    private final java.util.logging.Logger logger;
-
-    private CapturingLogHandler(java.util.logging.Logger logger) {
-      this.logger = logger;
-      logger.addHandler(this);
-    }
-
-    @Override
-    public void publish(java.util.logging.LogRecord record) {
-      records.append(record.getMessage()).append('\n');
-    }
-
-    @Override
-    public void flush() {}
-
-    @Override
-    public void close() {
-      logger.removeHandler(this);
-    }
-
-    private String output() {
-      return records.toString();
+  /**
+   * Writes one fixed generated source file so {@code loadGeneratedSource} has something to read.
+   */
+  private static void emitGeneratedSource(javax.annotation.processing.ProcessingEnvironment env) {
+    try {
+      var file = env.getFiler().createSourceFile("test.Generated");
+      try (var writer = file.openWriter()) {
+        writer.write("package test;\npublic class Generated {}\n");
+      }
+    } catch (java.io.IOException e) {
+      throw new IllegalStateException(e);
     }
   }
 }

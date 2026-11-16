@@ -62,6 +62,14 @@ public final class TestingGenerationEnvironment implements GenerationEnvironment
   }
 
   /**
+   * Environment with a default {@link CapturingProcessingLogger} whose {@code createSourceFile}
+   * captures the emitted source in memory.
+   */
+  public static TestingGenerationEnvironment create() {
+    return new TestingGenerationEnvironment(CapturingProcessingLogger.create().logger(), true);
+  }
+
+  /**
    * Environment whose {@code createSourceFile} returns {@code null} — the file-write step fails
    * deterministically on it.
    */

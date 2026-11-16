@@ -25,6 +25,7 @@
 package org.javahelpers.codegen.analysis;
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
+import static org.javahelpers.codegen.processing.ProcessingTestUtils.context;
 import static org.javahelpers.codegen.testing.ElementTestUtils.method;
 import static org.javahelpers.codegen.testing.ElementTestUtils.parameter;
 import static org.javahelpers.codegen.testing.ElementTestUtils.typeElement;
@@ -36,11 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.testing.compile.Compilation;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.TypeElement;
-import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.GenericParameterDto;
 import org.javahelpers.codegen.model.type.TypeName;
@@ -51,33 +48,11 @@ import org.javahelpers.codegen.model.type.TypeNameNested;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.codegen.processing.AnnotationProcessingContext;
-import org.javahelpers.codegen.testing.CapturingProcessingLogger;
 import org.javahelpers.codegen.testing.CodegenTestUtils;
-import org.javahelpers.codegen.testing.ProbeProcessor;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link JavaLangMapper} against elements captured from a real compilation. */
 class JavaLangMapperTest {
-
-  private static AnnotationProcessingContext context(ProcessingEnvironment processingEnv) {
-    return new AnnotationProcessingContext(
-        CapturingProcessingLogger.create().logger(), processingEnv);
-  }
-
-  private static Compilation compile(
-      BiConsumer<RoundEnvironment, ProcessingEnvironment> probe, String... sources) {
-    JavaFileObject[] files =
-        java.util.Arrays.stream(sources)
-            .map(CodegenTestUtils::forSource)
-            .toArray(JavaFileObject[]::new);
-    return CodegenTestUtils.createCompiler(new ProbeProcessor(probe)).compile(files);
-  }
-
-  private static TypeName paramType(
-      TypeElement dto, String methodName, int paramIndex, TypeMappingContext ctx) {
-    return JavaLangMapper.map2MethodParameter(parameter(method(dto, methodName), paramIndex), ctx)
-        .getParameterType();
-  }
 
   @Test
   void map2TypeName_mapsJavaClass() {
@@ -90,7 +65,7 @@ class JavaLangMapperTest {
   void mapToTypeName_mapsTypeElement() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) ->
                 result.set(
                     JavaLangMapper.mapToTypeName(
@@ -109,7 +84,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_mapsNameAndListType() {
     AtomicReference<MethodParameterDto> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               result.set(
@@ -137,7 +112,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_mapsSetToTypeNameSet() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               result.set(paramType(dto, "setIds", 0, context(processingEnv)));
@@ -159,7 +134,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_mapsMapToTypeNameMap() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               result.set(paramType(dto, "setLookup", 0, context(processingEnv)));
@@ -182,7 +157,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_mapsPrimitive() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               result.set(paramType(dto, "setCount", 0, context(processingEnv)));
@@ -202,7 +177,7 @@ class JavaLangMapperTest {
   void createDerivedTypeName_appendsSuffix() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) ->
                 result.set(
                     JavaLangMapper.createDerivedTypeName(
@@ -222,7 +197,7 @@ class JavaLangMapperTest {
     // CustomList<X,Y> extends ArrayList<Y>: the List element type is Y, not the declared X/Y pair
     AtomicReference<List<TypeName>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               AnnotationProcessingContext ctx = context(processingEnv);
               TypeElement customList = typeElement(processingEnv, "test.CustomList");
@@ -247,7 +222,7 @@ class JavaLangMapperTest {
     // ArrayList/HashMap/TreeMap take the hasConstructorWithParameterOfType path and still wrap
     AtomicReference<List<TypeName>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               AnnotationProcessingContext ctx = context(processingEnv);
@@ -281,7 +256,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_wrapsGenericListToTypeNameList() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               result.set(paramType(dto, "setTags", 0, context(processingEnv)));
@@ -303,7 +278,7 @@ class JavaLangMapperTest {
   void map2GenericParameterDtos_mapsTypeParametersWithBounds() {
     AtomicReference<List<GenericParameterDto>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               result.set(JavaLangMapper.map2GenericParameterDtos(dto, context(processingEnv)));
@@ -324,7 +299,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_mapsArrayAndTypeVariable() {
     AtomicReference<List<TypeName>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               AnnotationProcessingContext ctx = context(processingEnv);
@@ -357,7 +332,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_mapsAllPrimitiveKinds() {
     AtomicReference<List<TypeName>> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) -> {
               TypeElement dto = typeElement(processingEnv, "test.Dto");
               AnnotationProcessingContext ctx = context(processingEnv);
@@ -403,7 +378,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_marksTypeWithEmptyConstructor() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) ->
                 result.set(
                     paramType(
@@ -436,7 +411,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_nestedType_mapsTypeNameNested() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) ->
                 result.set(
                     paramType(
@@ -471,7 +446,7 @@ class JavaLangMapperTest {
   void map2MethodParameter_fallsBackWhenMapLacksCopyConstructor() {
     AtomicReference<TypeName> result = new AtomicReference<>();
     Compilation compilation =
-        compile(
+        CodegenTestUtils.probe(
             (roundEnv, processingEnv) ->
                 result.set(
                     paramType(
@@ -497,5 +472,11 @@ class JavaLangMapperTest {
 
     assertThat(compilation).succeeded();
     assertInstanceOf(TypeNameGeneric.class, result.get());
+  }
+
+  private static TypeName paramType(
+      TypeElement dto, String methodName, int paramIndex, TypeMappingContext ctx) {
+    return JavaLangMapper.map2MethodParameter(parameter(method(dto, methodName), paramIndex), ctx)
+        .getParameterType();
   }
 }

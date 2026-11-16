@@ -30,6 +30,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 
 /**
  * Look-ups for {@code javax.lang.model} elements during a live compilation — used inside {@link
@@ -89,7 +90,8 @@ public final class ElementTestUtils {
             .filter(
                 e ->
                     e.getParameters().stream()
-                        .map(p -> p.asType().toString())
+                        .map(VariableElement::asType)
+                        .map(TypeMirror::toString)
                         .toList()
                         .equals(List.of(parameterTypes))),
         "method '"

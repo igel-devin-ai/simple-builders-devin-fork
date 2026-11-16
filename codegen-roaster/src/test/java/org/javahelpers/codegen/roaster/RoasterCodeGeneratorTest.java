@@ -29,7 +29,6 @@ import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNormalizedE
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-import org.javahelpers.codegen.SourceFormatter;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.FormattingMode;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
@@ -46,7 +45,6 @@ import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
-import org.javahelpers.codegen.testing.CapturingProcessingLogger;
 import org.javahelpers.codegen.testing.TestingGenerationEnvironment;
 import org.junit.jupiter.api.Test;
 
@@ -56,6 +54,226 @@ import org.junit.jupiter.api.Test;
  * ({@link TestingGenerationEnvironment}) and the emitted source is asserted as a whole text block.
  */
 class RoasterCodeGeneratorTest {
+
+  @Test
+  void generatesDelegatingBuilderFromDto() throws Exception {
+    assertGeneratedSource(
+        """
+        package test;
+        public class PersonBuilder {
+
+          private Person target = new Person();
+
+          public PersonBuilder name(String name) {
+            target.setName(name);
+            return this;
+          }
+
+          public Person build() {
+            return target;
+          }
+        }""",
+        personBuilderDefinition());
+  }
+
+  @Test
+  void writesFileUnderQualifiedName() throws Exception {
+    GenerationTargetClassDto empty = new GenerationTargetClassDto();
+    empty.setTypeName(new TypeName("com.example", "EmptyBuilder"));
+    empty.setClassAccessModifier(AccessModifier.PUBLIC);
+    empty.setFormattingMode(FormattingMode.NONE);
+
+    assertEquals("mem:///com/example/EmptyBuilder.java", generate(empty).writtenUri().toString());
+  }
+
+  @Test
+  void generatesClassMetadataJavadocAndAnnotations() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "AnnotatedBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+    classDef.setClassJavadoc(new JavadocDto("Builder for {@link Person}."));
+    AnnotationDto generated = new AnnotationDto();
+    generated.setAnnotationType(new TypeName("javax.annotation", "Generated"));
+    generated.addMember("value", "\"simple-builders\"");
+    classDef.addClassAnnotation(generated);
+    classDef.setSuperType(new TypeName("test", "AbstractBuilder"));
+    InterfaceName iface = new InterfaceName("java.io", "Serializable");
+    classDef.addInterface(iface);
+
+    assertContaining(
+        generate(classDef).generatedSource(),
+        "* Builder for {@link Person}.",
+        "@Generated(\"simple-builders\")",
+        "public class AnnotatedBuilder extends AbstractBuilder implements Serializable");
+  }
+
+  @Test
+  void generatesGenericClassAndMethods() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "GenericBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+    GenericParameterDto generic = new GenericParameterDto();
+    generic.setName("T");
+    classDef.addGeneric(generic);
+
+    MethodDto genericMethod = new MethodDto("of", new TypeNameVariable("T"));
+    genericMethod.setModifier(AccessModifier.PUBLIC);
+    genericMethod.setStatic(true);
+    GenericParameterDto methodGeneric = new GenericParameterDto();
+    methodGeneric.setName("R");
+    methodGeneric.addUpperBound(TypeName.of(Number.class));
+    genericMethod.addGenericParameter(methodGeneric);
+    MethodParameterDto param = new MethodParameterDto();
+    param.setParameterName("input");
+    param.setParameterTypeName(new TypeNameVariable("R"));
+    genericMethod.addParameter(param);
+    genericMethod.setCode("return null;");
+    classDef.addMethod(genericMethod);
+
+    assertContaining(
+        generate(classDef).generatedSource(),
+        "public class GenericBuilder<T>",
+        "public static <R extends Number> T of(R input) {",
+        "return null;");
+  }
+
+  @Test
+  void generatesConstructorAndFieldVariants() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "CtorBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    ClassFieldDto constant = new ClassFieldDto();
+    constant.setFieldName("DEFAULT_SIZE");
+    constant.setFieldType(TypeNamePrimitive.INT);
+    constant.setVisibility(AccessModifier.PRIVATE);
+    constant.setLiteralInitializer("42");
+    classDef.addClassField(constant);
+
+    ConstructorDto ctor = new ConstructorDto();
+    ctor.setVisibility(AccessModifier.PROTECTED);
+    MethodParameterDto param = new MethodParameterDto();
+    param.setParameterName("capacity");
+    param.setParameterTypeName(TypeNamePrimitive.INT);
+    AnnotationDto paramAnnotation = new AnnotationDto();
+    paramAnnotation.setAnnotationType(new TypeName("test.anno", "NonNull"));
+    param.addAnnotation(paramAnnotation);
+    ctor.addParameter(param);
+    classDef.addConstructor(ctor);
+
+    assertGeneratedSource(
+        """
+        package test;
+        import test.anno.NonNull;
+        public class CtorBuilder {
+          private int DEFAULT_SIZE = 42;
+          protected CtorBuilder(int capacity) {
+          }
+        }""",
+        classDef);
+  }
+
+  @Test
+  void generatesNestedTypesWithMembers() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "OuterBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    NestedTypeDto nested = new NestedTypeDto();
+    nested.setTypeName("Helper");
+    nested.setKind(NestedTypeDto.NestedTypeKind.CLASS);
+    nested.setVisibility(AccessModifier.PUBLIC);
+    nested.setJavadoc(new JavadocDto("Nested helper."));
+    MethodDto nestedMethod = new MethodDto("assist", TypeNamePrimitive.VOID);
+    nestedMethod.setModifier(AccessModifier.PRIVATE);
+    nestedMethod.setCode("// nothing");
+    nested.addMethod(nestedMethod);
+    classDef.addNestedType(nested);
+
+    assertGeneratedSource(
+        """
+        package test;
+        public class OuterBuilder {
+          /**
+           * Nested helper.
+           */
+          public class Helper {
+            public void assist() {
+            }
+          }
+        }""",
+        classDef);
+  }
+
+  @Test
+  void generatesMethodWithJavadocAnnotationsAndTypedParameters() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "RichBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    MethodDto method =
+        new MethodDto(
+            "items",
+            new TypeNameGeneric(
+                new TypeName("java.util", "List"), List.of(TypeName.of(String.class))));
+    method.setModifier(AccessModifier.PUBLIC);
+    JavadocDto javadoc = new JavadocDto("Adds items.");
+    javadoc.addParam("values", "items to add");
+    javadoc.addReturn("this builder");
+    method.setJavadoc(javadoc);
+    AnnotationDto override_ = new AnnotationDto();
+    override_.setAnnotationType(new TypeName("java.lang", "Override"));
+    method.addAnnotation(override_);
+    MethodParameterDto param = new MethodParameterDto();
+    param.setParameterName("values");
+    param.setParameterTypeName(
+        new TypeNameGeneric(new TypeName("java.util", "List"), List.of(TypeName.of(String.class))));
+    method.addParameter(param);
+    method.setCode("return null;");
+    classDef.addMethod(method);
+
+    assertGeneratedSource(
+        """
+        package test;
+        import java.util.List;
+        public class RichBuilder {
+          /**
+           * Adds items.
+           * @param values items to add
+           * @return this builder
+           */
+          @Override
+          public List<String> items(List<String> values) {
+            return null;
+          }
+        }""",
+        classDef);
+  }
+
+  /**
+   * Generates {@code classDef} into a fresh {@link TestingGenerationEnvironment} and returns it.
+   */
+  private static TestingGenerationEnvironment generate(GenerationTargetClassDto classDef)
+      throws Exception {
+    TestingGenerationEnvironment env = TestingGenerationEnvironment.create();
+    new RoasterCodeGenerator(env)
+        .generateClass(classDef, new RoasterSourceFormatter(env.getLogger(), FormattingMode.NONE));
+    return env;
+  }
+
+  /** Generates {@code classDef} and compares the emitted source against {@code expected}. */
+  private static void assertGeneratedSource(String expected, GenerationTargetClassDto classDef)
+      throws Exception {
+    assertNormalizedEquals(
+        expected,
+        generate(classDef).generatedSource(),
+        "generated " + classDef.getTypeName().getClassName() + " must match the expected source");
+  }
 
   /** A builder-style DTO: private target field, one delegating setter, one build method. */
   private static GenerationTargetClassDto personBuilderDefinition() {
@@ -91,232 +309,5 @@ class RoasterCodeGeneratorTest {
     build.setCode("return target;");
     target.addMethod(build);
     return target;
-  }
-
-  @Test
-  void generatesDelegatingBuilderFromDto() throws Exception {
-    CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
-    TestingGenerationEnvironment env = TestingGenerationEnvironment.create(capturing.logger());
-    RoasterCodeGenerator generator = new RoasterCodeGenerator(env);
-    SourceFormatter formatter = new RoasterSourceFormatter(capturing.logger(), FormattingMode.NONE);
-
-    generator.generateClass(personBuilderDefinition(), formatter);
-
-    assertNormalizedEquals(
-        """
-        package test;
-        public class PersonBuilder {
-
-          private Person target = new Person();
-
-          public PersonBuilder name(String name) {
-            target.setName(name);
-            return this;
-          }
-
-          public Person build() {
-            return target;
-          }
-        }""",
-        env.generatedSource(),
-        "generated PersonBuilder must match the expected source");
-  }
-
-  @Test
-  void writesFileUnderQualifiedName() throws Exception {
-    CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
-    TestingGenerationEnvironment env = TestingGenerationEnvironment.create(capturing.logger());
-    RoasterCodeGenerator generator = new RoasterCodeGenerator(env);
-
-    GenerationTargetClassDto empty = new GenerationTargetClassDto();
-    empty.setTypeName(new TypeName("com.example", "EmptyBuilder"));
-    empty.setClassAccessModifier(AccessModifier.PUBLIC);
-    empty.setFormattingMode(FormattingMode.NONE);
-
-    generator.generateClass(
-        empty, new RoasterSourceFormatter(capturing.logger(), FormattingMode.NONE));
-
-    assertEquals("mem:///com/example/EmptyBuilder.java", env.writtenUri().toString());
-  }
-
-  @Test
-  void generatesClassMetadataJavadocAndAnnotations() throws Exception {
-    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
-    classDef.setTypeName(new TypeName("test", "AnnotatedBuilder"));
-    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
-    classDef.setFormattingMode(FormattingMode.NONE);
-    classDef.setClassJavadoc(new JavadocDto("Builder for {@link Person}."));
-    AnnotationDto generated = new AnnotationDto();
-    generated.setAnnotationType(new TypeName("javax.annotation", "Generated"));
-    generated.addMember("value", "\"simple-builders\"");
-    classDef.addClassAnnotation(generated);
-    classDef.setSuperType(new TypeName("test", "AbstractBuilder"));
-    InterfaceName iface = new InterfaceName("java.io", "Serializable");
-    classDef.addInterface(iface);
-
-    assertContaining(
-        generate(classDef),
-        "* Builder for {@link Person}.",
-        "@Generated(\"simple-builders\")",
-        "public class AnnotatedBuilder extends AbstractBuilder implements Serializable");
-  }
-
-  @Test
-  void generatesGenericClassAndMethods() throws Exception {
-    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
-    classDef.setTypeName(new TypeName("test", "GenericBuilder"));
-    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
-    classDef.setFormattingMode(FormattingMode.NONE);
-    GenericParameterDto generic = new GenericParameterDto();
-    generic.setName("T");
-    classDef.addGeneric(generic);
-
-    MethodDto genericMethod = new MethodDto("of", new TypeNameVariable("T"));
-    genericMethod.setModifier(AccessModifier.PUBLIC);
-    genericMethod.setStatic(true);
-    GenericParameterDto methodGeneric = new GenericParameterDto();
-    methodGeneric.setName("R");
-    methodGeneric.addUpperBound(TypeName.of(Number.class));
-    genericMethod.addGenericParameter(methodGeneric);
-    MethodParameterDto param = new MethodParameterDto();
-    param.setParameterName("input");
-    param.setParameterTypeName(new TypeNameVariable("R"));
-    genericMethod.addParameter(param);
-    genericMethod.setCode("return null;");
-    classDef.addMethod(genericMethod);
-
-    assertContaining(
-        generate(classDef),
-        "public class GenericBuilder<T>",
-        "public static <R extends Number> T of(R input) {",
-        "return null;");
-  }
-
-  @Test
-  void generatesConstructorAndFieldVariants() throws Exception {
-    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
-    classDef.setTypeName(new TypeName("test", "CtorBuilder"));
-    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
-    classDef.setFormattingMode(FormattingMode.NONE);
-
-    ClassFieldDto constant = new ClassFieldDto();
-    constant.setFieldName("DEFAULT_SIZE");
-    constant.setFieldType(TypeNamePrimitive.INT);
-    constant.setVisibility(AccessModifier.PRIVATE);
-    constant.setLiteralInitializer("42");
-    classDef.addClassField(constant);
-
-    ConstructorDto ctor = new ConstructorDto();
-    ctor.setVisibility(AccessModifier.PROTECTED);
-    MethodParameterDto param = new MethodParameterDto();
-    param.setParameterName("capacity");
-    param.setParameterTypeName(TypeNamePrimitive.INT);
-    AnnotationDto paramAnnotation = new AnnotationDto();
-    paramAnnotation.setAnnotationType(new TypeName("test.anno", "NonNull"));
-    param.addAnnotation(paramAnnotation);
-    ctor.addParameter(param);
-    classDef.addConstructor(ctor);
-
-    assertNormalizedEquals(
-        """
-        package test;
-        import test.anno.NonNull;
-        public class CtorBuilder {
-          private int DEFAULT_SIZE = 42;
-          protected CtorBuilder(int capacity) {
-          }
-        }""",
-        generate(classDef),
-        "generated CtorBuilder must match the expected source");
-  }
-
-  @Test
-  void generatesNestedTypesWithMembers() throws Exception {
-    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
-    classDef.setTypeName(new TypeName("test", "OuterBuilder"));
-    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
-    classDef.setFormattingMode(FormattingMode.NONE);
-
-    NestedTypeDto nested = new NestedTypeDto();
-    nested.setTypeName("Helper");
-    nested.setKind(NestedTypeDto.NestedTypeKind.CLASS);
-    nested.setVisibility(AccessModifier.PUBLIC);
-    nested.setJavadoc(new JavadocDto("Nested helper."));
-    MethodDto nestedMethod = new MethodDto("assist", TypeNamePrimitive.VOID);
-    nestedMethod.setModifier(AccessModifier.PRIVATE);
-    nestedMethod.setCode("// nothing");
-    nested.addMethod(nestedMethod);
-    classDef.addNestedType(nested);
-
-    assertNormalizedEquals(
-        """
-        package test;
-        public class OuterBuilder {
-          /**
-           * Nested helper.
-           */
-          public class Helper {
-            public void assist() {
-            }
-          }
-        }""",
-        generate(classDef),
-        "generated OuterBuilder must match the expected source");
-  }
-
-  @Test
-  void generatesMethodWithJavadocAnnotationsAndTypedParameters() throws Exception {
-    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
-    classDef.setTypeName(new TypeName("test", "RichBuilder"));
-    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
-    classDef.setFormattingMode(FormattingMode.NONE);
-
-    MethodDto method =
-        new MethodDto(
-            "items",
-            new TypeNameGeneric(
-                new TypeName("java.util", "List"), List.of(TypeName.of(String.class))));
-    method.setModifier(AccessModifier.PUBLIC);
-    JavadocDto javadoc = new JavadocDto("Adds items.");
-    javadoc.addParam("values", "items to add");
-    javadoc.addReturn("this builder");
-    method.setJavadoc(javadoc);
-    AnnotationDto override_ = new AnnotationDto();
-    override_.setAnnotationType(new TypeName("java.lang", "Override"));
-    method.addAnnotation(override_);
-    MethodParameterDto param = new MethodParameterDto();
-    param.setParameterName("values");
-    param.setParameterTypeName(
-        new TypeNameGeneric(new TypeName("java.util", "List"), List.of(TypeName.of(String.class))));
-    method.addParameter(param);
-    method.setCode("return null;");
-    classDef.addMethod(method);
-
-    assertNormalizedEquals(
-        """
-        package test;
-        import java.util.List;
-        public class RichBuilder {
-          /**
-           * Adds items.
-           * @param values items to add
-           * @return this builder
-           */
-          @Override
-          public List<String> items(List<String> values) {
-            return null;
-          }
-        }""",
-        generate(classDef),
-        "generated RichBuilder must match the expected source");
-  }
-
-  private static String generate(GenerationTargetClassDto classDef) throws Exception {
-    CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
-    TestingGenerationEnvironment env = TestingGenerationEnvironment.create(capturing.logger());
-    RoasterCodeGenerator generator = new RoasterCodeGenerator(env);
-    generator.generateClass(
-        classDef, new RoasterSourceFormatter(capturing.logger(), FormattingMode.NONE));
-    return env.generatedSource();
   }
 }

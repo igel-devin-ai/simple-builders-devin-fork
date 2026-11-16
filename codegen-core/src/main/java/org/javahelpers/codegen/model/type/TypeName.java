@@ -104,6 +104,12 @@ public class TypeName {
     return packageName.isEmpty() ? className : packageName + "." + className;
   }
 
+  /** Returns the full qualified name of this type. */
+  @Override
+  public String toString() {
+    return getFullQualifiedName();
+  }
+
   /**
    * Returns the list of annotations on this type.
    *
