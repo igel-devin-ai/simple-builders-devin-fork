@@ -162,20 +162,34 @@ class CodegenTestUtilsTest {
   }
 
   @Test
-  void printDiagnosticsAndSources_emitToSystemOut() {
+  void printDiagnosticsAndSources_emitToLog() {
     Compilation compilation =
         CodegenTestUtils.createCompiler(new EmittingProcessor())
             .compile(CodegenTestUtils.forSource("package test;\npublic class Dto {}\n"));
 
     assertThat(compilation).succeeded();
-    var captured = new java.io.ByteArrayOutputStream();
-    var original = System.out;
-    try (java.io.PrintStream redirected = new java.io.PrintStream(captured)) {
-      System.setOut(redirected);
+    var captured = new StringBuilder();
+    java.util.logging.Handler captureHandler =
+        new java.util.logging.Handler() {
+          @Override
+          public void publish(java.util.logging.LogRecord record) {
+            captured.append(record.getMessage()).append('\n');
+          }
+
+          @Override
+          public void flush() {}
+
+          @Override
+          public void close() {}
+        };
+    java.util.logging.Logger log =
+        java.util.logging.Logger.getLogger(CodegenTestUtils.class.getName());
+    log.addHandler(captureHandler);
+    try {
       CodegenTestUtils.printDiagnostics(compilation);
       CodegenTestUtils.printGeneratedSources(compilation);
     } finally {
-      System.setOut(original);
+      log.removeHandler(captureHandler);
     }
     assertTrue(captured.toString().contains("Generated"));
   }

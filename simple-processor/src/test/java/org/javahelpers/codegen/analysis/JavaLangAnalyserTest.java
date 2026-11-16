@@ -115,6 +115,15 @@ class JavaLangAnalyserTest {
       }
       """;
 
+  private static final String PRIVATE_CTOR_SOURCE =
+      """
+      package test;
+      public class PrivateCtor {
+        private PrivateCtor() {}
+        public PrivateCtor(String a) {}
+      }
+      """;
+
   private static AnnotationProcessingContext context(ProcessingEnvironment processingEnv) {
     return new AnnotationProcessingContext(
         CapturingProcessingLogger.create().logger(), processingEnv);
@@ -577,39 +586,53 @@ class JavaLangAnalyserTest {
   }
 
   @Test
-  void findPrimaryConstructor_prefersAnnotatedCtorElseWidest() {
-    AtomicReference<Integer> annotated = new AtomicReference<>();
-    AtomicReference<Optional<ExecutableElement>> noAnnotation = new AtomicReference<>();
+  void findAccessibleConstructors_excludesPrivate() {
+    AtomicReference<Integer> twoCtor = new AtomicReference<>();
+    AtomicReference<Integer> privateCtor = new AtomicReference<>();
     Compilation compilation =
         compile(
             (roundEnv, env) -> {
               AnnotationProcessingContext ctx = context(env);
-              TypeElement twoCtor = typeElement(env, "test.TwoCtor");
-              annotated.set(
-                  JavaLangAnalyser.findPrimaryConstructor(twoCtor, Deprecated.class, ctx)
-                      .map(c -> c.getParameters().size())
-                      .orElse(-1));
-              TypeElement dto = typeElement(env, "test.Dto");
-              noAnnotation.set(JavaLangAnalyser.findPrimaryConstructor(dto, null, ctx));
+              twoCtor.set(
+                  JavaLangAnalyser.findAccessibleConstructors(typeElement(env, "test.TwoCtor"), ctx)
+                      .size());
+              privateCtor.set(
+                  JavaLangAnalyser.findAccessibleConstructors(
+                          typeElement(env, "test.PrivateCtor"), ctx)
+                      .size());
             },
             CTOR_SOURCE,
-            DTO_SOURCE);
+            PRIVATE_CTOR_SOURCE);
     assertThat(compilation).succeeded();
-    assertEquals(2, annotated.get());
-    // widest ctor of Dto has 1 param
-    assertEquals(1, noAnnotation.get().map(c -> c.getParameters().size()).orElse(-1));
+    assertEquals(3, twoCtor.get());
+    assertEquals(1, privateCtor.get());
   }
 
   @Test
-  void hasAccessibleConstructor_detectsPublicCtors() {
-    AtomicReference<Boolean> result = new AtomicReference<>();
+  void findConstructorsAnnotatedWith_findsMarkedCtor() {
+    AtomicReference<List<ExecutableElement>> annotated = new AtomicReference<>();
+    Compilation compilation =
+        compile(
+            (roundEnv, env) ->
+                annotated.set(
+                    JavaLangAnalyser.findConstructorsAnnotatedWith(
+                        typeElement(env, "test.TwoCtor"), Deprecated.class, context(env))),
+            CTOR_SOURCE);
+    assertThat(compilation).succeeded();
+    assertEquals(1, annotated.get().size());
+    assertEquals(2, annotated.get().get(0).getParameters().size());
+  }
+
+  @Test
+  void findConstructorsAnnotatedWith_emptyWhenUnmarked() {
+    AtomicReference<List<ExecutableElement>> annotated = new AtomicReference<>();
     Compilation compilation =
         compileDto(
             (roundEnv, env) ->
-                result.set(
-                    JavaLangAnalyser.hasAccessibleConstructor(
-                        typeElement(env, "test.Dto"), context(env))));
+                annotated.set(
+                    JavaLangAnalyser.findConstructorsAnnotatedWith(
+                        typeElement(env, "test.Dto"), Deprecated.class, context(env))));
     assertThat(compilation).succeeded();
-    assertTrue(result.get());
+    assertTrue(annotated.get().isEmpty());
   }
 }
