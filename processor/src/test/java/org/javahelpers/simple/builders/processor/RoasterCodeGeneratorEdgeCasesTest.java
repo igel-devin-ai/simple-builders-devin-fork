@@ -29,12 +29,21 @@ import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNotContaining;
 import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Integration tests for RoasterCodeGenerator edge cases to improve code coverage.
@@ -184,6 +193,80 @@ class RoasterCodeGeneratorEdgeCasesTest {
     assertThat(compilation)
         .hadWarningContaining(
             "Failed to generate target - Target class 'test.PersonDtoBuilder' already exists");
+  }
+
+  /**
+   * Tests that a builder left over from a previous run inside the generated-sources output is
+   * regenerated silently instead of producing the "already exists" warning.
+   *
+   * <p>Simulates the setup where {@code target/generated-sources/annotations} is added as a compile
+   * source root (build-helper-maven-plugin / IDE): on a full recompile javac resolves the
+   * previously generated type from the source path. Runs through real javac (not compile-testing)
+   * because the check compares the element's source location against the real {@code -s} output
+   * directory — the Filer's virtualized locations cannot express that setup.
+   */
+  @Test
+  void shouldRegeneratePreviousOutput(@TempDir Path workDir) throws IOException {
+    Path generatedSources = workDir.resolve("generated-sources");
+    Path stale = generatedSources.resolve("test").resolve("RegenDtoBuilder.java");
+    Files.createDirectories(stale.getParent());
+    Files.writeString(
+        stale,
+        """
+        package test;
+        public class RegenDtoBuilder {
+          // leftover of a previous compilation
+        }
+        """);
+
+    Path source = workDir.resolve("src").resolve("test").resolve("RegenDto.java");
+    Files.createDirectories(source.getParent());
+    Files.writeString(
+        source,
+        """
+        package test;
+        import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+        @SimpleBuilder
+        public class RegenDto {
+          private String name;
+          public String getName() { return name; }
+          public void setName(String name) { this.name = name; }
+        }
+        """);
+
+    javax.tools.JavaCompiler compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+    DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+    try (StandardJavaFileManager fileManager =
+        compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8)) {
+      javax.tools.JavaCompiler.CompilationTask task =
+          compiler.getTask(
+              null,
+              fileManager,
+              diagnostics,
+              List.of(
+                  "-d", workDir.resolve("classes").toString(),
+                  "-s", generatedSources.toString(),
+                  "-sourcepath", generatedSources.toString(),
+                  "-processor", BuilderProcessor.class.getName()),
+              null,
+              fileManager.getJavaFileObjects(source));
+      assertTrue(task.call(), () -> "compile failed: " + diagnostics.getDiagnostics());
+    }
+
+    // no "already exists" warning for own previous output
+    assertTrue(
+        diagnostics.getDiagnostics().stream()
+            .noneMatch(d -> d.getMessage(null).contains("already exists")),
+        () -> "unexpected 'already exists' warning: " + diagnostics.getDiagnostics());
+
+    // the stale file was overwritten with the real builder
+    String regenerated = Files.readString(stale);
+    assertContaining(
+        regenerated,
+        "public class RegenDtoBuilder",
+        "public static RegenDtoBuilder create()",
+        "public RegenDto build()");
   }
 
   /**
