@@ -29,6 +29,7 @@ import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,7 +50,9 @@ public final class CodegenTestUtils {
 
   private static final Pattern TOP_LEVEL_TYPE_PATTERN =
       Pattern.compile(
-          "(?m)^[ \\t]*(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp)\\s+)*(?:@?interface|class|enum|record)\\s+([A-Za-z_]\\w*)\\b");
+          "(?m)^[ \\t]*(?:[a-zA-Z@-]+ +)*(?:@?interface|class|enum|record) +([A-Za-z_]\\w*)\\b");
+
+  private static final Logger LOG = Logger.getLogger(CodegenTestUtils.class.getName());
 
   private CodegenTestUtils() {
     // Private constructor to prevent instantiation
@@ -85,8 +88,8 @@ public final class CodegenTestUtils {
   }
 
   /**
-   * Prints compilation diagnostics (notes, warnings, errors) and generated source files to
-   * System.out.
+   * Prints compilation diagnostics (notes, warnings, errors) and generated source files via {@link
+   * Logger}.
    *
    * <p>This is useful for debugging test failures, as it makes the processor's debug output and
    * generated code visible in the test console output and CI logs. Domains decide when to call this
@@ -95,34 +98,34 @@ public final class CodegenTestUtils {
    * @param compilation the compilation result to print diagnostics from
    */
   public static void printDiagnostics(Compilation compilation) {
-    System.out.println("\n========== Compilation Diagnostics ==========");
+    LOG.info("\n========== Compilation Diagnostics ==========");
 
     // Print notes (includes debug messages)
     if (!compilation.notes().isEmpty()) {
-      System.out.println("--- NOTES ---");
-      compilation.notes().forEach(diag -> System.out.println(diag.getMessage(null)));
+      LOG.info("--- NOTES ---");
+      compilation.notes().forEach(diag -> LOG.info(diag.getMessage(null)));
     }
 
     // Print warnings
     if (!compilation.warnings().isEmpty()) {
-      System.out.println("\n--- WARNINGS ---");
-      compilation.warnings().forEach(diag -> System.out.println(diag.getMessage(null)));
+      LOG.info("\n--- WARNINGS ---");
+      compilation.warnings().forEach(diag -> LOG.info(diag.getMessage(null)));
     }
 
     // Print errors
     if (!compilation.errors().isEmpty()) {
-      System.out.println("\n--- ERRORS ---");
-      compilation.errors().forEach(diag -> System.out.println(diag.getMessage(null)));
+      LOG.info("\n--- ERRORS ---");
+      compilation.errors().forEach(diag -> LOG.info(diag.getMessage(null)));
     }
 
-    System.out.println("=============================================\n");
+    LOG.info("=============================================\n");
 
     // Print generated source files
     printGeneratedSources(compilation);
   }
 
   /**
-   * Prints all generated source files to System.out.
+   * Prints all generated source files via {@link Logger}.
    *
    * <p>This displays the actual generated code before assertions run, making it easy to compare
    * expected vs actual output without debugging.
@@ -132,24 +135,24 @@ public final class CodegenTestUtils {
   public static void printGeneratedSources(Compilation compilation) {
     var generatedFiles = compilation.generatedSourceFiles();
     if (generatedFiles.isEmpty()) {
-      System.out.println("========== No Source Files Generated ==========\n");
+      LOG.info("========== No Source Files Generated ==========\n");
       return;
     }
 
-    System.out.println("========== Generated Source Files ==========");
+    LOG.info("========== Generated Source Files ==========");
     generatedFiles.forEach(
         file -> {
           try {
             String fileName = file.getName();
             String content = file.getCharContent(false).toString();
-            System.out.println("\n--- " + fileName + " ---");
-            System.out.println(content);
-            System.out.println("--- End of " + fileName + " ---");
+            LOG.info("\n--- " + fileName + " ---");
+            LOG.info(content);
+            LOG.info("--- End of " + fileName + " ---");
           } catch (Exception e) {
-            System.err.println("Failed to read generated file: " + e.getMessage());
+            LOG.warning("Failed to read generated file: " + e.getMessage());
           }
         });
-    System.out.println("=============================================\n");
+    LOG.info("=============================================\n");
   }
 
   /**

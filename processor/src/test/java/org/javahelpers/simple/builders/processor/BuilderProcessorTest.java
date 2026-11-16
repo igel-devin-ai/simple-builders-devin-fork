@@ -233,7 +233,241 @@ class BuilderProcessorTest {
 
     // Then: compilation should succeed but with a warning
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningContaining("The SimpleBuilder should not be abstract");
+    assertThat(compilation)
+        .hadWarningContaining("The target class for generating a builder should not be abstract");
+  }
+
+  @Test
+  void shouldGenerateBuilderForNestedPropertyTypeInSameClass() {
+    // Given: a property whose type is a static nested class of the DTO itself
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private Status status;
+
+              public Status getStatus() { return status; }
+              public void setStatus(Status status) { this.status = status; }
+
+              public static class Status {}
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(source);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: the nested type keeps its enclosing qualifier
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "OrderDto.Status");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Status;");
+  }
+
+  @Test
+  void shouldGenerateBuilderForNestedPropertyTypeInOtherClass() {
+    // Given: a property whose type is a static nested class of another class
+    JavaFileObject address =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            public class OtherClass {
+              public static class Address {}
+            }
+            """);
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private OtherClass.Address address;
+
+              public OtherClass.Address getAddress() { return address; }
+              public void setAddress(OtherClass.Address address) { this.address = address; }
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(address, source);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: the nested type keeps its enclosing qualifier
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "OtherClass.Address");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Address;");
+  }
+
+  @Test
+  void shouldGenerateBuilderForDeeplyNestedPropertyType() {
+    // Given: a property typed as a doubly nested class (Outer.Middle.Inner)
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private Outer.Middle.Inner value;
+
+              public Outer.Middle.Inner getValue() { return value; }
+              public void setValue(Outer.Middle.Inner value) { this.value = value; }
+            }
+            """);
+    JavaFileObject outer =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            public class Outer {
+              public static class Middle {
+                public static class Inner {}
+              }
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(source, outer);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: the full qualifier chain is kept and a legal nested import is emitted
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "import test.Outer.Middle.Inner;");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Outer.Middle;");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Inner;");
+  }
+
+  @Test
+  void shouldGenerateBuilderForGenericNestedPropertyType() {
+    // Given: a property typed as a generic nested class (Outer.Pair<String>)
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class OrderDto {
+              private Outer.Pair<String> pair;
+
+              public Outer.Pair<String> getPair() { return pair; }
+              public void setPair(Outer.Pair<String> pair) { this.pair = pair; }
+            }
+            """);
+    JavaFileObject outer =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+
+            public class Outer {
+              public static class Pair<T> {}
+            }
+            """);
+
+    // When
+    Compilation compilation = compile(source, outer);
+    String generatedCode = loadGeneratedSource(compilation, "OrderDtoBuilder");
+
+    // Then: generic nested type resolves with its enclosing qualifier and type arguments
+    assertThat(compilation).succeeded();
+    assertGenerationSucceeded(compilation, "OrderDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(generatedCode, "import test.Outer.Pair;");
+    ProcessorAsserts.assertContaining(generatedCode, "Pair<String>");
+    ProcessorAsserts.assertNotContaining(generatedCode, "import test.Pair;");
+  }
+
+  @Test
+  void shouldWarnWhenAnnotatedConstructorIsNotAccessible() {
+    // Given: a private constructor explicitly selected via @SimpleBuilderConstructor
+    String source =
+        """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilderConstructor;
+
+            @SimpleBuilder
+            public class PrivateCtorDto {
+              private final String value;
+
+              public PrivateCtorDto() {
+                this.value = null;
+              }
+
+              @SimpleBuilderConstructor
+              private PrivateCtorDto(String value, int ignored) {
+                this.value = value;
+              }
+
+              public String getValue() {
+                return value;
+              }
+            }
+            """;
+
+    // When
+    Compilation compilation = compile(ProcessorTestUtils.forSource(source));
+
+    // Then: the unusable selection is reported instead of silently falling back
+    assertThat(compilation)
+        .hadWarningContaining("is not accessible from the generated builder's package");
+  }
+
+  /**
+   * {@code @SimpleBuilderConstructor} is meant to select a single constructor. When a type marks
+   * several constructors, the ambiguity is reported and the first declared is used instead of an
+   * arbitrary silent pick.
+   */
+  @Test
+  void shouldWarnOnMultipleAnnotatedConstructors() {
+    // Given: two constructors explicitly selected via @SimpleBuilderConstructor
+    String source =
+        """
+            package test;
+
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilderConstructor;
+
+            @SimpleBuilder
+            public class MultiCtorDto {
+              private final String value;
+
+              @SimpleBuilderConstructor
+              public MultiCtorDto() {
+                this.value = null;
+              }
+
+              @SimpleBuilderConstructor
+              public MultiCtorDto(String value) {
+                this.value = value;
+              }
+
+              public String getValue() {
+                return value;
+              }
+            }
+            """;
+
+    // When
+    Compilation compilation = compile(ProcessorTestUtils.forSource(source));
+
+    // Then
+    assertThat(compilation)
+        .hadWarningContaining("Multiple constructors annotated with @SimpleBuilderConstructor");
   }
 
   @Test

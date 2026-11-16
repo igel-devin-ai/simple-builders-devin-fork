@@ -125,12 +125,15 @@ jobs:
         # Resolve them from the base branch's pom (not the fork's) so that the
         # only pom Maven parses is trusted. A dependency added by the fork PR
         # is simply unresolved in the analysis; it is never downloaded here.
+        # `-am` installs processor's in-reactor dependencies (codegen-*) too:
+        # they are needed to resolve its dependency graph but exist only in
+        # this checkout, not in any remote repository.
         run: |
-          mvn -B -q -DskipTests -Dfmt.skip -pl core install
+          mvn -B -q -DskipTests -Dfmt.skip -pl processor -am install
           mvn -B -q -pl processor dependency:build-classpath \
             -Dmdep.includeScope=test \
             -Dmdep.pathSeparator=, \
-            -DexcludeGroupIds=io.github.java-helpers \
+            -DexcludeGroupIds=io.github.java-helpers,io.github.java-helpers.codegen \
             -Dmdep.outputFile="$RUNNER_TEMP/sonar-libraries.txt"
 
       - name: Fetch fork PR source as git data (not executed)

@@ -141,6 +141,15 @@ public class TypeName {
   }
 
   /**
+   * Returns whether this type is a nested (inner) class carrying an enclosing-type qualifier.
+   *
+   * @return true if this type is nested inside another class
+   */
+  public boolean isNestedType() {
+    return false;
+  }
+
+  /**
    * Returns whether this type represents an enum.
    *
    * @return true if this type is an enum

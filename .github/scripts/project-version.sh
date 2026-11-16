@@ -52,9 +52,10 @@ verify_versions() {
 }
 
 option="${1:-}"
+version="${2:-}"
 
 if [[ "$option" == "--set" && $# -eq 2 ]]; then
-  set_version "$2"
+  set_version "$version"
 elif [[ "$option" == "--verify" && $# -eq 1 ]]; then
   verify_versions
 elif [[ "$option" == "-h" || "$option" == "--help" ]]; then

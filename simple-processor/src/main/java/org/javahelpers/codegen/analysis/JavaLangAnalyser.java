@@ -55,6 +55,9 @@ import org.javahelpers.codegen.processing.AnnotationProcessingContext;
 /** Helperclass for extrating specific information from existing classes. */
 public final class JavaLangAnalyser {
 
+  /** Upper bound for {@link #findTopLevelType} walks — guards against cyclic element models. */
+  private static final int MAX_ENCLOSING_DEPTH = 100;
+
   private static final String PARAM_TAG = "@param ";
   private static final String DEPRECATED_TAG = "@deprecated";
 
@@ -888,58 +891,65 @@ public final class JavaLangAnalyser {
   }
 
   /**
-   * Finds the primary constructor of a type: the one to use when generated code must instantiate
-   * it. Prioritizes constructors annotated with the given marker annotation. If none is annotated,
-   * selects the constructor with the highest number of parameters. Returns empty if no constructor
-   * has parameters (i.e., only default constructor or none found).
+   * Finds all constructors of a type that are accessible from the generated package (e.g. private
+   * constructors are excluded). No selection heuristic is applied — choosing which constructor to
+   * use is the caller's concern.
    *
    * @param annotatedType the type element to search for constructors
-   * @param constructorAnnotation the marker annotation selecting a constructor explicitly; may be
-   *     {@code null} to skip the annotation check
    * @param context the processing context providing access to elements and types utilities
-   * @return Optional containing the selected constructor, or empty if none suitable
+   * @return list of accessible constructors, possibly empty
    */
-  public static Optional<ExecutableElement> findPrimaryConstructor(
-      TypeElement annotatedType,
-      Class<? extends Annotation> constructorAnnotation,
-      AnnotationProcessingContext context) {
-    List<ExecutableElement> ctors =
-        ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
-            .filter(context::isAccessibleFromGeneratedPackage)
-            .toList();
-
-    // First, check if any constructor is annotated with the constructor annotation
-    for (ExecutableElement ctor : ctors) {
-      if (constructorAnnotation != null && ctor.getAnnotation(constructorAnnotation) != null) {
-        return Optional.of(ctor);
-      }
-    }
-
-    // Fall back to heuristic: select constructor with the most parameters
-    ExecutableElement selected = null;
-    int maxParams = -1;
-    for (ExecutableElement ctor : ctors) {
-      int p = ctor.getParameters().size();
-      if (p > maxParams) {
-        maxParams = p;
-        selected = ctor;
-      }
-    }
-    return (selected != null && maxParams > 0) ? Optional.of(selected) : Optional.empty();
+  public static List<ExecutableElement> findAccessibleConstructors(
+      TypeElement annotatedType, AnnotationProcessingContext context) {
+    return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
+        .filter(context::isAccessibleFromGeneratedPackage)
+        .toList();
   }
 
   /**
-   * Checks whether the given type has at least one constructor that is accessible from the package
-   * generated code is written to. A type without an accessible constructor cannot be instantiated
-   * by generated code.
+   * Finds all constructors annotated with the given marker annotation, regardless of their
+   * accessibility. Callers that generate code invoking a constructor must check accessibility
+   * separately — e.g. via {@code context.isAccessibleFromGeneratedPackage(ctor)} — and report the
+   * explicit selection when it is not usable.
    *
-   * @param typeElement the type element to check
+   * @param annotatedType the type element to search for constructors
+   * @param constructorAnnotation the marker annotation to look for
    * @param context the processing context providing access to elements and types utilities
-   * @return {@code true} if an accessible constructor exists
+   * @return list of annotated constructors, possibly empty
    */
-  public static boolean hasAccessibleConstructor(
-      TypeElement typeElement, AnnotationProcessingContext context) {
-    return ElementFilter.constructorsIn(context.getAllMembers(typeElement)).stream()
-        .anyMatch(context::isAccessibleFromGeneratedPackage);
+  public static List<ExecutableElement> findConstructorsAnnotatedWith(
+      TypeElement annotatedType,
+      Class<? extends Annotation> constructorAnnotation,
+      AnnotationProcessingContext context) {
+    return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
+        .filter(ctor -> ctor.getAnnotation(constructorAnnotation) != null)
+        .toList();
+  }
+
+  /**
+   * Resolves the outermost type enclosing the given element — the top-level class declared in its
+   * own source file. For nested classes the enclosing chain is walked up to the file-level
+   * container; an element not enclosed by a type is returned itself.
+   *
+   * <p>The walk is bounded by {@value #MAX_ENCLOSING_DEPTH} steps so a malformed, cyclic element
+   * model cannot loop forever.
+   *
+   * @param element the element to resolve
+   * @return the outermost enclosing type
+   * @throws IllegalStateException when the enclosing chain exceeds {@value #MAX_ENCLOSING_DEPTH}
+   *     elements — a sign of a cyclic element model
+   */
+  public static Element findTopLevelType(Element element) {
+    Element topLevel = element;
+    for (int depth = 0; depth < MAX_ENCLOSING_DEPTH; depth++) {
+      if (topLevel.getEnclosingElement() instanceof TypeElement parent) {
+        topLevel = parent;
+      } else {
+        return topLevel;
+      }
+    }
+    throw new IllegalStateException(
+        "Enclosing-element chain of '%s' exceeds %d levels — possible cycle in the element model"
+            .formatted(element.getSimpleName(), MAX_ENCLOSING_DEPTH));
   }
 }
