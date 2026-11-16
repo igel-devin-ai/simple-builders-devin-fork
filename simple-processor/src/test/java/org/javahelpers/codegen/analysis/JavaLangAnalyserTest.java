@@ -24,18 +24,17 @@
 
 package org.javahelpers.codegen.analysis;
 
-import static com.google.testing.compile.CompilationSubject.assertThat;
-import static org.javahelpers.codegen.processing.ProcessingTestUtils.context;
 import static org.javahelpers.codegen.testing.ElementTestUtils.field;
 import static org.javahelpers.codegen.testing.ElementTestUtils.method;
 import static org.javahelpers.codegen.testing.ElementTestUtils.parameter;
 import static org.javahelpers.codegen.testing.ElementTestUtils.typeElement;
+import static org.javahelpers.codegen.testing.ProcessingTestUtils.context;
+import static org.javahelpers.codegen.testing.ProcessingTestUtils.probe;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.testing.compile.Compilation;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,7 +48,6 @@ import org.javahelpers.codegen.analysis.testannotations.Tag;
 import org.javahelpers.codegen.analysis.testannotations.Tags;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.processing.AnnotationProcessingContext;
-import org.javahelpers.codegen.testing.CodegenTestUtils;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link JavaLangAnalyser} against elements captured from a real compilation. */
@@ -133,18 +131,16 @@ class JavaLangAnalyserTest {
   void isNoMethodOfObjectClass_filtersObjectMethods() {
     AtomicReference<Boolean> onObject = new AtomicReference<>();
     AtomicReference<Boolean> onOwn = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement dto = typeElement(env, "test.Dto");
-              onObject.set(
-                  JavaLangAnalyser.isNoMethodOfObjectClass(
-                      method(typeElement(env, "java.lang.Object"), "toString"), ctx));
-              onOwn.set(JavaLangAnalyser.isNoMethodOfObjectClass(method(dto, "getName"), ctx));
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          onObject.set(
+              JavaLangAnalyser.isNoMethodOfObjectClass(
+                  method(typeElement(env, "java.lang.Object"), "toString"), ctx));
+          onOwn.set(JavaLangAnalyser.isNoMethodOfObjectClass(method(dto, "getName"), ctx));
+        },
+        DTO_SOURCE);
     assertFalse(onObject.get());
     assertTrue(onOwn.get());
   }
@@ -152,17 +148,15 @@ class JavaLangAnalyserTest {
   @Test
   void findSetterMethods_returnsSettersSortedByNameAndParameterType() {
     AtomicReference<List<String>> result = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              result.set(
-                  JavaLangAnalyser.findSetterMethods(typeElement(env, "test.Dto"), ctx).stream()
-                      .map(m -> m.getSimpleName() + "(" + m.getParameters().get(0).asType() + ")")
-                      .toList());
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          result.set(
+              JavaLangAnalyser.findSetterMethods(typeElement(env, "test.Dto"), ctx).stream()
+                  .map(m -> m.getSimpleName() + "(" + m.getParameters().get(0).asType() + ")")
+                  .toList());
+        },
+        DTO_SOURCE);
     assertEquals(List.of("setName(java.lang.Object)", "setName(java.lang.String)"), result.get());
   }
 
@@ -170,17 +164,13 @@ class JavaLangAnalyserTest {
   void hasNotAnnotation_checksForAnnotationPresence() {
     AtomicReference<Boolean> deprecated = new AtomicReference<>();
     AtomicReference<Boolean> plain = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              TypeElement dto = typeElement(env, "test.Dto");
-              deprecated.set(
-                  JavaLangAnalyser.hasNotAnnotation(Deprecated.class, method(dto, "old")));
-              plain.set(
-                  JavaLangAnalyser.hasNotAnnotation(Deprecated.class, method(dto, "getName")));
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          TypeElement dto = typeElement(env, "test.Dto");
+          deprecated.set(JavaLangAnalyser.hasNotAnnotation(Deprecated.class, method(dto, "old")));
+          plain.set(JavaLangAnalyser.hasNotAnnotation(Deprecated.class, method(dto, "getName")));
+        },
+        DTO_SOURCE);
     assertFalse(deprecated.get());
     assertTrue(plain.get());
   }
@@ -188,28 +178,26 @@ class JavaLangAnalyserTest {
   @Test
   void methodPredicates_coverThrowsReturnVisibilityStaticGenerics() {
     AtomicReference<List<Boolean>> results = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              TypeElement dto = typeElement(env, "test.Dto");
-              results.set(
-                  List.of(
-                      JavaLangAnalyser.hasNoThrowablesDeclared(method(dto, "getName")),
-                      JavaLangAnalyser.hasNoThrowablesDeclared(method(dto, "risky")),
-                      // setName returns void -> no return value; getName returns String
-                      JavaLangAnalyser.hasNoReturnValue(method(dto, "setName", "java.lang.String")),
-                      JavaLangAnalyser.hasNoReturnValue(method(dto, "getName")),
-                      JavaLangAnalyser.isNotPrivate(method(dto, "getName")),
-                      JavaLangAnalyser.isNotPrivate(method(dto, "hidden")),
-                      JavaLangAnalyser.isNotStatic(method(dto, "getName")),
-                      JavaLangAnalyser.isNotStatic(method(dto, "staticUtil")),
-                      JavaLangAnalyser.hasGenericTypes(method(dto, "generic")),
-                      JavaLangAnalyser.hasGenericTypes(method(dto, "getName")),
-                      JavaLangAnalyser.isSetterForField(method(dto, "setName", "java.lang.String")),
-                      JavaLangAnalyser.isSetterForField(method(dto, "getName"))));
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          TypeElement dto = typeElement(env, "test.Dto");
+          results.set(
+              List.of(
+                  JavaLangAnalyser.hasNoThrowablesDeclared(method(dto, "getName")),
+                  JavaLangAnalyser.hasNoThrowablesDeclared(method(dto, "risky")),
+                  // setName returns void -> no return value; getName returns String
+                  JavaLangAnalyser.hasNoReturnValue(method(dto, "setName", "java.lang.String")),
+                  JavaLangAnalyser.hasNoReturnValue(method(dto, "getName")),
+                  JavaLangAnalyser.isNotPrivate(method(dto, "getName")),
+                  JavaLangAnalyser.isNotPrivate(method(dto, "hidden")),
+                  JavaLangAnalyser.isNotStatic(method(dto, "getName")),
+                  JavaLangAnalyser.isNotStatic(method(dto, "staticUtil")),
+                  JavaLangAnalyser.hasGenericTypes(method(dto, "generic")),
+                  JavaLangAnalyser.hasGenericTypes(method(dto, "getName")),
+                  JavaLangAnalyser.isSetterForField(method(dto, "setName", "java.lang.String")),
+                  JavaLangAnalyser.isSetterForField(method(dto, "getName"))));
+        },
+        DTO_SOURCE);
     assertEquals(
         List.of(true, false, true, false, true, false, true, false, true, false, true, false),
         results.get());
@@ -219,17 +207,15 @@ class JavaLangAnalyserTest {
   void hasEmptyConstructor_detectsAccessibleNoArgConstructor() {
     AtomicReference<Boolean> dto = new AtomicReference<>();
     AtomicReference<Boolean> ctor = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              dto.set(JavaLangAnalyser.hasEmptyConstructor(typeElement(env, "test.Dto"), ctx));
-              // TwoCtor has public no-arg ctor -> true as well
-              ctor.set(JavaLangAnalyser.hasEmptyConstructor(typeElement(env, "test.TwoCtor"), ctx));
-            },
-            DTO_SOURCE,
-            CTOR_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          dto.set(JavaLangAnalyser.hasEmptyConstructor(typeElement(env, "test.Dto"), ctx));
+          // TwoCtor has public no-arg ctor -> true as well
+          ctor.set(JavaLangAnalyser.hasEmptyConstructor(typeElement(env, "test.TwoCtor"), ctx));
+        },
+        DTO_SOURCE,
+        CTOR_SOURCE);
     assertTrue(dto.get());
     assertTrue(ctor.get());
   }
@@ -237,14 +223,12 @@ class JavaLangAnalyserTest {
   @Test
   void findAnnotation_locatesDirectAnnotation() {
     AtomicReference<Optional<AnnotationMirror>> result = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) ->
-                result.set(
-                    JavaLangAnalyser.findAnnotation(
-                        method(typeElement(env, "test.Dto"), "old"), Deprecated.class)),
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) ->
+            result.set(
+                JavaLangAnalyser.findAnnotation(
+                    method(typeElement(env, "test.Dto"), "old"), Deprecated.class)),
+        DTO_SOURCE);
     assertTrue(result.get().isPresent());
   }
 
@@ -252,22 +236,20 @@ class JavaLangAnalyserTest {
   void findAnnotationInstances_unwrapsRepeatableContainerAndDirect() {
     AtomicReference<Integer> directCount = new AtomicReference<>();
     AtomicReference<Integer> containerCount = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement dto = typeElement(env, "test.Dto");
-              directCount.set(
-                  JavaLangAnalyser.findAnnotationInstances(
-                          method(dto, "tagged"), Tag.class, Tags.class, ctx)
-                      .size());
-              containerCount.set(
-                  JavaLangAnalyser.findAnnotationInstances(
-                          method(dto, "wrapped"), Tag.class, Tags.class, ctx)
-                      .size());
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          directCount.set(
+              JavaLangAnalyser.findAnnotationInstances(
+                      method(dto, "tagged"), Tag.class, Tags.class, ctx)
+                  .size());
+          containerCount.set(
+              JavaLangAnalyser.findAnnotationInstances(
+                      method(dto, "wrapped"), Tag.class, Tags.class, ctx)
+                  .size());
+        },
+        DTO_SOURCE);
     assertEquals(2, directCount.get());
     assertEquals(2, containerCount.get());
   }
@@ -276,28 +258,24 @@ class JavaLangAnalyserTest {
   void findAnnotationAttributeAndArray_readValues() {
     AtomicReference<String> value = new AtomicReference<>();
     AtomicReference<Integer> arraySize = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement dto = typeElement(env, "test.Dto");
-              AnnotationMirror tag =
-                  JavaLangAnalyser.findAnnotation(method(dto, "singleTag"), Tag.class)
-                      .orElseThrow();
-              value.set(
-                  JavaLangAnalyser.findAnnotationAttribute(tag, "value", ctx)
-                      .map(AnnotationValue::getValue)
-                      .map(Object::toString)
-                      .orElse(null));
-              AnnotationMirror tags =
-                  JavaLangAnalyser.findAnnotation(method(dto, "wrapped"), Tags.class).orElse(null);
-              if (tags != null) {
-                arraySize.set(
-                    JavaLangAnalyser.findAnnotationAttributeArray(tags, "value", ctx).size());
-              }
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          AnnotationMirror tag =
+              JavaLangAnalyser.findAnnotation(method(dto, "singleTag"), Tag.class).orElseThrow();
+          value.set(
+              JavaLangAnalyser.findAnnotationAttribute(tag, "value", ctx)
+                  .map(AnnotationValue::getValue)
+                  .map(Object::toString)
+                  .orElse(null));
+          AnnotationMirror tags =
+              JavaLangAnalyser.findAnnotation(method(dto, "wrapped"), Tags.class).orElse(null);
+          if (tags != null) {
+            arraySize.set(JavaLangAnalyser.findAnnotationAttributeArray(tags, "value", ctx).size());
+          }
+        },
+        DTO_SOURCE);
     assertEquals("a", value.get());
     assertEquals(2, arraySize.get());
   }
@@ -305,21 +283,18 @@ class JavaLangAnalyserTest {
   @Test
   void resolveTypeElement_resolvesAnnotationValueToTypeElement() {
     AtomicReference<Optional<TypeElement>> result = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement dto = typeElement(env, "test.Dto");
-              AnnotationMirror tag =
-                  JavaLangAnalyser.findAnnotation(method(dto, "singleTag"), Tag.class)
-                      .orElseThrow();
-              // value is a string, not a TypeMirror -> empty
-              AnnotationValue val =
-                  JavaLangAnalyser.findAnnotationAttribute(tag, "value", ctx).orElseThrow();
-              result.set(JavaLangAnalyser.resolveTypeElement(val, ctx));
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          AnnotationMirror tag =
+              JavaLangAnalyser.findAnnotation(method(dto, "singleTag"), Tag.class).orElseThrow();
+          // value is a string, not a TypeMirror -> empty
+          AnnotationValue val =
+              JavaLangAnalyser.findAnnotationAttribute(tag, "value", ctx).orElseThrow();
+          result.set(JavaLangAnalyser.resolveTypeElement(val, ctx));
+        },
+        DTO_SOURCE);
     assertTrue(result.get().isEmpty());
   }
 
@@ -328,31 +303,28 @@ class JavaLangAnalyserTest {
     AtomicReference<List<String>> single = new AtomicReference<>();
     AtomicReference<List<String>> voidReturn = new AtomicReference<>();
     AtomicReference<List<String>> allStatic = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement dto = typeElement(env, "test.Dto");
-              single.set(
-                  JavaLangAnalyser.findMethodsStatic(
-                          dto, TypeName.of(String.class), TypeName.of(String.class), ctx)
-                      .stream()
-                      .map(m -> m.getSimpleName().toString())
-                      .toList());
-              voidReturn.set(
-                  JavaLangAnalyser.findMethodsStatic(
-                          dto, List.of(TypeName.of(String.class)), null, ctx)
-                      .stream()
-                      .map(m -> m.getSimpleName().toString())
-                      .toList());
-              allStatic.set(
-                  JavaLangAnalyser.findMethodsStatic(dto, List.of(TypeName.of(String.class)), ctx)
-                      .stream()
-                      .map(m -> m.getSimpleName().toString())
-                      .toList());
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          single.set(
+              JavaLangAnalyser.findMethodsStatic(
+                      dto, TypeName.of(String.class), TypeName.of(String.class), ctx)
+                  .stream()
+                  .map(m -> m.getSimpleName().toString())
+                  .toList());
+          voidReturn.set(
+              JavaLangAnalyser.findMethodsStatic(dto, List.of(TypeName.of(String.class)), null, ctx)
+                  .stream()
+                  .map(m -> m.getSimpleName().toString())
+                  .toList());
+          allStatic.set(
+              JavaLangAnalyser.findMethodsStatic(dto, List.of(TypeName.of(String.class)), ctx)
+                  .stream()
+                  .map(m -> m.getSimpleName().toString())
+                  .toList());
+        },
+        DTO_SOURCE);
     assertEquals(List.of("staticUtil"), single.get());
     assertEquals(List.of("staticVoid"), voidReturn.get());
     assertEquals(List.of("staticUtil", "staticVoid"), allStatic.get());
@@ -361,19 +333,16 @@ class JavaLangAnalyserTest {
   @Test
   void findMethods_matchesByParametersAndReturnType() {
     AtomicReference<List<String>> result = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement dto = typeElement(env, "test.Dto");
-              result.set(
-                  JavaLangAnalyser.findMethods(dto, List.of(), TypeName.of(String.class), ctx)
-                      .stream()
-                      .map(m -> m.getSimpleName().toString())
-                      .toList());
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          result.set(
+              JavaLangAnalyser.findMethods(dto, List.of(), TypeName.of(String.class), ctx).stream()
+                  .map(m -> m.getSimpleName().toString())
+                  .toList());
+        },
+        DTO_SOURCE);
     assertEquals(List.of("toString", "getName"), result.get());
   }
 
@@ -381,17 +350,14 @@ class JavaLangAnalyserTest {
   void findMethodWithoutParameters_matchesNameAndModifiers() {
     AtomicReference<Optional<ExecutableElement>> found = new AtomicReference<>();
     AtomicReference<Optional<ExecutableElement>> missing = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              TypeElement dto = typeElement(env, "test.Dto");
-              found.set(
-                  JavaLangAnalyser.findMethodWithoutParameters(dto, "getName", Modifier.PUBLIC));
-              missing.set(
-                  JavaLangAnalyser.findMethodWithoutParameters(dto, "setName", Modifier.PUBLIC));
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          TypeElement dto = typeElement(env, "test.Dto");
+          found.set(JavaLangAnalyser.findMethodWithoutParameters(dto, "getName", Modifier.PUBLIC));
+          missing.set(
+              JavaLangAnalyser.findMethodWithoutParameters(dto, "setName", Modifier.PUBLIC));
+        },
+        DTO_SOURCE);
     assertTrue(found.get().isPresent());
     assertTrue(missing.get().isEmpty());
   }
@@ -400,24 +366,20 @@ class JavaLangAnalyserTest {
   void findReadableProperties_combinesRecordComponentsGettersAndFields() {
     AtomicReference<List<String>> recordProps = new AtomicReference<>();
     AtomicReference<List<String>> dtoProps = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              recordProps.set(
-                  JavaLangAnalyser.findReadableProperties(typeElement(env, "test.Point"), ctx)
-                      .stream()
-                      .map(ReadableProperty::name)
-                      .toList());
-              dtoProps.set(
-                  JavaLangAnalyser.findReadableProperties(typeElement(env, "test.Dto"), ctx)
-                      .stream()
-                      .map(ReadableProperty::name)
-                      .toList());
-            },
-            RECORD_SOURCE,
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          recordProps.set(
+              JavaLangAnalyser.findReadableProperties(typeElement(env, "test.Point"), ctx).stream()
+                  .map(ReadableProperty::name)
+                  .toList());
+          dtoProps.set(
+              JavaLangAnalyser.findReadableProperties(typeElement(env, "test.Dto"), ctx).stream()
+                  .map(ReadableProperty::name)
+                  .toList());
+        },
+        RECORD_SOURCE,
+        DTO_SOURCE);
     assertEquals(List.of("x", "y"), recordProps.get());
     // getters are readable; private fields without accessors are not
     assertTrue(dtoProps.get().containsAll(List.of("name", "active")));
@@ -426,20 +388,18 @@ class JavaLangAnalyserTest {
   @Test
   void findSingleParameterMethods_returnsNonStaticOneParamMethods() {
     AtomicReference<List<String>> result = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              result.set(
-                  JavaLangAnalyser.findSingleParameterMethods(typeElement(env, "test.Dto"), ctx)
-                      .stream()
-                      .map(m -> m.getSimpleName().toString())
-                      .distinct()
-                      .sorted()
-                      .toList());
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          result.set(
+              JavaLangAnalyser.findSingleParameterMethods(typeElement(env, "test.Dto"), ctx)
+                  .stream()
+                  .map(m -> m.getSimpleName().toString())
+                  .distinct()
+                  .sorted()
+                  .toList());
+        },
+        DTO_SOURCE);
     // setName overloads + generic — staticUtil excluded (static)
     assertEquals(List.of("generic", "setName"), result.get());
   }
@@ -448,18 +408,16 @@ class JavaLangAnalyserTest {
   void hasConstructorAccepting_matchesParameterType() {
     AtomicReference<Boolean> matching = new AtomicReference<>();
     AtomicReference<Boolean> nonMatching = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement ctor = typeElement(env, "test.TwoCtor");
-              matching.set(
-                  JavaLangAnalyser.hasConstructorAccepting(ctor, TypeName.of(String.class), ctx));
-              nonMatching.set(
-                  JavaLangAnalyser.hasConstructorAccepting(ctor, TypeName.of(Integer.class), ctx));
-            },
-            CTOR_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement ctor = typeElement(env, "test.TwoCtor");
+          matching.set(
+              JavaLangAnalyser.hasConstructorAccepting(ctor, TypeName.of(String.class), ctx));
+          nonMatching.set(
+              JavaLangAnalyser.hasConstructorAccepting(ctor, TypeName.of(Integer.class), ctx));
+        },
+        CTOR_SOURCE);
     assertTrue(matching.get());
     assertFalse(nonMatching.get());
   }
@@ -467,35 +425,30 @@ class JavaLangAnalyserTest {
   @Test
   void isFunctionalInterface_detectsAnnotatedAndSingleAbstractMethod() {
     AtomicReference<List<Boolean>> results = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              results.set(
-                  List.of(
-                      JavaLangAnalyser.isFunctionalInterface(
-                          typeElement(env, "test.Interfaces.Single")),
-                      JavaLangAnalyser.isFunctionalInterface(
-                          typeElement(env, "test.Interfaces.Two")),
-                      JavaLangAnalyser.isFunctionalInterface(
-                          typeElement(env, "test.Interfaces.Explicit")),
-                      JavaLangAnalyser.isFunctionalInterface(typeElement(env, "test.Dto")),
-                      JavaLangAnalyser.isFunctionalInterface(null)));
-            },
-            INTERFACES_SOURCE,
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          results.set(
+              List.of(
+                  JavaLangAnalyser.isFunctionalInterface(
+                      typeElement(env, "test.Interfaces.Single")),
+                  JavaLangAnalyser.isFunctionalInterface(typeElement(env, "test.Interfaces.Two")),
+                  JavaLangAnalyser.isFunctionalInterface(
+                      typeElement(env, "test.Interfaces.Explicit")),
+                  JavaLangAnalyser.isFunctionalInterface(typeElement(env, "test.Dto")),
+                  JavaLangAnalyser.isFunctionalInterface(null)));
+        },
+        INTERFACES_SOURCE,
+        DTO_SOURCE);
     assertEquals(List.of(true, false, true, false, false), results.get());
   }
 
   @Test
   void extractParamJavaDoc_readsParamTextWithContinuation() {
     AtomicReference<ExecutableElement> mth = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) ->
-                mth.set(method(typeElement(env, "test.Dto"), "setName", "java.lang.String")),
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) ->
+            mth.set(method(typeElement(env, "test.Dto"), "setName", "java.lang.String")),
+        DTO_SOURCE);
     String javadoc =
         """
         Sets the name.
@@ -523,23 +476,19 @@ class JavaLangAnalyserTest {
     AtomicReference<Optional<ExecutableElement>> byGet = new AtomicReference<>();
     AtomicReference<Optional<ExecutableElement>> byIs = new AtomicReference<>();
     AtomicReference<Optional<ExecutableElement>> absent = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement dto = typeElement(env, "test.Dto");
-              byGet.set(
-                  JavaLangAnalyser.findGetterForField(
-                      dto, "name", field(dto, "name").asType(), ctx));
-              byIs.set(
-                  JavaLangAnalyser.findGetterForField(
-                      dto, "active", field(dto, "active").asType(), ctx));
-              absent.set(
-                  JavaLangAnalyser.findGetterForField(
-                      dto, "count", field(dto, "count").asType(), ctx));
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          byGet.set(
+              JavaLangAnalyser.findGetterForField(dto, "name", field(dto, "name").asType(), ctx));
+          byIs.set(
+              JavaLangAnalyser.findGetterForField(
+                  dto, "active", field(dto, "active").asType(), ctx));
+          absent.set(
+              JavaLangAnalyser.findGetterForField(dto, "count", field(dto, "count").asType(), ctx));
+        },
+        DTO_SOURCE);
     assertTrue(byGet.get().isPresent());
     assertTrue(byIs.get().isPresent());
     assertTrue(absent.get().isEmpty());
@@ -550,19 +499,17 @@ class JavaLangAnalyserTest {
     AtomicReference<Boolean> fieldFound = new AtomicReference<>();
     AtomicReference<Boolean> fieldMissing = new AtomicReference<>();
     AtomicReference<Boolean> compFound = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              TypeElement dto = typeElement(env, "test.Dto");
-              fieldFound.set(JavaLangAnalyser.findFieldElement(dto, "name").isPresent());
-              fieldMissing.set(JavaLangAnalyser.findFieldElement(dto, "missing").isEmpty());
-              compFound.set(
-                  JavaLangAnalyser.findRecordComponent(typeElement(env, "test.Point"), "x")
-                      .isPresent());
-            },
-            DTO_SOURCE,
-            RECORD_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          TypeElement dto = typeElement(env, "test.Dto");
+          fieldFound.set(JavaLangAnalyser.findFieldElement(dto, "name").isPresent());
+          fieldMissing.set(JavaLangAnalyser.findFieldElement(dto, "missing").isEmpty());
+          compFound.set(
+              JavaLangAnalyser.findRecordComponent(typeElement(env, "test.Point"), "x")
+                  .isPresent());
+        },
+        DTO_SOURCE,
+        RECORD_SOURCE);
     assertTrue(fieldFound.get());
     assertTrue(fieldMissing.get());
     assertTrue(compFound.get());
@@ -572,16 +519,14 @@ class JavaLangAnalyserTest {
   void findSetterForField_matchesVoidSingleParamSetter() {
     AtomicReference<Optional<ExecutableElement>> found = new AtomicReference<>();
     AtomicReference<Optional<ExecutableElement>> missing = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              TypeElement dto = typeElement(env, "test.Dto");
-              found.set(JavaLangAnalyser.findSetterForField(dto, "name", ctx));
-              missing.set(JavaLangAnalyser.findSetterForField(dto, "count", ctx));
-            },
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          found.set(JavaLangAnalyser.findSetterForField(dto, "name", ctx));
+          missing.set(JavaLangAnalyser.findSetterForField(dto, "count", ctx));
+        },
+        DTO_SOURCE);
     assertTrue(found.get().isPresent());
     assertTrue(missing.get().isEmpty());
   }
@@ -590,21 +535,18 @@ class JavaLangAnalyserTest {
   void findAccessibleConstructors_excludesPrivate() {
     AtomicReference<Integer> twoCtor = new AtomicReference<>();
     AtomicReference<Integer> privateCtor = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              AnnotationProcessingContext ctx = context(env);
-              twoCtor.set(
-                  JavaLangAnalyser.findAccessibleConstructors(typeElement(env, "test.TwoCtor"), ctx)
-                      .size());
-              privateCtor.set(
-                  JavaLangAnalyser.findAccessibleConstructors(
-                          typeElement(env, "test.PrivateCtor"), ctx)
-                      .size());
-            },
-            CTOR_SOURCE,
-            PRIVATE_CTOR_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          twoCtor.set(
+              JavaLangAnalyser.findAccessibleConstructors(typeElement(env, "test.TwoCtor"), ctx)
+                  .size());
+          privateCtor.set(
+              JavaLangAnalyser.findAccessibleConstructors(typeElement(env, "test.PrivateCtor"), ctx)
+                  .size());
+        },
+        CTOR_SOURCE,
+        PRIVATE_CTOR_SOURCE);
     assertEquals(3, twoCtor.get());
     assertEquals(1, privateCtor.get());
   }
@@ -612,14 +554,12 @@ class JavaLangAnalyserTest {
   @Test
   void findConstructorsAnnotatedWith_findsMarkedCtor() {
     AtomicReference<List<ExecutableElement>> annotated = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) ->
-                annotated.set(
-                    JavaLangAnalyser.findConstructorsAnnotatedWith(
-                        typeElement(env, "test.TwoCtor"), Deprecated.class, context(env))),
-            CTOR_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) ->
+            annotated.set(
+                JavaLangAnalyser.findConstructorsAnnotatedWith(
+                    typeElement(env, "test.TwoCtor"), Deprecated.class, context(env))),
+        CTOR_SOURCE);
     assertEquals(1, annotated.get().size());
     assertEquals(2, annotated.get().get(0).getParameters().size());
   }
@@ -627,14 +567,12 @@ class JavaLangAnalyserTest {
   @Test
   void findConstructorsAnnotatedWith_emptyWhenUnmarked() {
     AtomicReference<List<ExecutableElement>> annotated = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) ->
-                annotated.set(
-                    JavaLangAnalyser.findConstructorsAnnotatedWith(
-                        typeElement(env, "test.Dto"), Deprecated.class, context(env))),
-            DTO_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) ->
+            annotated.set(
+                JavaLangAnalyser.findConstructorsAnnotatedWith(
+                    typeElement(env, "test.Dto"), Deprecated.class, context(env))),
+        DTO_SOURCE);
     assertTrue(annotated.get().isEmpty());
   }
 
@@ -642,20 +580,18 @@ class JavaLangAnalyserTest {
   void findTopLevelType_walksToOutermostType() {
     AtomicReference<String> deepTop = new AtomicReference<>();
     AtomicReference<String> outerTop = new AtomicReference<>();
-    Compilation compilation =
-        CodegenTestUtils.probe(
-            (roundEnv, env) -> {
-              deepTop.set(
-                  JavaLangAnalyser.findTopLevelType(typeElement(env, "test.Outer.Inner.Deep"))
-                      .getSimpleName()
-                      .toString());
-              outerTop.set(
-                  JavaLangAnalyser.findTopLevelType(typeElement(env, "test.Outer"))
-                      .getSimpleName()
-                      .toString());
-            },
-            NESTED_SOURCE);
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          deepTop.set(
+              JavaLangAnalyser.findTopLevelType(typeElement(env, "test.Outer.Inner.Deep"))
+                  .getSimpleName()
+                  .toString());
+          outerTop.set(
+              JavaLangAnalyser.findTopLevelType(typeElement(env, "test.Outer"))
+                  .getSimpleName()
+                  .toString());
+        },
+        NESTED_SOURCE);
     assertEquals("Outer", deepTop.get());
     assertEquals("Outer", outerTop.get());
   }

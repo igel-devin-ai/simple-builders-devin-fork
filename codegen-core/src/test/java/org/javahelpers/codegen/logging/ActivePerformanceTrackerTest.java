@@ -184,7 +184,7 @@ class ActivePerformanceTrackerTest {
     tracker.endEnhancer("MyEnhancer");
     tracker.endClass(5, 2);
 
-    CapturingLogger capturing = CapturingLogger.create("simple-builders");
+    CapturingLogger capturing = CapturingLogger.create("codegen");
     tracker.generateReport(capturing.logger());
 
     // Remove the diagnostic kind marker and the exact measurements (durations, percentages,
@@ -201,40 +201,40 @@ class ActivePerformanceTrackerTest {
 
     assertEquals(
         """
-        simple-builders: PERFORMANCE REPORT
-        simple-builders: ================================
-        simple-builders: Total classes processed: <n>
-        simple-builders: Total processing time: <n>s
-        simple-builders:
-        simple-builders: Phase breakdown:
-        simple-builders: ├─ Element Collection: <n>s (<n>%)
-        simple-builders: ├─ Configuration Resolution: <n>s (<n>%)
-        simple-builders: ├─ Analysis: <n>s (<n>%)
-        simple-builders: ├─ Target Mapping: <n>s (<n>%)
-        simple-builders: └─ Code Generation: <n>s (<n>%)
-        simple-builders:    ├─ Source Construction: <n>s (<n>%)
-        simple-builders:    │  ├─ Element Building: <n>s (<n>%)
-        simple-builders:    │  │  ├─ Class Creation: <n>s (<n>%)
-        simple-builders:    │  │  ├─ Class Metadata: <n>s (<n>%)
-        simple-builders:    │  │  ├─ Fields: <n>s (<n>%)
-        simple-builders:    │  │  ├─ Constructors: <n>s (<n>%)
-        simple-builders:    │  │  ├─ Methods: <n>s (<n>%)
-        simple-builders:    │  │  ├─ Nested Types: <n>s (<n>%)
-        simple-builders:    │  │  └─ Class Annotations: <n>s (<n>%)
-        simple-builders:    │  ├─ String Generation: <n>s (<n>%)
-        simple-builders:    │  └─ Formatting: <n>s (<n>%)
-        simple-builders:    └─ File Writing: <n>s (<n>%)
-        simple-builders:
-        simple-builders: Average per class: <n>ms
-        simple-builders:
-        simple-builders: Top <n> slowest classes:
-        simple-builders:   <n>. MyClass - <n>ms (<n> fields, <n> collections)
-        simple-builders:
-        simple-builders: Top <n> slowest MethodGenerators:
-        simple-builders:   <n>. MyGenerator - <n>s (<n> calls, <n>ms/call)
-        simple-builders:
-        simple-builders: Top <n> slowest enhancers:
-        simple-builders:   <n>. MyEnhancer - <n>s (<n> calls, <n>ms/call)\
+        codegen: PERFORMANCE REPORT
+        codegen: ================================
+        codegen: Total classes processed: <n>
+        codegen: Total processing time: <n>s
+        codegen:
+        codegen: Phase breakdown:
+        codegen: ├─ Element Collection: <n>s (<n>%)
+        codegen: ├─ Configuration Resolution: <n>s (<n>%)
+        codegen: ├─ Analysis: <n>s (<n>%)
+        codegen: ├─ Target Mapping: <n>s (<n>%)
+        codegen: └─ Code Generation: <n>s (<n>%)
+        codegen:    ├─ Source Construction: <n>s (<n>%)
+        codegen:    │  ├─ Element Building: <n>s (<n>%)
+        codegen:    │  │  ├─ Class Creation: <n>s (<n>%)
+        codegen:    │  │  ├─ Class Metadata: <n>s (<n>%)
+        codegen:    │  │  ├─ Fields: <n>s (<n>%)
+        codegen:    │  │  ├─ Constructors: <n>s (<n>%)
+        codegen:    │  │  ├─ Methods: <n>s (<n>%)
+        codegen:    │  │  ├─ Nested Types: <n>s (<n>%)
+        codegen:    │  │  └─ Class Annotations: <n>s (<n>%)
+        codegen:    │  ├─ String Generation: <n>s (<n>%)
+        codegen:    │  └─ Formatting: <n>s (<n>%)
+        codegen:    └─ File Writing: <n>s (<n>%)
+        codegen:
+        codegen: Average per class: <n>ms
+        codegen:
+        codegen: Top <n> slowest classes:
+        codegen:   <n>. MyClass - <n>ms (<n> fields, <n> collections)
+        codegen:
+        codegen: Top <n> slowest MethodGenerators:
+        codegen:   <n>. MyGenerator - <n>s (<n> calls, <n>ms/call)
+        codegen:
+        codegen: Top <n> slowest enhancers:
+        codegen:   <n>. MyEnhancer - <n>s (<n> calls, <n>ms/call)\
         """,
         actual);
   }

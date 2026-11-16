@@ -444,7 +444,6 @@ public class MinimalCodegenProcessorTest {
             """);
 
     Compilation compilation = CodegenTestUtils.createCompiler(new EmptyProcessor()).compile(source);
-
     assertThat(compilation).succeeded();
   }
 
@@ -466,7 +465,6 @@ public class MinimalCodegenProcessorTest {
 
     Compilation compilation =
         CodegenTestUtils.createCompiler(new NoTasksProcessor()).compile(source);
-
     assertThat(compilation).succeeded();
   }
 
@@ -488,7 +486,6 @@ public class MinimalCodegenProcessorTest {
         CodegenTestUtils.createCompiler(new VerboseProcessor())
             .withOptions("-Averbose=true")
             .compile(source);
-
     assertThat(compilation).succeeded();
     String generatedCode =
         CodegenTestUtils.readSource(

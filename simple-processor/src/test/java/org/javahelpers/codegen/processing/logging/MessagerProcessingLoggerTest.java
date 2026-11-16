@@ -27,6 +27,7 @@ package org.javahelpers.codegen.processing.logging;
 import static com.google.testing.compile.CompilationSubject.assertThat;
 import static org.javahelpers.codegen.testing.ElementTestUtils.method;
 import static org.javahelpers.codegen.testing.ElementTestUtils.typeElement;
+import static org.javahelpers.codegen.testing.ProcessingTestUtils.probe;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,7 +48,6 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import org.javahelpers.codegen.testing.CodegenTestUtils;
-import org.javahelpers.codegen.testing.ProbeProcessor;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MessagerProcessingLogger} driven by a real Messager. */
@@ -67,19 +67,15 @@ class MessagerProcessingLoggerTest {
   @Test
   void warning_attachesElementInDefaultMode() {
     List<Diag> diags = new CopyOnWriteArrayList<>();
-    Compilation compilation =
-        CodegenTestUtils.createCompiler(
-                new ProbeProcessor(
-                    (roundEnv, env) -> {
-                      MessagerProcessingLogger logger =
-                          MessagerProcessingLogger.create(recordingEnv(env, diags));
-                      Element param =
-                          method(typeElement(env, "test.Dto"), "setName").getParameters().get(0);
-                      logger.warning(param, "conflict on %s", "name");
-                      logger.flushWarningLocations();
-                    }))
-            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          MessagerProcessingLogger logger =
+              MessagerProcessingLogger.create(recordingEnv(env, diags));
+          Element param = method(typeElement(env, "test.Dto"), "setName").getParameters().get(0);
+          logger.warning(param, "conflict on %s", "name");
+          logger.flushWarningLocations();
+        },
+        DTO_SOURCE);
     assertEquals(1, diags.size());
     Diag diag = diags.get(0);
     assertEquals(Diagnostic.Kind.WARNING, diag.kind());
@@ -91,14 +87,13 @@ class MessagerProcessingLoggerTest {
   void error_attachesElement() {
     List<Diag> diags = new CopyOnWriteArrayList<>();
     Compilation compilation =
-        CodegenTestUtils.createCompiler(
-                new ProbeProcessor(
-                    (roundEnv, env) -> {
-                      MessagerProcessingLogger logger =
-                          MessagerProcessingLogger.create(recordingEnv(env, diags));
-                      logger.error(typeElement(env, "test.Dto"), "failed on %s", "Dto");
-                    }))
-            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
+        CodegenTestUtils.probe(
+            (roundEnv, env) -> {
+              MessagerProcessingLogger logger =
+                  MessagerProcessingLogger.create(recordingEnv(env, diags));
+              logger.error(typeElement(env, "test.Dto"), "failed on %s", "Dto");
+            },
+            DTO_SOURCE);
     // the emitted error fails the compilation on purpose
     assertThat(compilation).failed();
     assertEquals(1, diags.size());
@@ -109,21 +104,17 @@ class MessagerProcessingLoggerTest {
   @Test
   void verboseWarning_deferLocationAndFlushOncePerType() {
     List<Diag> diags = new CopyOnWriteArrayList<>();
-    Compilation compilation =
-        CodegenTestUtils.createCompiler(
-                new ProbeProcessor(
-                    (roundEnv, env) -> {
-                      MessagerProcessingLogger logger =
-                          MessagerProcessingLogger.createVerbose(recordingEnv(env, diags), "test");
-                      Element param =
-                          method(typeElement(env, "test.Dto"), "setName").getParameters().get(0);
-                      logger.warning(param, "first %s", "a");
-                      logger.warning(param, "second %s", "b");
-                      logger.flushWarningLocations();
-                      logger.flushWarningLocations(); // cleared -> nothing more
-                    }))
-            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          MessagerProcessingLogger logger =
+              MessagerProcessingLogger.createVerbose(recordingEnv(env, diags), "test");
+          Element param = method(typeElement(env, "test.Dto"), "setName").getParameters().get(0);
+          logger.warning(param, "first %s", "a");
+          logger.warning(param, "second %s", "b");
+          logger.flushWarningLocations();
+          logger.flushWarningLocations(); // cleared -> nothing more
+        },
+        DTO_SOURCE);
     assertEquals(3, diags.size());
     // two flat warnings without element + one location marker on the enclosing type
     assertTrue(diags.get(0).message().contains("first a"));
@@ -135,17 +126,14 @@ class MessagerProcessingLoggerTest {
   @Test
   void deferWarningLocation_ignoresNullElement() {
     List<Diag> diags = new CopyOnWriteArrayList<>();
-    Compilation compilation =
-        CodegenTestUtils.createCompiler(
-                new ProbeProcessor(
-                    (roundEnv, env) -> {
-                      MessagerProcessingLogger logger =
-                          MessagerProcessingLogger.createVerbose(recordingEnv(env, diags));
-                      logger.warning((Element) null, "orphan warning");
-                      logger.flushWarningLocations();
-                    }))
-            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) -> {
+          MessagerProcessingLogger logger =
+              MessagerProcessingLogger.createVerbose(recordingEnv(env, diags));
+          logger.warning((Element) null, "orphan warning");
+          logger.flushWarningLocations();
+        },
+        DTO_SOURCE);
     assertEquals(1, diags.size());
     assertTrue(diags.get(0).message().contains("orphan warning"));
   }
@@ -153,14 +141,11 @@ class MessagerProcessingLoggerTest {
   @Test
   void loggingPrefix_appliesToMessages() {
     List<Diag> diags = new CopyOnWriteArrayList<>();
-    Compilation compilation =
-        CodegenTestUtils.createCompiler(
-                new ProbeProcessor(
-                    (roundEnv, env) ->
-                        MessagerProcessingLogger.create(recordingEnv(env, diags), "myproc")
-                            .info("hello %s", "world")))
-            .compile(CodegenTestUtils.forSource(DTO_SOURCE));
-    assertThat(compilation).succeeded();
+    probe(
+        (roundEnv, env) ->
+            MessagerProcessingLogger.create(recordingEnv(env, diags), "myproc")
+                .info("hello %s", "world"),
+        DTO_SOURCE);
     assertTrue(diags.get(0).message().contains("myproc"));
   }
 

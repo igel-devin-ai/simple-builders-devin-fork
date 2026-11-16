@@ -38,6 +38,8 @@ import javax.lang.model.type.TypeMirror;
  */
 public final class ElementTestUtils {
 
+  private static final String ON = "' on ";
+
   private ElementTestUtils() {}
 
   /**
@@ -60,7 +62,7 @@ public final class ElementTestUtils {
             .filter(VariableElement.class::isInstance)
             .map(VariableElement.class::cast)
             .filter(e -> e.getSimpleName().toString().equals(fieldName)),
-        "field '" + fieldName + "' on " + type.getQualifiedName());
+        "field '" + fieldName + ON + type.getQualifiedName());
   }
 
   /**
@@ -73,7 +75,7 @@ public final class ElementTestUtils {
             .filter(ExecutableElement.class::isInstance)
             .map(ExecutableElement.class::cast)
             .filter(e -> e.getSimpleName().toString().equals(methodName)),
-        "method '" + methodName + "' on " + type.getQualifiedName());
+        "method '" + methodName + ON + type.getQualifiedName());
   }
 
   /**
@@ -98,7 +100,7 @@ public final class ElementTestUtils {
             + methodName
             + "("
             + String.join(", ", parameterTypes)
-            + "' on "
+            + ON
             + type.getQualifiedName());
   }
 

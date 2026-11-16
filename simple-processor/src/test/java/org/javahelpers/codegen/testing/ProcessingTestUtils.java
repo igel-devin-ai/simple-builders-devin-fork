@@ -22,12 +22,22 @@
  * SOFTWARE.
  */
 
-package org.javahelpers.codegen.processing;
+package org.javahelpers.codegen.testing;
 
+import static com.google.testing.compile.CompilationSubject.assertThat;
+
+import com.google.testing.compile.Compilation;
+import java.util.List;
+import java.util.function.BiConsumer;
 import javax.annotation.processing.ProcessingEnvironment;
-import org.javahelpers.codegen.testing.CapturingProcessingLogger;
+import javax.annotation.processing.RoundEnvironment;
+import org.javahelpers.codegen.processing.AnnotationProcessingContext;
 
-/** Shared helpers for simple-processor tests running against a live compilation. */
+/**
+ * Shared helpers for simple-processor tests running against a live compilation. Lives in this
+ * module's test sources (not codegen-testing) because {@link AnnotationProcessingContext} is a
+ * simple-processor type — codegen-testing sits below it in the dependency graph.
+ */
 public final class ProcessingTestUtils {
 
   private ProcessingTestUtils() {
@@ -44,5 +54,34 @@ public final class ProcessingTestUtils {
   public static AnnotationProcessingContext context(ProcessingEnvironment processingEnv) {
     return new AnnotationProcessingContext(
         CapturingProcessingLogger.create().logger(), processingEnv);
+  }
+
+  /**
+   * Compiles the given source texts with a {@link ProbeProcessor} running {@code probe} in the
+   * first processing round and asserts the compilation succeeded.
+   *
+   * @param probe callback receiving the {@link RoundEnvironment} and {@link ProcessingEnvironment}
+   * @param sources the Java source texts to compile
+   * @return the compilation result
+   */
+  public static Compilation probe(
+      BiConsumer<RoundEnvironment, ProcessingEnvironment> probe, String... sources) {
+    Compilation compilation = CodegenTestUtils.probe(probe, sources);
+    assertThat(compilation).succeeded();
+    return compilation;
+  }
+
+  /**
+   * Same as {@link #probe(BiConsumer, String...)} for source lists.
+   *
+   * @param probe callback receiving the {@link RoundEnvironment} and {@link ProcessingEnvironment}
+   * @param sources the Java source texts to compile
+   * @return the compilation result
+   */
+  public static Compilation probe(
+      BiConsumer<RoundEnvironment, ProcessingEnvironment> probe, List<String> sources) {
+    Compilation compilation = CodegenTestUtils.probe(probe, sources);
+    assertThat(compilation).succeeded();
+    return compilation;
   }
 }

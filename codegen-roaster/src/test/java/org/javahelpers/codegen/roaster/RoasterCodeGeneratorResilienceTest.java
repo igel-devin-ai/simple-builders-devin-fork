@@ -122,7 +122,7 @@ class RoasterCodeGeneratorResilienceTest {
     method.setModifier(AccessModifier.PUBLIC);
     MethodParameterDto parameter = new MethodParameterDto();
     parameter.setParameterName("value");
-    parameter.setParameterTypeName(new TypeName("java.lang", "String"));
+    parameter.setParameterTypeName(TypeName.of(String.class));
     method.addParameter(parameter);
     method.setCode("return this; // " + marker);
     return method;

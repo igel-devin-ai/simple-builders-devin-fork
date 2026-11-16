@@ -101,11 +101,18 @@ class RoasterCodeGeneratorTest {
     InterfaceName iface = new InterfaceName("java.io", "Serializable");
     classDef.addInterface(iface);
 
-    assertContaining(
-        generate(classDef).generatedSource(),
-        "* Builder for {@link Person}.",
-        "@Generated(\"simple-builders\")",
-        "public class AnnotatedBuilder extends AbstractBuilder implements Serializable");
+    assertGeneratedSource(
+        """
+        package test;
+        import java.io.Serializable;
+        import javax.annotation.Generated;
+        /**
+         * Builder for {@link Person}.
+         */
+        @Generated("simple-builders")
+        public class AnnotatedBuilder extends AbstractBuilder implements Serializable {
+        }""",
+        classDef);
   }
 
   @Test
@@ -216,23 +223,18 @@ class RoasterCodeGeneratorTest {
     classDef.setClassAccessModifier(AccessModifier.PUBLIC);
     classDef.setFormattingMode(FormattingMode.NONE);
 
-    MethodDto method =
-        new MethodDto(
-            "items",
-            new TypeNameGeneric(
-                new TypeName("java.util", "List"), List.of(TypeName.of(String.class))));
+    MethodDto method = new MethodDto("items", new TypeNameGeneric(List.class, String.class));
     method.setModifier(AccessModifier.PUBLIC);
     JavadocDto javadoc = new JavadocDto("Adds items.");
     javadoc.addParam("values", "items to add");
     javadoc.addReturn("this builder");
     method.setJavadoc(javadoc);
     AnnotationDto override_ = new AnnotationDto();
-    override_.setAnnotationType(new TypeName("java.lang", "Override"));
+    override_.setAnnotationType(TypeName.of(Override.class));
     method.addAnnotation(override_);
     MethodParameterDto param = new MethodParameterDto();
     param.setParameterName("values");
-    param.setParameterTypeName(
-        new TypeNameGeneric(new TypeName("java.util", "List"), List.of(TypeName.of(String.class))));
+    param.setParameterTypeName(new TypeNameGeneric(List.class, String.class));
     method.addParameter(param);
     method.setCode("return null;");
     classDef.addMethod(method);
@@ -296,7 +298,7 @@ class RoasterCodeGeneratorTest {
     name.setModifier(AccessModifier.PUBLIC);
     MethodParameterDto param = new MethodParameterDto();
     param.setParameterName("name");
-    param.setParameterTypeName(new TypeName("java.lang", "String"));
+    param.setParameterTypeName(TypeName.of(String.class));
     name.addParameter(param);
     name.setCode(
         """

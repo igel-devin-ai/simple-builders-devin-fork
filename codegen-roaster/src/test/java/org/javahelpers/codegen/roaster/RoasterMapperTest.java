@@ -73,13 +73,13 @@ class RoasterMapperTest {
 
   @Test
   void mapType_rendersRawGenericWithoutArguments() {
-    TypeNameGeneric generic = new TypeNameGeneric(new TypeName("java.util", "List"), List.of());
+    TypeNameGeneric generic = new TypeNameGeneric(List.class);
     assertEquals("List", RoasterMapper.mapType(generic));
   }
 
   @Test
   void mapType_prependsTypeUseAnnotations() {
-    TypeName annotated = new TypeName("java.lang", "String");
+    TypeName annotated = TypeName.of(String.class);
     AnnotationDto nonNull = new AnnotationDto();
     nonNull.setAnnotationType(new TypeName("test.anno", "NonNull"));
     annotated.addAnnotation(nonNull);

@@ -51,12 +51,14 @@ public final class CapturingLogHandler extends Handler implements AutoCloseable 
   }
 
   @Override
-  public void publish(LogRecord record) {
-    records.append(record.getMessage()).append('\n');
+  public void publish(LogRecord logRecord) {
+    records.append(logRecord.getMessage()).append('\n');
   }
 
   @Override
-  public void flush() {}
+  public void flush() {
+    // records accumulate in memory only — nothing to flush
+  }
 
   /** All captured record messages, one per line. */
   public String output() {
