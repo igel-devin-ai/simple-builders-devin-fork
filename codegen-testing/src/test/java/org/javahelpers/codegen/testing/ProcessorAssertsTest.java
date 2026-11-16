@@ -60,9 +60,8 @@ class ProcessorAssertsTest {
   @Test
   void assertingResult_supportsRecordChecks() {
     ProcessorAsserts.assertingResult(CODE, contains("class Foo"), notContains("class Bar"));
-    assertThrows(
-        AssertionError.class,
-        () -> ProcessorAsserts.assertingResult(CODE, notContains("class Foo")));
+    var failingCheck = notContains("class Foo");
+    assertThrows(AssertionError.class, () -> ProcessorAsserts.assertingResult(CODE, failingCheck));
   }
 
   @Test

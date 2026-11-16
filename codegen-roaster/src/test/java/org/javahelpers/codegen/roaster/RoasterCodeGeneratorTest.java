@@ -26,6 +26,7 @@ package org.javahelpers.codegen.roaster;
 
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNormalizedEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import org.javahelpers.codegen.SourceFormatter;
@@ -135,8 +136,7 @@ class RoasterCodeGeneratorTest {
     generator.generateClass(
         empty, new RoasterSourceFormatter(capturing.logger(), FormattingMode.NONE));
 
-    org.junit.jupiter.api.Assertions.assertEquals(
-        "mem:///com/example/EmptyBuilder.java", env.writtenUri().toString());
+    assertEquals("mem:///com/example/EmptyBuilder.java", env.writtenUri().toString());
   }
 
   @Test
@@ -156,10 +156,9 @@ class RoasterCodeGeneratorTest {
 
     assertContaining(
         generate(classDef),
-        "extends AbstractBuilder",
-        "implements Serializable",
-        "Builder for",
-        "Generated(\"simple-builders\")");
+        "* Builder for {@link Person}.",
+        "@Generated(\"simple-builders\")",
+        "public class AnnotatedBuilder extends AbstractBuilder implements Serializable");
   }
 
   @Test
@@ -187,7 +186,10 @@ class RoasterCodeGeneratorTest {
     classDef.addMethod(genericMethod);
 
     assertContaining(
-        generate(classDef), "class GenericBuilder<T>", "static <R extends Number> T of(R input)");
+        generate(classDef),
+        "public class GenericBuilder<T>",
+        "public static <R extends Number> T of(R input) {",
+        "return null;");
   }
 
   @Test
@@ -215,8 +217,17 @@ class RoasterCodeGeneratorTest {
     ctor.addParameter(param);
     classDef.addConstructor(ctor);
 
-    assertContaining(
-        generate(classDef), "private int DEFAULT_SIZE = 42", "protected CtorBuilder(int capacity)");
+    assertNormalizedEquals(
+        """
+        package test;
+        import test.anno.NonNull;
+        public class CtorBuilder {
+          private int DEFAULT_SIZE = 42;
+          protected CtorBuilder(int capacity) {
+          }
+        }""",
+        generate(classDef),
+        "generated CtorBuilder must match the expected source");
   }
 
   @Test
@@ -237,7 +248,20 @@ class RoasterCodeGeneratorTest {
     nested.addMethod(nestedMethod);
     classDef.addNestedType(nested);
 
-    assertContaining(generate(classDef), "class Helper", "Nested helper.", "void assist()");
+    assertNormalizedEquals(
+        """
+        package test;
+        public class OuterBuilder {
+          /**
+           * Nested helper.
+           */
+          public class Helper {
+            public void assist() {
+            }
+          }
+        }""",
+        generate(classDef),
+        "generated OuterBuilder must match the expected source");
   }
 
   @Test
@@ -268,14 +292,23 @@ class RoasterCodeGeneratorTest {
     method.setCode("return null;");
     classDef.addMethod(method);
 
-    String generated = generate(classDef);
-    assertContaining(
-        generated,
-        "Adds items",
-        "@param values",
-        "@return",
-        "@Override",
-        "List<String> items(List<String> values)");
+    assertNormalizedEquals(
+        """
+        package test;
+        import java.util.List;
+        public class RichBuilder {
+          /**
+           * Adds items.
+           * @param values items to add
+           * @return this builder
+           */
+          @Override
+          public List<String> items(List<String> values) {
+            return null;
+          }
+        }""",
+        generate(classDef),
+        "generated RichBuilder must match the expected source");
   }
 
   private static String generate(GenerationTargetClassDto classDef) throws Exception {

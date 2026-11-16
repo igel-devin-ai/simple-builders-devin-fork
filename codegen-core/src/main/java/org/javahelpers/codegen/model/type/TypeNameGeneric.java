@@ -96,6 +96,18 @@ public class TypeNameGeneric extends TypeName {
   }
 
   /**
+   * Varargs convenience constructor taking {@link Class} references directly.
+   *
+   * @param outerType the outer type
+   * @param innerTypeArguments variable number of generic type arguments
+   */
+  public TypeNameGeneric(Class<?> outerType, Class<?>... innerTypeArguments) {
+    this(
+        TypeName.of(outerType),
+        java.util.Arrays.stream(innerTypeArguments).map(TypeName::of).toArray(TypeName[]::new));
+  }
+
+  /**
    * Returns the raw type (without type parameters).
    *
    * @return the raw type

@@ -25,6 +25,7 @@
 package org.javahelpers.codegen.roaster;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.javahelpers.codegen.enums.FormattingMode;
@@ -43,11 +44,10 @@ class RoasterBackendTest {
             TestingGenerationEnvironment.create(capturing.logger()), capturing.logger(), null);
 
     assertInstanceOf(RoasterCodeGenerator.class, backend.generator());
-    assertInstanceOf(
-        RoasterSourceFormatter.class, backend.formatterFor(FormattingMode.LIGHTWEIGHT));
-    // formatters are cached per mode
-    assertSame(
-        backend.formatterFor(FormattingMode.LIGHTWEIGHT),
-        backend.formatterFor(FormattingMode.LIGHTWEIGHT));
+    RoasterSourceFormatter formatter =
+        (RoasterSourceFormatter) backend.formatterFor(FormattingMode.LIGHTWEIGHT);
+    // formatters are cached per mode, and distinct across modes
+    assertSame(formatter, backend.formatterFor(FormattingMode.LIGHTWEIGHT));
+    assertNotSame(formatter, backend.formatterFor(FormattingMode.NONE));
   }
 }

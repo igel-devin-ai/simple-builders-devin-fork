@@ -24,15 +24,14 @@
 
 package org.javahelpers.codegen.testing;
 
-import static com.google.testing.compile.CompilationSubject.assertThat;
 import static org.javahelpers.codegen.testing.ElementTestUtils.field;
 import static org.javahelpers.codegen.testing.ElementTestUtils.method;
 import static org.javahelpers.codegen.testing.ElementTestUtils.parameter;
 import static org.javahelpers.codegen.testing.ElementTestUtils.typeElement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.testing.compile.Compilation;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -51,66 +50,62 @@ class ElementTestUtilsTest {
       }
       """;
 
-  private static Compilation compile(
-      java.util.function.BiConsumer<
+  private static <T> T probe(
+      java.util.function.BiFunction<
               javax.annotation.processing.RoundEnvironment,
-              javax.annotation.processing.ProcessingEnvironment>
-          probe) {
-    return CodegenTestUtils.createCompiler(new ProbeProcessor(probe))
-        .compile(CodegenTestUtils.forSource(DTO_SOURCE));
+              javax.annotation.processing.ProcessingEnvironment,
+              T>
+          probeFn) {
+    return ProbeProcessor.probe(probeFn, CodegenTestUtils.forSource(DTO_SOURCE));
   }
 
   @Test
   void typeElement_findsCompiledType() {
-    AtomicReference<TypeElement> result = new AtomicReference<>();
-    Compilation compilation = compile((roundEnv, env) -> result.set(typeElement(env, "test.Dto")));
-
-    assertThat(compilation).succeeded();
-    assertEquals("test.Dto", result.get().getQualifiedName().toString());
+    TypeElement dto = probe((roundEnv, env) -> typeElement(env, "test.Dto"));
+    assertEquals("test.Dto", dto.getQualifiedName().toString());
   }
 
   @Test
   void field_findsDeclaredField() {
-    AtomicReference<VariableElement> result = new AtomicReference<>();
-    Compilation compilation =
-        compile((roundEnv, env) -> result.set(field(typeElement(env, "test.Dto"), "name")));
-
-    assertThat(compilation).succeeded();
-    assertEquals("name", result.get().getSimpleName().toString());
-    assertEquals("java.lang.String", result.get().asType().toString());
+    VariableElement name = probe((roundEnv, env) -> field(typeElement(env, "test.Dto"), "name"));
+    assertEquals("name", name.getSimpleName().toString());
+    assertEquals("java.lang.String", name.asType().toString());
   }
 
   @Test
-  void method_returnsFirstOverload() {
-    AtomicReference<ExecutableElement> result = new AtomicReference<>();
-    Compilation compilation =
-        compile((roundEnv, env) -> result.set(method(typeElement(env, "test.Dto"), "setName")));
-
-    assertThat(compilation).succeeded();
-    assertEquals("setName", result.get().getSimpleName().toString());
+  void field_failsWhenMissing() {
+    // javac wraps processor-thrown exceptions in RuntimeException
+    RuntimeException thrown =
+        assertThrows(
+            RuntimeException.class,
+            () -> probe((roundEnv, env) -> field(typeElement(env, "test.Dto"), "missing")));
+    assertTrue(String.valueOf(thrown.getCause()).contains("No field 'missing'"));
   }
 
   @Test
-  void method_overloadIndexSelectsLaterOverload() {
-    AtomicReference<ExecutableElement> result = new AtomicReference<>();
-    Compilation compilation =
-        compile((roundEnv, env) -> result.set(method(typeElement(env, "test.Dto"), "setName", 1)));
+  void method_failsOnOverloadAmbiguity() {
+    // javac wraps processor-thrown exceptions in RuntimeException
+    RuntimeException thrown =
+        assertThrows(
+            RuntimeException.class,
+            () -> probe((roundEnv, env) -> method(typeElement(env, "test.Dto"), "setName")));
+    assertTrue(String.valueOf(thrown.getCause()).contains("found 2"));
+  }
 
-    assertThat(compilation).succeeded();
-    assertEquals("java.lang.Object", result.get().getParameters().get(0).asType().toString());
+  @Test
+  void method_parameterTypesSelectOverload() {
+    ExecutableElement objectOverload =
+        probe(
+            (roundEnv, env) -> method(typeElement(env, "test.Dto"), "setName", "java.lang.Object"));
+    assertEquals("java.lang.Object", objectOverload.getParameters().get(0).asType().toString());
   }
 
   @Test
   void parameter_returnsIndexedParameter() {
-    AtomicReference<VariableElement> result = new AtomicReference<>();
-    Compilation compilation =
-        compile(
-            (roundEnv, env) -> {
-              ExecutableElement mth = method(typeElement(env, "test.Dto"), "setName");
-              result.set(parameter(mth, 0));
-            });
-
-    assertThat(compilation).succeeded();
-    assertEquals("name", result.get().getSimpleName().toString());
+    VariableElement param =
+        probe(
+            (roundEnv, env) ->
+                parameter(method(typeElement(env, "test.Dto"), "setName", "java.lang.String"), 0));
+    assertEquals("name", param.getSimpleName().toString());
   }
 }

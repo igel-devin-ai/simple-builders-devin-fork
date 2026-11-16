@@ -198,7 +198,7 @@ class JavaLangAnalyserTest {
                       JavaLangAnalyser.hasNoThrowablesDeclared(method(dto, "getName")),
                       JavaLangAnalyser.hasNoThrowablesDeclared(method(dto, "risky")),
                       // setName returns void -> no return value; getName returns String
-                      JavaLangAnalyser.hasNoReturnValue(method(dto, "setName")),
+                      JavaLangAnalyser.hasNoReturnValue(method(dto, "setName", "java.lang.String")),
                       JavaLangAnalyser.hasNoReturnValue(method(dto, "getName")),
                       JavaLangAnalyser.isNotPrivate(method(dto, "getName")),
                       JavaLangAnalyser.isNotPrivate(method(dto, "hidden")),
@@ -206,7 +206,7 @@ class JavaLangAnalyserTest {
                       JavaLangAnalyser.isNotStatic(method(dto, "staticUtil")),
                       JavaLangAnalyser.hasGenericTypes(method(dto, "generic")),
                       JavaLangAnalyser.hasGenericTypes(method(dto, "getName")),
-                      JavaLangAnalyser.isSetterForField(method(dto, "setName")),
+                      JavaLangAnalyser.isSetterForField(method(dto, "setName", "java.lang.String")),
                       JavaLangAnalyser.isSetterForField(method(dto, "getName"))));
             });
     assertThat(compilation).succeeded();
@@ -484,7 +484,9 @@ class JavaLangAnalyserTest {
   void extractParamJavaDoc_readsParamTextWithContinuation() {
     AtomicReference<ExecutableElement> mth = new AtomicReference<>();
     Compilation compilation =
-        compileDto((roundEnv, env) -> mth.set(method(typeElement(env, "test.Dto"), "setName")));
+        compileDto(
+            (roundEnv, env) ->
+                mth.set(method(typeElement(env, "test.Dto"), "setName", "java.lang.String")));
     assertThat(compilation).succeeded();
     String javadoc =
         """

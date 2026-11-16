@@ -170,8 +170,8 @@ class CodegenTestUtilsTest {
     assertThat(compilation).succeeded();
     var captured = new java.io.ByteArrayOutputStream();
     var original = System.out;
-    try {
-      System.setOut(new java.io.PrintStream(captured));
+    try (java.io.PrintStream redirected = new java.io.PrintStream(captured)) {
+      System.setOut(redirected);
       CodegenTestUtils.printDiagnostics(compilation);
       CodegenTestUtils.printGeneratedSources(compilation);
     } finally {

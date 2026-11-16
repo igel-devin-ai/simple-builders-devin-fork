@@ -24,6 +24,8 @@
 
 package org.javahelpers.codegen.testing;
 
+import java.util.List;
+import java.util.stream.Stream;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -47,41 +49,67 @@ public final class ElementTestUtils {
     return processingEnv.getElementUtils().getTypeElement(qualifiedName);
   }
 
-  /** Finds a field (or any {@link VariableElement} member) of a type by simple name. */
+  /**
+   * Finds the field of a type by simple name. Only fields are considered — parameters belong to
+   * methods, not to the type. Fails when the field is missing or declared several times.
+   */
   public static VariableElement field(TypeElement type, String fieldName) {
-    return type.getEnclosedElements().stream()
-        .filter(VariableElement.class::isInstance)
-        .map(VariableElement.class::cast)
-        .filter(e -> e.getSimpleName().toString().equals(fieldName))
-        .findFirst()
-        .orElseThrow();
+    return exactlyOne(
+        type.getEnclosedElements().stream()
+            .filter(VariableElement.class::isInstance)
+            .map(VariableElement.class::cast)
+            .filter(e -> e.getSimpleName().toString().equals(fieldName)),
+        "field '" + fieldName + "' on " + type.getQualifiedName());
   }
 
   /**
-   * Finds a method of a type by simple name; fails when several overloads exist — use {@link
-   * #method(TypeElement, String, int)} or {@link #parameter(ExecutableElement, int)} then.
+   * Finds the method of a type by simple name; fails when it is missing or overloaded — use {@link
+   * #method(TypeElement, String, String...)} to select an overload by its parameter types.
    */
   public static ExecutableElement method(TypeElement type, String methodName) {
-    return type.getEnclosedElements().stream()
-        .filter(ExecutableElement.class::isInstance)
-        .map(ExecutableElement.class::cast)
-        .filter(e -> e.getSimpleName().toString().equals(methodName))
-        .findFirst()
-        .orElseThrow();
+    return exactlyOne(
+        type.getEnclosedElements().stream()
+            .filter(ExecutableElement.class::isInstance)
+            .map(ExecutableElement.class::cast)
+            .filter(e -> e.getSimpleName().toString().equals(methodName)),
+        "method '" + methodName + "' on " + type.getQualifiedName());
   }
 
   /**
-   * Finds the {@code overloadIndex}-th method of a type with the given simple name, in declaration
-   * order.
+   * Finds the method of a type by simple name and parameter types (as qualified names, e.g. {@code
+   * "java.lang.String"}), matching each parameter's erased type string.
    */
-  public static ExecutableElement method(TypeElement type, String methodName, int overloadIndex) {
-    return type.getEnclosedElements().stream()
-        .filter(ExecutableElement.class::isInstance)
-        .map(ExecutableElement.class::cast)
-        .filter(e -> e.getSimpleName().toString().equals(methodName))
-        .skip(overloadIndex)
-        .findFirst()
-        .orElseThrow();
+  public static ExecutableElement method(
+      TypeElement type, String methodName, String... parameterTypes) {
+    return exactlyOne(
+        type.getEnclosedElements().stream()
+            .filter(ExecutableElement.class::isInstance)
+            .map(ExecutableElement.class::cast)
+            .filter(e -> e.getSimpleName().toString().equals(methodName))
+            .filter(
+                e ->
+                    e.getParameters().stream()
+                        .map(p -> p.asType().toString())
+                        .toList()
+                        .equals(List.of(parameterTypes))),
+        "method '"
+            + methodName
+            + "("
+            + String.join(", ", parameterTypes)
+            + "' on "
+            + type.getQualifiedName());
+  }
+
+  private static <T> T exactlyOne(Stream<T> matches, String description) {
+    List<T> found = matches.toList();
+    if (found.isEmpty()) {
+      throw new IllegalArgumentException("No " + description + " found");
+    }
+    if (found.size() > 1) {
+      throw new IllegalArgumentException(
+          "Expected one " + description + " but found " + found.size());
+    }
+    return found.get(0);
   }
 
   /** Returns the {@code index}-th parameter of a method. */

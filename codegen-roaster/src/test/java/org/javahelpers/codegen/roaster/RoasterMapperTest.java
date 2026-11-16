@@ -67,8 +67,7 @@ class RoasterMapperTest {
 
   @Test
   void mapType_rendersGenericWithInnerArguments() {
-    TypeNameGeneric generic =
-        new TypeNameGeneric(new TypeName("java.util", "List"), List.of(TypeName.of(String.class)));
+    TypeNameGeneric generic = new TypeNameGeneric(List.class, String.class);
     assertEquals("List<String>", RoasterMapper.mapType(generic));
   }
 
