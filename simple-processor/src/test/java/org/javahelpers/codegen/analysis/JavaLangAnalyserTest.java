@@ -124,6 +124,16 @@ class JavaLangAnalyserTest {
       }
       """;
 
+  private static final String NESTED_SOURCE =
+      """
+      package test;
+      public class Outer {
+        public static class Inner {
+          public static class Deep {}
+        }
+      }
+      """;
+
   private static AnnotationProcessingContext context(ProcessingEnvironment processingEnv) {
     return new AnnotationProcessingContext(
         CapturingProcessingLogger.create().logger(), processingEnv);
@@ -634,5 +644,27 @@ class JavaLangAnalyserTest {
                         typeElement(env, "test.Dto"), Deprecated.class, context(env))));
     assertThat(compilation).succeeded();
     assertTrue(annotated.get().isEmpty());
+  }
+
+  @Test
+  void findTopLevelType_walksToOutermostType() {
+    AtomicReference<String> deepTop = new AtomicReference<>();
+    AtomicReference<String> outerTop = new AtomicReference<>();
+    Compilation compilation =
+        compile(
+            (roundEnv, env) -> {
+              deepTop.set(
+                  JavaLangAnalyser.findTopLevelType(typeElement(env, "test.Outer.Inner.Deep"))
+                      .getSimpleName()
+                      .toString());
+              outerTop.set(
+                  JavaLangAnalyser.findTopLevelType(typeElement(env, "test.Outer"))
+                      .getSimpleName()
+                      .toString());
+            },
+            NESTED_SOURCE);
+    assertThat(compilation).succeeded();
+    assertEquals("Outer", deepTop.get());
+    assertEquals("Outer", outerTop.get());
   }
 }
