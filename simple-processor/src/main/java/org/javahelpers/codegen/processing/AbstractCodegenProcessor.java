@@ -40,6 +40,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.StandardLocation;
 import org.javahelpers.codegen.CodeGenerationException;
 import org.javahelpers.codegen.CodegenBackend;
+import org.javahelpers.codegen.analysis.JavaLangAnalyser;
 import org.javahelpers.codegen.analysis.JavaLangMapper;
 import org.javahelpers.codegen.logging.PerformanceTracker;
 import org.javahelpers.codegen.logging.ProcessingLogger;
@@ -102,6 +103,7 @@ public abstract class AbstractCodegenProcessor<
   private CodegenBackend backend;
   private boolean supportedJdk = true;
   private boolean processedOnce;
+  private URI generatedOutputDir;
 
   /**
    * Creates the processor on its static configuration. javac still instantiates the concrete
@@ -384,10 +386,7 @@ public abstract class AbstractCodegenProcessor<
    */
   private boolean isOwnGeneratedOutput(TypeElement existing) {
     try {
-      Element topLevel = existing;
-      while (topLevel.getEnclosingElement() instanceof TypeElement parent) {
-        topLevel = parent;
-      }
+      Element topLevel = JavaLangAnalyser.findTopLevelType(existing);
       URI sourceUri =
           processingEnv
               .getFiler()
@@ -407,23 +406,27 @@ public abstract class AbstractCodegenProcessor<
 
   /**
    * Whether the given source URI resolves inside the generated-sources output directory ({@link
-   * StandardLocation#SOURCE_OUTPUT}). The output dir is probed through a dummy resource entry. The
-   * containment check is scheme-agnostic: {@link URI#relativize} returns a relative URI different
-   * from the source URI only when the source lives inside the output dir; relative or
-   * scheme-mismatched URIs (in-memory test sources, classpath jars) stay outside.
+   * StandardLocation#SOURCE_OUTPUT}). The output dir is probed once through a dummy resource entry
+   * and cached — it cannot change during processing. The containment check is scheme-agnostic:
+   * {@link URI#relativize} returns a relative URI different from the source URI only when the
+   * source lives inside the output dir; relative or scheme-mismatched URIs (in-memory test sources,
+   * classpath jars) stay outside.
    *
    * @param sourceUri the URI of the existing type's source file
    * @return {@code true} when the source file is inside the generated-sources output
    * @throws IOException when the filer cannot resolve the probe resource
    */
   private boolean isInsideGeneratedOutput(URI sourceUri) throws IOException {
-    URI outputDir =
-        processingEnv
-            .getFiler()
-            .getResource(StandardLocation.SOURCE_OUTPUT, "", "probe.tmp")
-            .toUri()
-            .resolve(".");
-    URI relative = outputDir.relativize(sourceUri);
+    // The generated-sources output directory does not change during processing — probe it once.
+    if (generatedOutputDir == null) {
+      generatedOutputDir =
+          processingEnv
+              .getFiler()
+              .getResource(StandardLocation.SOURCE_OUTPUT, "", "probe.tmp")
+              .toUri()
+              .resolve(".");
+    }
+    URI relative = generatedOutputDir.relativize(sourceUri);
     return !relative.equals(sourceUri) && !relative.isAbsolute();
   }
 

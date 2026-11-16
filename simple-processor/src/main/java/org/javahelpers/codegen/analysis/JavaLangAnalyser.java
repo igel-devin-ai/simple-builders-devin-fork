@@ -55,6 +55,9 @@ import org.javahelpers.codegen.processing.AnnotationProcessingContext;
 /** Helperclass for extrating specific information from existing classes. */
 public final class JavaLangAnalyser {
 
+  /** Upper bound for {@link #findTopLevelType} walks — guards against cyclic element models. */
+  private static final int MAX_ENCLOSING_DEPTH = 100;
+
   private static final String PARAM_TAG = "@param ";
   private static final String DEPRECATED_TAG = "@deprecated";
 
@@ -921,5 +924,32 @@ public final class JavaLangAnalyser {
     return ElementFilter.constructorsIn(context.getAllMembers(annotatedType)).stream()
         .filter(ctor -> ctor.getAnnotation(constructorAnnotation) != null)
         .toList();
+  }
+
+  /**
+   * Resolves the outermost type enclosing the given element — the top-level class declared in its
+   * own source file. For nested classes the enclosing chain is walked up to the file-level
+   * container; an element not enclosed by a type is returned itself.
+   *
+   * <p>The walk is bounded by {@value #MAX_ENCLOSING_DEPTH} steps so a malformed, cyclic element
+   * model cannot loop forever.
+   *
+   * @param element the element to resolve
+   * @return the outermost enclosing type
+   * @throws IllegalStateException when the enclosing chain exceeds {@value #MAX_ENCLOSING_DEPTH}
+   *     elements — a sign of a cyclic element model
+   */
+  public static Element findTopLevelType(Element element) {
+    Element topLevel = element;
+    for (int depth = 0; depth < MAX_ENCLOSING_DEPTH; depth++) {
+      if (topLevel.getEnclosingElement() instanceof TypeElement parent) {
+        topLevel = parent;
+      } else {
+        return topLevel;
+      }
+    }
+    throw new IllegalStateException(
+        "Enclosing-element chain of '%s' exceeds %d levels — possible cycle in the element model"
+            .formatted(element.getSimpleName(), MAX_ENCLOSING_DEPTH));
   }
 }
