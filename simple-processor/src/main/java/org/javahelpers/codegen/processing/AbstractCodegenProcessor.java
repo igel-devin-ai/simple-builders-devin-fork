@@ -24,6 +24,9 @@
 
 package org.javahelpers.codegen.processing;
 
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.util.Trees;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +37,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.StandardLocation;
 import org.javahelpers.codegen.CodeGenerationException;
 import org.javahelpers.codegen.CodegenBackend;
 import org.javahelpers.codegen.analysis.JavaLangMapper;
@@ -327,34 +331,78 @@ public abstract class AbstractCodegenProcessor<
   }
 
   /**
-   * Fails the build with a descriptive error when the class to be generated already exists (a
-   * manually written class or a leftover from a previous compilation).
+   * Fails the build with a descriptive error when the class to be generated already exists as a
+   * manually written class or a classpath entry. An existing type that lives inside the
+   * generated-sources output directory is this processor's own previous output — it is regenerated
+   * silently (the Filer overwrites the stale file), so incremental and IDE rebuilds stay
+   * warning-free.
    *
    * @param target the class definition to check
    * @throws CodeGenerationException if a class with the target qualified name already exists
+   *     outside the generated-sources output
    */
   private void assertTargetDoesNotExist(GenerationTargetClassDto target)
       throws CodeGenerationException {
     String qualifiedName = target.getTypeName().getFullQualifiedName();
-    boolean exists;
+    TypeElement existing;
     try {
-      exists = context.getTypeElement(qualifiedName) != null;
+      existing = context.getTypeElement(qualifiedName);
     } catch (Exception e) {
       context.debug(
           "Error checking if class '%s' already exists: %s",
           qualifiedName, e.getMessage() != null ? e.getMessage() : "No message");
-      exists = false;
+      existing = null;
     }
-    if (exists) {
-      throw new CodeGenerationException(
-          """
-              Target class '%s' already exists. This may be a manually written target or a previously generated target.
-              To resolve this:
-              1. If you have a manual target, consider renaming it or removing the annotation triggering generation
-              2. If this is from a previous compilation, clean and rebuild the project
-              3. Check that you're not trying to generate multiple targets for the same target type
-              """
-              .formatted(qualifiedName));
+    if (existing == null) {
+      return;
+    }
+    if (isOwnGeneratedOutput(existing)) {
+      context.debug("Regenerating previously generated target '%s'.", qualifiedName);
+      return;
+    }
+    throw new CodeGenerationException(
+        """
+            Target class '%s' already exists. This may be a manually written target or a previously generated target.
+            To resolve this:
+            1. If you have a manual target, consider renaming it or removing the annotation triggering generation
+            2. If this is from a previous compilation, clean and rebuild the project
+            3. Check that you're not trying to generate multiple targets for the same target type
+            """
+            .formatted(qualifiedName));
+  }
+
+  /**
+   * Whether the given type originates from this processor's own earlier output, i.e. its source
+   * file lives inside the generated-sources output directory ({@link
+   * StandardLocation#SOURCE_OUTPUT}). This happens when the generated directory is added as a
+   * compile source root — by {@code build-helper-maven-plugin} or by IDEs — so a full recompile
+   * resolves the previously generated type. Elements from hand-written sources or classpath jars
+   * report {@code false}, keeping the clash diagnostic.
+   *
+   * @param existing the type element already known under the target name
+   * @return {@code true} when the element's source is inside the generated-sources output
+   */
+  private boolean isOwnGeneratedOutput(TypeElement existing) {
+    try {
+      CompilationUnitTree unit =
+          Trees.instance(processingEnv).getPath(existing).getCompilationUnit();
+      URI sourceUri = unit.getSourceFile().toUri();
+      URI probeUri =
+          processingEnv
+              .getFiler()
+              .getResource(StandardLocation.SOURCE_OUTPUT, "", "probe.tmp")
+              .toUri();
+      URI outputDir = probeUri.resolve(".");
+      // Scheme-agnostic containment check: relativize returns a relative URI different from the
+      // source URI only when the source lives inside the output dir. Relative or scheme-mismatched
+      // source URIs (in-memory test sources, classpath jars) stay outside.
+      URI relative = outputDir.relativize(sourceUri);
+      return !relative.equals(sourceUri) && !relative.isAbsolute();
+    } catch (Exception e) {
+      context.debug(
+          "Could not determine the origin of existing class '%s' — keeping the warning: %s",
+          existing.getQualifiedName(), e.getMessage());
+      return false;
     }
   }
 
