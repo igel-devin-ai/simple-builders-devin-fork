@@ -26,6 +26,9 @@ package org.javahelpers.codegen.model.type;
 
 import static java.util.Objects.requireNonNull;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 /**
  * TypeName of a nested (inner) class. Holds the enclosing type explicitly so arbitrarily deep
  * nesting (e.g. {@code Outer.Middle.Inner}) is represented structurally instead of by a dotted
@@ -66,5 +69,31 @@ public class TypeNameNested extends TypeName {
   @Override
   public boolean isNestedType() {
     return true;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    TypeNameNested that = (TypeNameNested) o;
+
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(enclosingType, that.enclosingType)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(enclosingType)
+        .toHashCode();
   }
 }
