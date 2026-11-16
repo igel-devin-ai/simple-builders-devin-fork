@@ -24,8 +24,6 @@
 
 package org.javahelpers.codegen.processing;
 
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.util.Trees;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -384,15 +382,29 @@ public abstract class AbstractCodegenProcessor<
    */
   private boolean isOwnGeneratedOutput(TypeElement existing) {
     try {
-      CompilationUnitTree unit =
-          Trees.instance(processingEnv).getPath(existing).getCompilationUnit();
-      URI sourceUri = unit.getSourceFile().toUri();
-      URI probeUri =
+      String qualifiedName = existing.getQualifiedName().toString();
+      String packageName =
+          processingEnv.getElementUtils().getPackageOf(existing).getQualifiedName().toString();
+      String topLevelName =
+          qualifiedName.substring(packageName.isEmpty() ? 0 : packageName.length() + 1);
+      int nestedIndex = topLevelName.indexOf('.');
+      if (nestedIndex >= 0) {
+        topLevelName = topLevelName.substring(0, nestedIndex);
+      }
+      URI sourceUri =
+          processingEnv
+              .getFiler()
+              .getResource(StandardLocation.SOURCE_PATH, packageName, topLevelName + ".java")
+              .toUri();
+      if (!sourceUri.isAbsolute()) {
+        return false;
+      }
+      URI outputDir =
           processingEnv
               .getFiler()
               .getResource(StandardLocation.SOURCE_OUTPUT, "", "probe.tmp")
-              .toUri();
-      URI outputDir = probeUri.resolve(".");
+              .toUri()
+              .resolve(".");
       // Scheme-agnostic containment check: relativize returns a relative URI different from the
       // source URI only when the source lives inside the output dir. Relative or scheme-mismatched
       // source URIs (in-memory test sources, classpath jars) stay outside.
