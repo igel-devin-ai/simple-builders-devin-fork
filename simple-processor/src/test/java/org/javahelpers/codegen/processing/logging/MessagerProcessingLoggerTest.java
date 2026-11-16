@@ -100,6 +100,7 @@ class MessagerProcessingLoggerTest {
                     }))
             .compile(CodegenTestUtils.forSource(DTO_SOURCE));
     // the emitted error fails the compilation on purpose
+    assertThat(compilation).failed();
     assertEquals(1, diags.size());
     assertEquals(Diagnostic.Kind.ERROR, diags.get(0).kind());
     assertEquals("Dto", diags.get(0).element().getSimpleName().toString());

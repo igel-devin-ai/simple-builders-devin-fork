@@ -25,6 +25,7 @@
 package org.javahelpers.codegen.logging;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -104,6 +105,7 @@ class SinkProcessingLoggerTest {
 
     logger.debugStartOperation("op");
     assertTrue(logger.getCurrentIndentationLevel() > 0);
+    assertFalse(messages.isEmpty());
     logger.resetIndentation();
     assertEquals(0, logger.getCurrentIndentationLevel());
   }
