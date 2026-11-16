@@ -24,6 +24,7 @@
 
 package org.javahelpers.codegen.processing;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.StandardLocation;
 import org.javahelpers.codegen.CodeGenerationException;
@@ -382,40 +384,47 @@ public abstract class AbstractCodegenProcessor<
    */
   private boolean isOwnGeneratedOutput(TypeElement existing) {
     try {
-      String qualifiedName = existing.getQualifiedName().toString();
-      String packageName =
-          processingEnv.getElementUtils().getPackageOf(existing).getQualifiedName().toString();
-      String topLevelName =
-          qualifiedName.substring(packageName.isEmpty() ? 0 : packageName.length() + 1);
-      int nestedIndex = topLevelName.indexOf('.');
-      if (nestedIndex >= 0) {
-        topLevelName = topLevelName.substring(0, nestedIndex);
+      Element topLevel = existing;
+      while (topLevel.getEnclosingElement() instanceof TypeElement parent) {
+        topLevel = parent;
       }
       URI sourceUri =
           processingEnv
               .getFiler()
-              .getResource(StandardLocation.SOURCE_PATH, packageName, topLevelName + ".java")
+              .getResource(
+                  StandardLocation.SOURCE_PATH,
+                  context.getPackageName(existing),
+                  topLevel.getSimpleName() + ".java")
               .toUri();
-      if (!sourceUri.isAbsolute()) {
-        return false;
-      }
-      URI outputDir =
-          processingEnv
-              .getFiler()
-              .getResource(StandardLocation.SOURCE_OUTPUT, "", "probe.tmp")
-              .toUri()
-              .resolve(".");
-      // Scheme-agnostic containment check: relativize returns a relative URI different from the
-      // source URI only when the source lives inside the output dir. Relative or scheme-mismatched
-      // source URIs (in-memory test sources, classpath jars) stay outside.
-      URI relative = outputDir.relativize(sourceUri);
-      return !relative.equals(sourceUri) && !relative.isAbsolute();
+      return sourceUri.isAbsolute() && isInsideGeneratedOutput(sourceUri);
     } catch (Exception e) {
       context.debug(
           "Could not determine the origin of existing class '%s' — keeping the warning: %s",
           existing.getQualifiedName(), e.getMessage());
       return false;
     }
+  }
+
+  /**
+   * Whether the given source URI resolves inside the generated-sources output directory ({@link
+   * StandardLocation#SOURCE_OUTPUT}). The output dir is probed through a dummy resource entry. The
+   * containment check is scheme-agnostic: {@link URI#relativize} returns a relative URI different
+   * from the source URI only when the source lives inside the output dir; relative or
+   * scheme-mismatched URIs (in-memory test sources, classpath jars) stay outside.
+   *
+   * @param sourceUri the URI of the existing type's source file
+   * @return {@code true} when the source file is inside the generated-sources output
+   * @throws IOException when the filer cannot resolve the probe resource
+   */
+  private boolean isInsideGeneratedOutput(URI sourceUri) throws IOException {
+    URI outputDir =
+        processingEnv
+            .getFiler()
+            .getResource(StandardLocation.SOURCE_OUTPUT, "", "probe.tmp")
+            .toUri()
+            .resolve(".");
+    URI relative = outputDir.relativize(sourceUri);
+    return !relative.equals(sourceUri) && !relative.isAbsolute();
   }
 
   /**
