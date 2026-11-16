@@ -24,7 +24,6 @@
 
 package org.javahelpers.codegen.roaster;
 
-import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNormalizedEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -139,11 +138,15 @@ class RoasterCodeGeneratorTest {
     genericMethod.setCode("return null;");
     classDef.addMethod(genericMethod);
 
-    assertContaining(
-        generate(classDef).generatedSource(),
-        "public class GenericBuilder<T>",
-        "public static <R extends Number> T of(R input) {",
-        "return null;");
+    assertGeneratedSource(
+        """
+        package test;
+        public class GenericBuilder<T> {
+          public static <R extends Number> T of(R input) {
+            return null;
+          }
+        }""",
+        classDef);
   }
 
   @Test
