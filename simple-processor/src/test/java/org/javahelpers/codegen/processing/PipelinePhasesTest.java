@@ -24,25 +24,25 @@
 
 package org.javahelpers.codegen.processing;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Set;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link ProcessorOptionRegistry}. */
-class ProcessorOptionRegistryTest {
-
-  private static ProcessorOptionRegistry minimalRegistry() {
-    return ProcessorOptionRegistry.builder().options(Set.of()).build();
-  }
+/** Unit tests for {@link PipelinePhases}. */
+class PipelinePhasesTest {
 
   @Test
-  void reader_returnsReaderForEnvironment() {
-    assertNotNull(minimalRegistry().reader(null));
-  }
-
-  @Test
-  void formatterProfile_withoutConfiguredOption_returnsNull() {
-    assertNull(minimalRegistry().formatterProfile(new CompilerArgumentsReader(null)));
+  void pipelineHierarchy_containsAllDeclaredPhases() {
+    List<String> topLevel = PipelinePhases.PIPELINE_HIERARCHY.topLevelPhases();
+    for (String phase :
+        List.of(
+            PipelinePhases.PHASE_ELEMENT_COLLECTION,
+            PipelinePhases.PHASE_CONFIGURATION_RESOLUTION,
+            PipelinePhases.PHASE_ANALYSIS,
+            PipelinePhases.PHASE_TARGET_MAPPING,
+            PipelinePhases.PHASE_CODE_GENERATION)) {
+      assertTrue(topLevel.contains(phase), "missing top-level phase " + phase);
+    }
   }
 }

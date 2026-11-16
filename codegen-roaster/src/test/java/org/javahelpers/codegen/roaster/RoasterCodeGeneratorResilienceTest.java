@@ -22,12 +22,11 @@
  * SOFTWARE.
  */
 
-package org.javahelpers.simple.builders.processor;
+package org.javahelpers.codegen.roaster;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import org.javahelpers.codegen.CodeGenerationException;
 import org.javahelpers.codegen.SourceFormatter;
 import org.javahelpers.codegen.enums.AccessModifier;
@@ -40,15 +39,9 @@ import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
 import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.TypeName;
-import org.javahelpers.codegen.processing.AnnotationProcessingEnvironment;
-import org.javahelpers.codegen.processing.logging.MessagerProcessingLogger;
-import org.javahelpers.codegen.roaster.RoasterCodeGenerator;
-import org.javahelpers.codegen.roaster.RoasterSourceFormatter;
 import org.javahelpers.codegen.roaster.exceptions.RoasterMapperException;
 import org.javahelpers.codegen.testing.CapturingProcessingLogger;
-import org.javahelpers.codegen.testing.ProcessingEnvironmentStub;
-import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
-import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
+import org.javahelpers.codegen.testing.TestingGenerationEnvironment;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -84,14 +77,9 @@ class RoasterCodeGeneratorResilienceTest {
     constructor.setMethodCodeDto(code);
     classDef.addConstructor(constructor);
 
-    ProcessingEnvironment env = ProcessingEnvironmentStub.createEmpty();
-    ProcessingLogger logger = MessagerProcessingLogger.create(env);
-    BuilderProcessingContext context =
-        new BuilderProcessingContext(logger, BuilderConfiguration.DEFAULT, env);
+    ProcessingLogger logger = CapturingProcessingLogger.create().logger();
     RoasterCodeGenerator generator =
-        new RoasterCodeGenerator(
-            new AnnotationProcessingEnvironment(
-                env, logger, context.getPerformanceTracker(), context::reportBasedOnStrictMode));
+        new RoasterCodeGenerator(TestingGenerationEnvironment.createUnwritable(logger));
 
     SourceFormatter formatter = new RoasterSourceFormatter(logger, FormattingMode.NONE);
     CodeGenerationException thrown =
@@ -117,19 +105,11 @@ class RoasterCodeGeneratorResilienceTest {
     classDef.addMethod(duplicateSignatureMethod("second"));
 
     CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
-    ProcessingEnvironment env = ProcessingEnvironmentStub.createEmpty();
-    BuilderProcessingContext context =
-        new BuilderProcessingContext(capturing.logger(), BuilderConfiguration.DEFAULT, env);
     RoasterCodeGenerator generator =
-        new RoasterCodeGenerator(
-            new AnnotationProcessingEnvironment(
-                env,
-                capturing.logger(),
-                context.getPerformanceTracker(),
-                context::reportBasedOnStrictMode));
+        new RoasterCodeGenerator(TestingGenerationEnvironment.createUnwritable(capturing.logger()));
 
     SourceFormatter formatter = new RoasterSourceFormatter(capturing.logger(), FormattingMode.NONE);
-    // generation itself succeeds; only the file-write step fails on the stub's null filer
+    // generation itself succeeds; only the file-write step fails on the stub's null source file
     assertThrows(NullPointerException.class, () -> generator.generateClass(classDef, formatter));
     capturing.assertMessage(
         "WARNING: Unexpected duplicate method signature: 'name(java.lang.String)'"
@@ -142,7 +122,7 @@ class RoasterCodeGeneratorResilienceTest {
     method.setModifier(AccessModifier.PUBLIC);
     MethodParameterDto parameter = new MethodParameterDto();
     parameter.setParameterName("value");
-    parameter.setParameterTypeName(new TypeName("java.lang", "String"));
+    parameter.setParameterTypeName(TypeName.of(String.class));
     method.addParameter(parameter);
     method.setCode("return this; // " + marker);
     return method;

@@ -23,6 +23,7 @@
  */
 package org.javahelpers.codegen.model.type;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -100,6 +101,18 @@ public class TypeNameGeneric extends TypeName {
     super(packageName, className);
     this.outerType = new TypeName(packageName, className);
     this.innerTypeArguments = List.of(innerTypeArguments);
+  }
+
+  /**
+   * Varargs convenience constructor taking {@link Class} references directly.
+   *
+   * @param outerType the outer type
+   * @param innerTypeArguments variable number of generic type arguments
+   */
+  public TypeNameGeneric(Class<?> outerType, Class<?>... innerTypeArguments) {
+    this(
+        TypeName.of(outerType),
+        Arrays.stream(innerTypeArguments).map(TypeName::of).toArray(TypeName[]::new));
   }
 
   /**
