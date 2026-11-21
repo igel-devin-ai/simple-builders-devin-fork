@@ -63,7 +63,7 @@ import org.javahelpers.codegen.processing.CompilerArgumentsReader;
 import org.javahelpers.codegen.processing.ElementCollector;
 import org.javahelpers.codegen.processing.ElementGroups;
 import org.javahelpers.codegen.processing.ProcessorOptionRegistry;
-import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilder.Template;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilderFor;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilderFors;
@@ -102,7 +102,7 @@ public class BuilderProcessor
   /**
    * Which elements builders are generated for: types carrying {@code @SimpleBuilder} or a
    * user-defined {@code @SimpleBuilder.Template}-meta-annotated annotation (opt-out via
-   * {@code @Ignore4BuilderGeneration}), plus classes declaring external types with
+   * {@code @IgnoreForBuilderGeneration}), plus classes declaring external types with
    * {@code @SimpleBuilderFor}.
    */
   private static final ElementCollector ELEMENT_COLLECTOR =
@@ -112,7 +112,7 @@ public class BuilderProcessor
                   selector
                       .groupName(GROUP_ANNOTATED_ELEMENTS)
                       .metaMarker(Template.class)
-                      .optOutAnnotation(Ignore4BuilderGeneration.class))
+                      .optOutAnnotation(IgnoreForBuilderGeneration.class))
           .selector(
               selector ->
                   selector
@@ -298,7 +298,7 @@ public class BuilderProcessor
   /**
    * Plans a builder for a single type listed in {@code @SimpleBuilderFor}, or reports on the holder
    * why no builder is generated for it. An explicit declaration always generates a builder - the
-   * target type's own annotations (such as {@code @Ignore4BuilderGeneration}) are not consulted,
+   * target type's own annotations (such as {@code @IgnoreForBuilderGeneration}) are not consulted,
    * and the {@code builderGenerationPackages} scope only filters annotated types, so a scope that
    * would exclude an explicitly named type is a contradictory configuration and only warns.
    */

@@ -39,12 +39,12 @@ import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
 
-/** Tests for the {@code @Ignore4BuilderGeneration} opt-out annotation. */
-class Ignore4BuilderGenerationTest {
+/** Tests for the {@code @IgnoreForBuilderGeneration} opt-out annotation. */
+class IgnoreForBuilderGenerationTest {
 
   /**
    * (a) A subclass that inherits a template annotation from its parent and is annotated with
-   * {@code @Ignore4BuilderGeneration} must NOT get a builder, while the parent's builder is still
+   * {@code @IgnoreForBuilderGeneration} must NOT get a builder, while the parent's builder is still
    * generated.
    */
   @Test
@@ -87,9 +87,9 @@ class Ignore4BuilderGenerationTest {
             """
             package test;
 
-            import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
 
-            @Ignore4BuilderGeneration
+            @IgnoreForBuilderGeneration
             public class ChildDto extends ParentDto { }
             """);
 
@@ -104,11 +104,11 @@ class Ignore4BuilderGenerationTest {
     assertNoBuilderGenerated(
         compilation,
         "ChildDto",
-        "ChildDto builder should not have been generated due to @Ignore4BuilderGeneration");
+        "ChildDto builder should not have been generated due to @IgnoreForBuilderGeneration");
   }
 
   /**
-   * (b) A DTO field whose type is annotated with {@code @Ignore4BuilderGeneration} must not trigger
+   * (b) A DTO field whose type is annotated with {@code @IgnoreForBuilderGeneration} must not trigger
    * nested-builder consumer generation in the referencing DTO. The referencing builder falls back
    * to a plain setter and must not reference a non-existent builder class.
    */
@@ -120,10 +120,10 @@ class Ignore4BuilderGenerationTest {
             package test;
 
             import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
-            import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
 
             @SimpleBuilder
-            @Ignore4BuilderGeneration
+            @IgnoreForBuilderGeneration
             public class IgnoredDto {
                 private String value;
 

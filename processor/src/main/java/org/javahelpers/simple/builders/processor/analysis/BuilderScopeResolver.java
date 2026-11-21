@@ -43,7 +43,7 @@ import org.javahelpers.codegen.analysis.JavaLangMapper;
 import org.javahelpers.codegen.model.core.PackageScopes;
 import org.javahelpers.codegen.model.type.TypeInstantiation;
 import org.javahelpers.codegen.model.type.TypeName;
-import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
 import org.javahelpers.simple.builders.processor.model.core.BuilderConfiguration;
 import org.javahelpers.simple.builders.processor.model.type.PrefillCall;
 import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
@@ -127,7 +127,7 @@ public final class BuilderScopeResolver {
    *       generated builder's package. The contract check is annotation-agnostic, so builders
    *       generated with custom template annotations, external tools, or different suffixes are
    *       supported. The referenced type must not be opted out with
-   *       {@code @Ignore4BuilderGeneration}.
+   *       {@code @IgnoreForBuilderGeneration}.
    * </ol>
    *
    * @param referencedType the type element being referenced as a field or collection element
@@ -772,6 +772,6 @@ public final class BuilderScopeResolver {
     if (typeElement == null) {
       return false;
     }
-    return JavaLangAnalyser.findAnnotation(typeElement, Ignore4BuilderGeneration.class).isPresent();
+    return JavaLangAnalyser.findAnnotation(typeElement, IgnoreForBuilderGeneration.class).isPresent();
   }
 }

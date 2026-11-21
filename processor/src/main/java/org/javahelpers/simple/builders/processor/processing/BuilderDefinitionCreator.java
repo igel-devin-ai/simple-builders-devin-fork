@@ -443,7 +443,7 @@ public class BuilderDefinitionCreator {
 
   /**
    * Whether an annotation must not be copied onto generated code: either a simple-builders
-   * framework annotation (e.g. {@code @Default}, {@code @Ignore4BuilderGeneration}) — those
+   * framework annotation (e.g. {@code @Default}, {@code @IgnoreForBuilderGeneration}) — those
    * configure generation — or one of {@link #SKIPPED_COPIED_ANNOTATIONS}.
    *
    * @param annotation the annotation DTO

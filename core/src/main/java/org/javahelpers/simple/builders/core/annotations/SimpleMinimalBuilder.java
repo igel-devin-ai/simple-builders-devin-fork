@@ -42,7 +42,7 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
  * <p>This annotation is implemented purely as a {@link SimpleBuilder.Template} with every optional
  * feature set to {@link OptionState#DISABLED}. Because the template is {@link Inherited},
  * subclasses of an annotated type also receive a minimal builder unless explicitly excluded by
- * {@link Ignore4BuilderGeneration}.
+ * {@link IgnoreForBuilderGeneration}.
  *
  * <p>Example:
  *
@@ -67,7 +67,7 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
  * @see SimpleBuilder
  * @see SimpleBuilder.Template
  * @see SimpleBuilder.Options
- * @see Ignore4BuilderGeneration
+ * @see IgnoreForBuilderGeneration
  */
 @SimpleBuilder.Template(
     options =
