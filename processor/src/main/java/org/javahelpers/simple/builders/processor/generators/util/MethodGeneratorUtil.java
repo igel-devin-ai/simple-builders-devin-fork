@@ -469,8 +469,26 @@ public final class MethodGeneratorUtil {
       BuilderMethodDto methodDto,
       TypeName fieldType,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+    addExampleChainFragment(methodDto, fieldType, null, builderResolver);
+  }
+
+  /**
+   * Adds the fluent-chain fragment for Javadoc examples to a method.
+   *
+   * <p>Behaves like {@link #addExampleChainFragment(BuilderMethodDto, TypeName, Function)}, but
+   * derives String example values from the given field name (e.g. {@code "example <fieldName>"}).
+   *
+   * @param methodDto the method DTO to add the fragment to
+   * @param fieldType the field type to get an example value for
+   * @param fieldName the original field name used for String example values (may be {@code null})
+   */
+  public static void addExampleChainFragment(
+      BuilderMethodDto methodDto,
+      TypeName fieldType,
+      String fieldName,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     addExampleChainFragmentTemplate(
-        methodDto, "#{methodName}(#{exampleValue})", fieldType, builderResolver);
+        methodDto, "#{methodName}(#{exampleValue})", fieldType, fieldName, builderResolver);
   }
 
   /**
@@ -491,8 +509,30 @@ public final class MethodGeneratorUtil {
       BuilderMethodDto methodDto,
       TypeName elementType,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+    addExampleChainFragmentVarArgs(methodDto, elementType, null, builderResolver);
+  }
+
+  /**
+   * Adds the fluent-chain fragment for Javadoc examples to a varargs method.
+   *
+   * <p>Behaves like {@link #addExampleChainFragmentVarArgs(BuilderMethodDto, TypeName, Function)},
+   * but derives String example values from the given field name.
+   *
+   * @param methodDto the method DTO to add the fragment to
+   * @param elementType the element type to get an example value for
+   * @param fieldName the original field name used for String example values (may be {@code null})
+   */
+  public static void addExampleChainFragmentVarArgs(
+      BuilderMethodDto methodDto,
+      TypeName elementType,
+      String fieldName,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     addExampleChainFragmentTemplate(
-        methodDto, "#{methodName}(#{exampleValue}, #{exampleValue})", elementType, builderResolver);
+        methodDto,
+        "#{methodName}(#{exampleValue}, #{exampleValue})",
+        elementType,
+        fieldName,
+        builderResolver);
   }
 
   /**
@@ -513,12 +553,30 @@ public final class MethodGeneratorUtil {
       BuilderMethodDto methodDto,
       TypeName fieldType,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+    addExampleChainFragmentWithSupplier(methodDto, fieldType, null, builderResolver);
+  }
+
+  /**
+   * Adds the fluent-chain fragment for Javadoc examples to a method using a supplier pattern.
+   *
+   * <p>Behaves like {@link #addExampleChainFragmentWithSupplier(BuilderMethodDto, TypeName,
+   * Function)}, but derives String example values from the given field name.
+   *
+   * @param methodDto the method DTO to add the fragment to
+   * @param fieldType the field type to get an example value for
+   * @param fieldName the original field name used for String example values (may be {@code null})
+   */
+  public static void addExampleChainFragmentWithSupplier(
+      BuilderMethodDto methodDto,
+      TypeName fieldType,
+      String fieldName,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     if (fieldType.hasEmptyConstructor()) {
       addExampleChainFragmentTemplate(
           methodDto, "#{methodName}(" + fieldType.getClassName() + "::new)");
     } else {
       addExampleChainFragmentTemplate(
-          methodDto, "#{methodName}(() -> #{exampleValue})", fieldType, builderResolver);
+          methodDto, "#{methodName}(() -> #{exampleValue})", fieldType, fieldName, builderResolver);
     }
   }
 
@@ -546,11 +604,32 @@ public final class MethodGeneratorUtil {
       String template,
       TypeName fieldType,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+    addExampleChainFragmentTemplate(methodDto, template, fieldType, null, builderResolver);
+  }
+
+  /**
+   * Adds the fluent-chain fragment for Javadoc examples to a method using a template string.
+   *
+   * <p>Behaves like {@link #addExampleChainFragmentTemplate(BuilderMethodDto, String, TypeName,
+   * Function)}, but derives String example values from the given field name.
+   *
+   * @param methodDto the method DTO to add the fragment to
+   * @param template the template string with placeholders (e.g., {@code
+   *     #{methodName}(#{exampleValue})})
+   * @param fieldType the field type to get an example value for (can be {@code null})
+   * @param fieldName the original field name used for String example values (may be {@code null})
+   */
+  public static void addExampleChainFragmentTemplate(
+      BuilderMethodDto methodDto,
+      String template,
+      TypeName fieldType,
+      String fieldName,
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     String fragment = template.replace("#{methodName}", methodDto.getMethodName());
 
     if (fieldType != null) {
       Optional<String> exampleValue =
-          JavadocExampleValues.getExampleValue(fieldType, builderResolver);
+          JavadocExampleValues.getExampleValue(fieldType, fieldName, builderResolver);
       if (exampleValue.isEmpty()) {
         return;
       }
