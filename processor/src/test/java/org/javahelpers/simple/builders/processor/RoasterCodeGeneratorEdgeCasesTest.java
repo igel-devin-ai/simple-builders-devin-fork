@@ -362,4 +362,41 @@ class RoasterCodeGeneratorEdgeCasesTest {
         "public GenericDto<T> build()",
         "public static <T> GenericDtoBuilder<T> create()");
   }
+
+  /**
+   * Tests that fields whose types share a simple name but live in different packages generate a
+   * compilable builder.
+   *
+   * <p>Regression test for the {@code java.util.Date} / {@code java.sql.Date} collision: the
+   * generated builder must qualify at least one of the two types instead of emitting the ambiguous
+   * simple name for both.
+   */
+  @Test
+  void shouldQualifyCollidingSimpleTypeNames() {
+    JavaFileObject sourceFile =
+        JavaFileObjects.forSourceString(
+            "test.DateDto",
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class DateDto {
+              private java.util.Date utilDateTestField;
+              private java.sql.Date sqlDateTestField;
+              public java.util.Date getUtilDateTestField() { return utilDateTestField; }
+              public void setUtilDateTestField(java.util.Date d) { this.utilDateTestField = d; }
+              public java.sql.Date getSqlDateTestField() { return sqlDateTestField; }
+              public void setSqlDateTestField(java.sql.Date d) { this.sqlDateTestField = d; }
+            }
+            """);
+
+    Compilation compilation = ProcessorTestUtils.createCompiler().compile(sourceFile);
+
+    String generatedCode = loadGeneratedSource(compilation, "DateDtoBuilder");
+    assertGenerationSucceeded(compilation, "DateDtoBuilder", generatedCode);
+    assertTrue(
+        generatedCode.contains("java.util.Date") || generatedCode.contains("java.sql.Date"),
+        () -> "colliding types must be qualified in the generated builder, was: " + generatedCode);
+  }
 }

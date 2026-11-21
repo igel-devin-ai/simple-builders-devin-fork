@@ -57,6 +57,7 @@ import org.javahelpers.codegen.model.imports.ImportStatement;
 import org.javahelpers.codegen.model.javadoc.JavadocCodeBlockDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocTagDto;
+import org.javahelpers.codegen.model.method.CodeTemplateDto;
 import org.javahelpers.codegen.model.method.ConstructorDto;
 import org.javahelpers.codegen.model.method.MethodCodeDto;
 import org.javahelpers.codegen.model.method.MethodDto;
@@ -88,6 +89,13 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
 
   /** Reporter for problems found during generation; the reporter decides the severity. */
   private final GenerationIssueReporter issueReporter;
+
+  /**
+   * Simple type names used by more than one distinct type in the class currently being generated
+   * (e.g. {@code java.util.Date} next to {@code java.sql.Date}). Usages of such types are emitted
+   * fully qualified; recomputed per {@link #generateClass} call.
+   */
+  private Set<String> collidingSimpleNames = Set.of();
 
   /**
    * Creates a code generator using the given generation environment.
@@ -151,6 +159,10 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
 
   private JavaClassSource buildClassSource(GenerationTargetClassDto classDef) {
     performanceTracker.startPhase();
+    collidingSimpleNames =
+        new ImportCollector(classDef.getTypeName())
+            .collectImports(classDef)
+            .getCollidingSimpleNames();
     JavaClassSource source = createJavaClassSource(classDef);
     addClassMetadata(source, classDef);
     appendFields(source, classDef);
@@ -211,7 +223,8 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
 
     // Add interfaces
     for (InterfaceName interfaceName : classDef.getInterfaces()) {
-      source.addInterface(RoasterMapper.mapInterfaceToTypeName(interfaceName));
+      source.addInterface(
+          RoasterMapper.mapInterfaceToTypeName(interfaceName, collidingSimpleNames));
     }
 
     logger.debug("Class metadata added");
@@ -406,7 +419,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       TypeVariableSource<JavaClassSource> typeVariable = source.addTypeVariable(generic.getName());
       if (CollectionUtils.isNotEmpty(generic.getUpperBounds())) {
         typeVariable.setBounds(
-            generic.getUpperBounds().stream().map(RoasterMapper::mapType).toArray(String[]::new));
+            generic.getUpperBounds().stream().map(this::mapType).toArray(String[]::new));
       }
     }
   }
@@ -421,7 +434,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       TypeVariableSource<?> typeVariable = source.addTypeVariable(generic.getName());
       if (CollectionUtils.isNotEmpty(generic.getUpperBounds())) {
         typeVariable.setBounds(
-            generic.getUpperBounds().stream().map(RoasterMapper::mapType).toArray(String[]::new));
+            generic.getUpperBounds().stream().map(this::mapType).toArray(String[]::new));
       }
     }
   }
@@ -558,6 +571,14 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       parameter.setVarArgs(true);
     }
     applyAnnotations(parameter, paramDto.getAnnotations());
+  }
+
+  private String mapType(TypeName typeName) {
+    return RoasterMapper.mapType(typeName, collidingSimpleNames);
+  }
+
+  private String resolveCodeTemplate(CodeTemplateDto codeDto) {
+    return RoasterMapper.resolveCodeTemplate(codeDto, collidingSimpleNames);
   }
 
   private String formatSource(String rawSource, SourceFormatter formatter) {
