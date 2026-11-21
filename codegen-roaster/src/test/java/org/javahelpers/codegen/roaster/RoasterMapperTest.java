@@ -29,8 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.annotation.InterfaceName;
 import org.javahelpers.codegen.model.method.CodeTemplateDto;
+import org.javahelpers.codegen.model.method.CodeTemplateDtoBuilder;
 import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
 import org.javahelpers.codegen.model.method.MethodCodeStringPlaceholder;
 import org.javahelpers.codegen.model.method.MethodCodeTypePlaceholder;
@@ -80,8 +82,8 @@ class RoasterMapperTest {
   @Test
   void mapType_prependsTypeUseAnnotations() {
     TypeName annotated = TypeName.of(String.class);
-    AnnotationDto nonNull = new AnnotationDto();
-    nonNull.setAnnotationType(new TypeName("test.anno", "NonNull"));
+    AnnotationDto nonNull =
+        AnnotationDtoBuilder.create().annotationType(new TypeName("test.anno", "NonNull")).build();
     annotated.addAnnotation(nonNull);
     assertEquals("@NonNull String", RoasterMapper.mapType(annotated));
   }
@@ -106,15 +108,15 @@ class RoasterMapperTest {
 
   @Test
   void mapAnnotation_rendersMarkerWithoutMembers() {
-    AnnotationDto annotation = new AnnotationDto();
-    annotation.setAnnotationType(new TypeName("test.anno", "Marker"));
+    AnnotationDto annotation =
+        AnnotationDtoBuilder.create().annotationType(new TypeName("test.anno", "Marker")).build();
     assertEquals("@Marker", RoasterMapper.mapAnnotation(annotation));
   }
 
   @Test
   void mapAnnotation_rendersValueMemberBareAndOthersNamed() {
-    AnnotationDto annotation = new AnnotationDto();
-    annotation.setAnnotationType(new TypeName("test.anno", "Meta"));
+    AnnotationDto annotation =
+        AnnotationDtoBuilder.create().annotationType(new TypeName("test.anno", "Meta")).build();
     annotation.addMember("value", "\"x\"");
     annotation.addMember("order", "3");
     assertEquals("@Meta(\"x\", order = 3)", RoasterMapper.mapAnnotation(annotation));
@@ -122,14 +124,16 @@ class RoasterMapperTest {
 
   @Test
   void mapAnnotation_wrapsFailuresInMapperException() {
-    AnnotationDto annotation = new AnnotationDto();
-    annotation.setAnnotationType(
-        new TypeName("test.anno", "Broken") {
-          @Override
-          public List<AnnotationDto> getAnnotations() {
-            throw new IllegalStateException("boom");
-          }
-        });
+    AnnotationDto annotation =
+        AnnotationDtoBuilder.create()
+            .annotationType(
+                new TypeName("test.anno", "Broken") {
+                  @Override
+                  public List<AnnotationDto> getAnnotations() {
+                    throw new IllegalStateException("boom");
+                  }
+                })
+            .build();
     assertThrows(RoasterMapperException.class, () -> RoasterMapper.mapAnnotation(annotation));
   }
 
@@ -146,8 +150,8 @@ class RoasterMapperTest {
   @Test
   void mapInterfaceToTypeName_prependsTypeUseAnnotations() {
     InterfaceName iface = new InterfaceName("java.io", "Serializable");
-    AnnotationDto marker = new AnnotationDto();
-    marker.setAnnotationType(new TypeName("test.anno", "Tag"));
+    AnnotationDto marker =
+        AnnotationDtoBuilder.create().annotationType(new TypeName("test.anno", "Tag")).build();
     iface.addAnnotation(marker);
     assertEquals("@Tag Serializable", RoasterMapper.mapInterfaceToTypeName(iface));
   }
@@ -168,8 +172,10 @@ class RoasterMapperTest {
 
   @Test
   void resolveCodeTemplate_replacesStringAndTypePlaceholders() {
-    CodeTemplateDto code = new CodeTemplateDto();
-    code.setCodeFormat("return $name:S, $type:T, $boxed:B, $raw:N;");
+    CodeTemplateDto code =
+        CodeTemplateDtoBuilder.create()
+            .codeFormat("return $name:S, $type:T, $boxed:B, $raw:N;")
+            .build();
     code.addCodeArgument(new MethodCodeStringPlaceholder("name", "val"));
     code.addCodeArgument(new MethodCodeTypePlaceholder("type", TypeNamePrimitive.INT));
     code.addCodeArgument(new MethodCodeTypePlaceholder("boxed", TypeNamePrimitive.INT));
@@ -180,17 +186,19 @@ class RoasterMapperTest {
 
   @Test
   void resolveCodeTemplate_rewritesTrackedValueFactoryNames() {
-    CodeTemplateDto code = new CodeTemplateDto();
-    code.setCodeFormat(
-        "TrackedValue.initialValue(x); TrackedValue.changedValue(y); TrackedValue.unsetValue();");
+    CodeTemplateDto code =
+        CodeTemplateDtoBuilder.create()
+            .codeFormat(
+                "TrackedValue.initialValue(x); TrackedValue.changedValue(y);"
+                    + " TrackedValue.unsetValue();")
+            .build();
     assertEquals(
         "initialValue(x); changedValue(y); unsetValue();", RoasterMapper.resolveCodeTemplate(code));
   }
 
   @Test
   void resolveCodeTemplate_rejectsUnknownPlaceholderKinds() {
-    CodeTemplateDto code = new CodeTemplateDto();
-    code.setCodeFormat("return $x:X;");
+    CodeTemplateDto code = CodeTemplateDtoBuilder.create().codeFormat("return $x:X;").build();
     code.addCodeArgument(new MethodCodePlaceholder<String>("x", "v") {});
     assertThrows(RoasterMapperException.class, () -> RoasterMapper.resolveCodeTemplate(code));
   }
