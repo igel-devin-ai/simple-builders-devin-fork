@@ -25,8 +25,10 @@
 package org.javahelpers.codegen.util;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +61,7 @@ import org.javahelpers.codegen.model.type.TypeNameVariable;
 public class ImportCollector {
 
   private final Set<ImportStatement> imports = new LinkedHashSet<>();
+  private final Map<String, Set<String>> typeUsageBySimpleName = new LinkedHashMap<>();
   private final TypeName currentType;
 
   /**
@@ -243,7 +246,20 @@ public class ImportCollector {
    * @param importStatement the import statement to add
    */
   private void addImport(ImportStatement importStatement) {
-    if (importStatement == null || shouldSkipImport(importStatement)) {
+    if (importStatement == null) {
+      return;
+    }
+    // Track every concrete type usage by its simple name so callers can detect collisions
+    // between types of different packages (e.g. java.util.Date vs java.sql.Date). Tracking
+    // happens before the import filter: same-package and java.lang types resolve by simple
+    // name without an import and still participate in name binding.
+    if (importStatement instanceof RegularImport regularImport) {
+      TypeName usedType = regularImport.getType();
+      typeUsageBySimpleName
+          .computeIfAbsent(usedType.getClassName(), k -> new LinkedHashSet<>())
+          .add(usedType.getFullQualifiedName());
+    }
+    if (shouldSkipImport(importStatement)) {
       return;
     }
     imports.add(importStatement);
@@ -307,6 +323,20 @@ public class ImportCollector {
 
     // Add the concrete type
     addImport(new RegularImport(type));
+  }
+
+  /**
+   * Returns the simple type names that are used with more than one distinct qualified name in the
+   * collected class definition. Usages of such types must be emitted fully qualified to keep the
+   * generated source compilable (e.g. {@code java.util.Date} next to {@code java.sql.Date}).
+   *
+   * @return set of colliding simple names, empty if every simple name is unambiguous
+   */
+  public Set<String> getCollidingSimpleNames() {
+    return typeUsageBySimpleName.entrySet().stream()
+        .filter(entry -> entry.getValue().size() > 1)
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet());
   }
 
   /**

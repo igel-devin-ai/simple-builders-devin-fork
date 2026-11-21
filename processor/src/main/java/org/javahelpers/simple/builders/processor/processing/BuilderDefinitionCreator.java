@@ -40,9 +40,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.javahelpers.codegen.analysis.FieldAnnotationExtractor;
@@ -699,6 +701,31 @@ public class BuilderDefinitionCreator {
     String fullJavaDoc = context.getDocComment(mth);
     String javaDocDescription = JavaLangAnalyser.extractParamJavaDoc(fullJavaDoc, fieldParameter);
 
+    // The setter-derived property name is used as-is for generated method and field names.
+    // setX -> x can yield a name that is not a legal Java identifier (e.g. setStatic ->
+    // "static"). Prefer a backing field with a legal name; if none exists, skip only this
+    // property instead of failing the whole target.
+    if (!SourceVersion.isName(fieldName)) {
+      Optional<String> legalFieldName =
+          findLegalBackingFieldName(dtoTypeElement, fieldName, fieldParameter, context);
+      if (legalFieldName.isEmpty()) {
+        context.reportBasedOnStrictMode(
+            mth,
+            "Setter '%s' derives property name '%s', which is not a legal Java identifier. "
+                + "No backing field with a legal name was found, so this property is skipped. "
+                + "Rename the setter, add a backing field, or use @IgnoreInBuilder to silence "
+                + "this message.",
+            methodName,
+            fieldName);
+        return Optional.empty();
+      }
+      context.debug(
+          "Setter '%s' derives property name '%s', which is not a legal Java identifier - "
+              + "using backing field name '%s' for builder members",
+          methodName, fieldName, legalFieldName.get());
+      fieldName = legalFieldName.get();
+    }
+
     // Check for field name conflicts and rename if necessary
     String finalFieldName =
         resolveFieldNameConflict(fieldName, fieldParameter, fieldNameRegistry, context);
@@ -719,6 +746,10 @@ public class BuilderDefinitionCreator {
     }
 
     BuilderFieldDto field = result.get();
+
+    // The real setter name is authoritative: the derived field name may have been renamed
+    // (e.g. setStatic -> "static" resolved to the backing field "isStatic").
+    field.setSetterName(methodName);
 
     // If no default was found on the setter parameter, check the field element itself
     // (annotations like @Default may be placed on the field rather than the setter param)
@@ -762,6 +793,35 @@ public class BuilderDefinitionCreator {
     }
 
     return result;
+  }
+
+  /**
+   * Finds a backing field on the DTO that corresponds to an illegal setter-derived property name. A
+   * field cannot itself be named after a keyword, so the legal candidates are the JavaBeans {@code
+   * is}-prefixed boolean convention: a field {@code isX} maps to property {@code x} the same way
+   * setter {@code setX} does (e.g. field {@code isStatic} for setter {@code setStatic}).
+   *
+   * @param dtoTypeElement the DTO type declaring the setter
+   * @param propertyName the illegal property name derived from the setter (e.g. {@code "static"})
+   * @param fieldParameter the setter parameter, used to verify the field type matches
+   * @param context processing context
+   * @return the legal backing field name, or empty if no matching field exists
+   */
+  private static Optional<String> findLegalBackingFieldName(
+      TypeElement dtoTypeElement,
+      String propertyName,
+      VariableElement fieldParameter,
+      BuilderProcessingContext context) {
+    for (VariableElement field : ElementFilter.fieldsIn(dtoTypeElement.getEnclosedElements())) {
+      String name = field.getSimpleName().toString();
+      if (name.length() > 2
+          && name.startsWith("is")
+          && propertyName.equals(StringUtils.uncapitalize(name.substring(2)))
+          && context.isSameType(field.asType(), fieldParameter.asType())) {
+        return Optional.of(name);
+      }
+    }
+    return Optional.empty();
   }
 
   /**
@@ -971,8 +1031,18 @@ public class BuilderDefinitionCreator {
 
     Optional<? extends Element> recordComponent =
         JavaLangAnalyser.findRecordComponent(dtoTypeElement, fieldName);
+    // The setter name is usually set<Cap(fieldName)>; after reserved-name fallback (e.g.
+    // setStatic -> field "isStatic") the name-derived lookup misses, so the enclosing
+    // executable of the parameter is used as an additional candidate — for setter fields
+    // that enclosing element IS the setter.
     Optional<ExecutableElement> setter =
-        JavaLangAnalyser.findSetterForField(dtoTypeElement, fieldName, context);
+        JavaLangAnalyser.findSetterForField(dtoTypeElement, fieldName, context)
+            .or(
+                () ->
+                    param.getEnclosingElement() instanceof ExecutableElement e
+                            && e.getKind() == ElementKind.METHOD
+                        ? Optional.of(e)
+                        : Optional.empty());
 
     // Search the relevant elements in priority order for the @Deprecated annotation to propagate.
     // Note: the backing field is intentionally NOT checked — it is uncommon to deprecate a

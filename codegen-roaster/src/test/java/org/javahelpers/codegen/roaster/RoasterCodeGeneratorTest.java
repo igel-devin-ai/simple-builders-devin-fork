@@ -97,6 +97,34 @@ class RoasterCodeGeneratorTest {
   }
 
   @Test
+  void qualifiesCollidingSimpleTypeNames() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "DateBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    ClassFieldDto utilDate = new ClassFieldDto();
+    utilDate.setFieldName("utilDate");
+    utilDate.setFieldType(new TypeName("java.util", "Date"));
+    classDef.addClassField(utilDate);
+
+    ClassFieldDto sqlDate = new ClassFieldDto();
+    sqlDate.setFieldName("sqlDate");
+    sqlDate.setFieldType(new TypeName("java.sql", "Date"));
+    classDef.addClassField(sqlDate);
+
+    assertGeneratedSource(
+        """
+        package test;
+        import java.sql.Date;
+        public class DateBuilder {
+          private java.util.Date utilDate;
+          private Date sqlDate;
+        }""",
+        classDef);
+  }
+
+  @Test
   void generatesClassMetadataJavadocAndAnnotations() throws Exception {
     GenerationTargetClassDto classDef =
         GenerationTargetClassDtoBuilder.create()

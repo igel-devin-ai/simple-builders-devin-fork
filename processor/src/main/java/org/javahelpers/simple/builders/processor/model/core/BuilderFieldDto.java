@@ -45,6 +45,13 @@ public class BuilderFieldDto {
   /** Name of the field as it appears in the original DTO (used for method names and setters). */
   private String originalFieldName;
 
+  /**
+   * Name of the DTO setter invoked for this field. {@code null} when the setter name can be derived
+   * from {@link #originalFieldName} via JavaBeans conventions; set explicitly when the real setter
+   * name deviates (e.g. {@code setStatic} for a field renamed to {@code isStatic}).
+   */
+  private String setterName;
+
   /** Name of the field as stored in the builder (may be renamed to avoid conflicts). */
   private String fieldNameInBuilder;
 
@@ -138,13 +145,24 @@ public class BuilderFieldDto {
   }
 
   /**
-   * Gets the setter method name for this field. The setter name is derived from the original field
-   * name and follows JavaBean conventions (e.g., "userName" becomes "setUserName").
+   * Gets the setter method name for this field. Defaults to the name derived from the original
+   * field name following JavaBean conventions (e.g., "userName" becomes "setUserName"); an
+   * explicitly set name takes precedence.
    *
    * @return the setter method name for this field (never null)
    */
   public String getSetterName() {
-    return "set" + StringUtils.capitalize(originalFieldName);
+    return setterName != null ? setterName : "set" + StringUtils.capitalize(originalFieldName);
+  }
+
+  /**
+   * Sets the setter method name to invoke for this field. Use this when the real setter name cannot
+   * be derived from {@link #getOriginalFieldName()} via JavaBeans conventions.
+   *
+   * @param setterName the setter method name, or {@code null} to fall back to the derived name
+   */
+  public void setSetterName(String setterName) {
+    this.setterName = setterName;
   }
 
   /**
