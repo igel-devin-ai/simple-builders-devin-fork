@@ -527,10 +527,10 @@ class BuilderScopeProcessingTest {
     return ProcessorTestUtils.forSource(
         """
         package test;
-        import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+        import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
         import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
         @SimpleBuilder
-        @Ignore4BuilderGeneration
+        @IgnoreForBuilderGeneration
         public class OptedOutDto { public OptedOutDto() {} }
         """);
   }

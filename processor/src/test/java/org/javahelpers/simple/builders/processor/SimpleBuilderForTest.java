@@ -230,8 +230,8 @@ class SimpleBuilderForTest {
         ProcessorTestUtils.forSource(
             """
             package ext;
-            import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
-            @Ignore4BuilderGeneration
+            import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
+            @IgnoreForBuilderGeneration
             public class OptedOut {
               public OptedOut() {}
             }
@@ -242,7 +242,7 @@ class SimpleBuilderForTest {
             .compile(optedOut, holder("test", "Builders", "ext.OptedOut"));
 
     // The explicit @SimpleBuilderFor declaration wins - the target type's own annotations
-    // (including @Ignore4BuilderGeneration) are not consulted
+    // (including @IgnoreForBuilderGeneration) are not consulted
     assertThat(compilation).succeededWithoutWarnings();
     String generated = ProcessorTestUtils.loadGeneratedSource(compilation, "OptedOutBuilder");
     BuilderAsserts.assertGenerationSucceeded(compilation, "OptedOutBuilder", generated);

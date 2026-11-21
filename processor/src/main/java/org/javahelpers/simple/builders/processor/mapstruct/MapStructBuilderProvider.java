@@ -42,7 +42,7 @@ import org.javahelpers.codegen.logging.ProcessingLogger;
 import org.javahelpers.codegen.logging.SinkProcessingLogger;
 import org.javahelpers.codegen.model.core.PackageScopes;
 import org.javahelpers.codegen.processing.CompilerArgumentsReader;
-import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
 import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
 import org.javahelpers.simple.builders.processor.SimpleBuildersSpiIntegration;
 import org.javahelpers.simple.builders.processor.SimpleBuildersSpiIntegration.PublishedBuilder;
@@ -275,13 +275,13 @@ public class MapStructBuilderProvider implements BuilderProvider {
 
   /**
    * Whether {@code beanElement} is marked for builder generation ({@code @SimpleBuilder} or a
-   * builder template annotation, not opted out via {@code @Ignore4BuilderGeneration}), directly or
+   * builder template annotation, not opted out via {@code @IgnoreForBuilderGeneration}), directly or
    * through an inherited annotation. The marker decides the finished-state warning and whether an
    * unfinished miss can be answered as "no builder" — deferral and claiming never depend on it.
    */
   private boolean isBuilderGenerationTarget(TypeElement beanElement) {
     Objects.requireNonNull(beanElement, "beanElement must not be null");
-    if (JavaLangAnalyser.findAnnotation(beanElement, Ignore4BuilderGeneration.class).isPresent()) {
+    if (JavaLangAnalyser.findAnnotation(beanElement, IgnoreForBuilderGeneration.class).isPresent()) {
       return false;
     }
     for (AnnotationMirror mirror : elementUtils.getAllAnnotationMirrors(beanElement)) {
