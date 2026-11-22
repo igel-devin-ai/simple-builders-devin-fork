@@ -70,6 +70,7 @@ import org.jboss.forge.roaster.model.source.FieldSource;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
+import org.jboss.forge.roaster.model.source.MethodHolderSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
 import org.jboss.forge.roaster.model.source.ParameterSource;
 import org.jboss.forge.roaster.model.source.TypeVariableSource;
@@ -242,9 +243,19 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
 
   private void appendField(
       JavaClassSource source, ClassFieldDto fieldDto, Set<String> collidingSimpleNames) {
-    FieldSource<JavaClassSource> field = source.addField();
-    field.setName(fieldDto.getFieldName());
-    field.setType(mapType(fieldDto.getFieldType(), collidingSimpleNames));
+    String typeSource = mapType(fieldDto.getFieldType(), collidingSimpleNames);
+    FieldSource<JavaClassSource> field;
+    if (typeSource.contains("@")) {
+      // Declaration form is needed for type-use annotations, but keeps qualified names literal
+      // (no normalization against imports).
+      field = source.addField(typeSource + " " + fieldDto.getFieldName() + ";");
+    } else {
+      // setType normalizes fully qualified names against imports, so a colliding type that is
+      // imported renders by simple name while only the non-imported one stays qualified.
+      field = source.addField();
+      field.setName(fieldDto.getFieldName());
+      field.setType(typeSource);
+    }
     applyVisibility(field, fieldDto.getVisibility());
     applyLiteralInitializer(field, fieldDto.getLiteralInitializer());
     applyJavadoc(field, fieldDto.getJavadoc(), collidingSimpleNames);
@@ -334,7 +345,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       boolean nestedTypeMethod,
       boolean interfaceMethod,
       Set<String> collidingSimpleNames) {
-    MethodSource<JavaClassSource> method = source.addMethod();
+    MethodSource<?> method = createMethod(source, methodDto, collidingSimpleNames);
     configureMethod(method, methodDto, nestedTypeMethod, interfaceMethod, collidingSimpleNames);
     applyCodeBlock(method, methodDto.getMethodCodeDto(), collidingSimpleNames);
   }
@@ -376,7 +387,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       Set<String> collidingSimpleNames) {
     org.jboss.forge.roaster.model.source.MethodHolderSource<?> methodHolder =
         (org.jboss.forge.roaster.model.source.MethodHolderSource<?>) source;
-    MethodSource<?> method = methodHolder.addMethod();
+    MethodSource<?> method = createMethod(methodHolder, methodDto, collidingSimpleNames);
     configureMethod(method, methodDto, true, isInterface, collidingSimpleNames);
     if (methodDto.getMethodCodeDto() != null
         && StringUtils.isNotBlank(methodDto.getMethodCodeDto().getCodeFormat())) {
@@ -537,19 +548,34 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     }
   }
 
+  private MethodSource<?> createMethod(
+      MethodHolderSource<?> source, MethodDto methodDto, Set<String> collidingSimpleNames) {
+    String returnTypeSource =
+        methodDto.getReturnType() == null
+            ? "void"
+            : mapType(methodDto.getReturnType(), collidingSimpleNames);
+    if (returnTypeSource.contains("@")) {
+      // Signature form is needed for type-use annotations, but keeps qualified names literal
+      // (no normalization against imports).
+      return source.addMethod(returnTypeSource + " " + methodDto.getMethodName() + "();");
+    }
+    // setReturnType normalizes qualified names against imports, like the field path.
+    MethodSource<?> method = source.addMethod();
+    if (methodDto.getReturnType() == null) {
+      method.setReturnTypeVoid();
+    } else {
+      method.setReturnType(returnTypeSource);
+    }
+    method.setName(methodDto.getMethodName());
+    return method;
+  }
+
   private void configureMethod(
       MethodSource<?> method,
       MethodDto methodDto,
       boolean nestedTypeMethod,
       boolean interfaceMethod,
       Set<String> collidingSimpleNames) {
-    method.setName(methodDto.getMethodName());
-    if (methodDto.getReturnType() == null) {
-      method.setReturnTypeVoid();
-    } else {
-      method.setReturnType(mapType(methodDto.getReturnType(), collidingSimpleNames));
-    }
-
     if (nestedTypeMethod) {
       boolean hasBody =
           interfaceMethod

@@ -44,6 +44,16 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  * way.
  */
 public class TypeNameGeneric extends TypeName {
+  /**
+   * Checks whether any immediate type argument is a wildcard, rather than a writable element type.
+   *
+   * @return true if an immediate argument is a wildcard
+   */
+  @Override
+  public boolean hasWildcardArguments() {
+    return innerTypeArguments.stream().anyMatch(TypeNameWildcard.class::isInstance);
+  }
+
   private final List<TypeName> innerTypeArguments;
 
   /** The raw (outer) type before generic parameterization; preserves nested-type structure. */

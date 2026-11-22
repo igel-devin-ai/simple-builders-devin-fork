@@ -92,6 +92,12 @@ public class FieldInstanceConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    // The helper instantiates the field type with `new`; `new Foo<? extends X>()` is not
+    // legal Java, so no consumer is generated for wildcard-parameterized fields.
+    if (field.getFieldType().hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateFieldConsumer()) {
       return false;
     }

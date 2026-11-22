@@ -48,4 +48,4 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
-public @interface Ignore4BuilderGeneration {}
+public @interface IgnoreForBuilderGeneration {}

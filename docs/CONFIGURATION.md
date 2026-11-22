@@ -156,19 +156,19 @@ public class ChildDto extends ParentDto { ... }
 
 ## Excluding Types from Builder Generation
 
-You can opt a whole DTO out of builder generation with `@Ignore4BuilderGeneration`. This is useful when a class inherits `@SimpleBuilder` (which is itself `@Inherited`) or an `@SimpleBuilder.Template`-based annotation from a parent and you do not want a builder for that specific subclass.
+You can opt a whole DTO out of builder generation with `@IgnoreForBuilderGeneration`. This is useful when a class inherits `@SimpleBuilder` (which is itself `@Inherited`) or an `@SimpleBuilder.Template`-based annotation from a parent and you do not want a builder for that specific subclass.
 
 ```java
-import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
 
-@Ignore4BuilderGeneration
+@IgnoreForBuilderGeneration
 public class IgnoredDto extends ParentDto {
     // No builder will be generated for IgnoredDto, even if ParentDto carries
     // @SimpleBuilder or an @Inherited template annotation.
 }
 ```
 
-A type marked with `@Ignore4BuilderGeneration` is treated as having **no builder available**. Other builders that reference it will fall back to plain setters instead of emitting nested-builder consumers. The annotation is intentionally **not** `@Inherited`, so it only suppresses the exact type it is placed on and does not cascade to further subclasses.
+A type marked with `@IgnoreForBuilderGeneration` is treated as having **no builder available**. Other builders that reference it will fall back to plain setters instead of emitting nested-builder consumers. The annotation is intentionally **not** `@Inherited`, so it only suppresses the exact type it is placed on and does not cascade to further subclasses.
 
 ## Generating Builders for External Types
 
@@ -200,7 +200,7 @@ public class ExternalBuildersProvider {
 
 Interfaces, abstract classes, enums and annotation types are skipped (a debug log lists each skip), and package scanning only sees *top-level* types - nested types keep requiring an explicit `value` entry. Only packages visible to the compilation can be resolved: an unresolvable package name produces a warning and is skipped. Types a package contributes are ordered by qualified name, so the generated set is deterministic.
 
-The target type must be constructible through accessible Java APIs from the builder's package: it needs a visible type and an accessible constructor, otherwise generation fails with a compile-time diagnostic. The target type's own annotations are not consulted - the explicit declaration wins, so `@Ignore4BuilderGeneration` on the target does not suppress generation either. `@SimpleBuilderFor` is not `@Inherited`, and the provider class or package itself never gets a builder.
+The target type must be constructible through accessible Java APIs from the builder's package: it needs a visible type and an accessible constructor, otherwise generation fails with a compile-time diagnostic. The target type's own annotations are not consulted - the explicit declaration wins, so `@IgnoreForBuilderGeneration` on the target does not suppress generation either. `@SimpleBuilderFor` is not `@Inherited`, and the provider class or package itself never gets a builder.
 
 `@SimpleBuilderFor` is `@Repeatable`: several declarations may be placed on the same holder or `package-info.java` when the listed types need different options - for example a different `packageName` per declaration:
 
@@ -757,7 +757,7 @@ current compilation, so references to their builders do not require a type searc
 This option is an allowlist for whole packages: once set, builders are generated only inside
 the listed packages and every other package is excluded implicitly. Excluding a single
 package while generating everywhere else is not expressible; to exclude a single class,
-use `@Ignore4BuilderGeneration` instead. The scope also applies to types that carry
+use `@IgnoreForBuilderGeneration` instead. The scope also applies to types that carry
 `@SimpleBuilder` only through inheritance or a template annotation.
 
 #### `builderUsagePackages`

@@ -78,16 +78,17 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
  *
  * <p>This annotation is {@link Inherited}: a subclass of an annotated type is treated as if it also
  * carried {@code @SimpleBuilder} for the purpose of triggering builder generation, unless it is
- * explicitly excluded via {@link Ignore4BuilderGeneration}. The {@link Template} meta-annotation is
- * {@link Inherited} as well, so custom template annotations that are themselves {@code @Inherited}
- * propagate to subclasses in the same way. Configuration options declared on the parent's
- * {@code @SimpleBuilder(options = ...)} or template are also inherited by subclass builders.
+ * explicitly excluded via {@link IgnoreForBuilderGeneration}. The {@link Template} meta-annotation
+ * is {@link Inherited} as well, so custom template annotations that are themselves
+ * {@code @Inherited} propagate to subclasses in the same way. Configuration options declared on the
+ * parent's {@code @SimpleBuilder(options = ...)} or template are also inherited by subclass
+ * builders.
  *
  * <p>Related annotations:
  *
  * <ul>
  *   <li>{@link IgnoreInBuilder} - exclude individual setters/constructors from builder generation
- *   <li>{@link Ignore4BuilderGeneration} - exclude a class/record from builder generation, even
+ *   <li>{@link IgnoreForBuilderGeneration} - exclude a class/record from builder generation, even
  *       when an inherited {@code @SimpleBuilder} or {@code @SimpleBuilder.Template} would otherwise
  *       trigger it
  * </ul>
@@ -95,7 +96,7 @@ import org.javahelpers.simple.builders.core.enums.OptionState;
  * @see Options
  * @see Template
  * @see IgnoreInBuilder
- * @see Ignore4BuilderGeneration
+ * @see IgnoreForBuilderGeneration
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
@@ -733,7 +734,7 @@ public @interface SimpleBuilder {
      * precedence over the compiler option, so a type can include its own package even when the
      * global scope excludes it. Set on a {@link Template} annotation or a base class ({@code
      * SimpleBuilder} is {@code @Inherited}), it instead filters which inheriting types get a
-     * builder. To exclude a single type, prefer {@link Ignore4BuilderGeneration}.
+     * builder. To exclude a single type, prefer {@link IgnoreForBuilderGeneration}.
      *
      * <p>Example: {@code "com.example.dto, com.example.shared"}
      *
@@ -979,12 +980,12 @@ public @interface SimpleBuilder {
    *
    * <ul>
    *   <li>{@link IgnoreInBuilder} - exclude individual setters/constructors from builder generation
-   *   <li>{@link Ignore4BuilderGeneration} - exclude a class/record from builder generation, even
+   *   <li>{@link IgnoreForBuilderGeneration} - exclude a class/record from builder generation, even
    *       when this template is inherited from a parent type
    * </ul>
    *
    * @see IgnoreInBuilder
-   * @see Ignore4BuilderGeneration
+   * @see IgnoreForBuilderGeneration
    */
   @Retention(RetentionPolicy.CLASS)
   @Target(ElementType.ANNOTATION_TYPE)
