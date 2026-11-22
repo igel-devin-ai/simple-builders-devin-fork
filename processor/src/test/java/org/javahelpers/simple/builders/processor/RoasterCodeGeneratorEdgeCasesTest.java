@@ -398,16 +398,20 @@ class RoasterCodeGeneratorEdgeCasesTest {
     assertContaining(
         generatedCode,
         """
+        /**
+         * Tracked value for <code>sqlDateTestField</code>: sqlDateTestField.
+         */
+        private TrackedValue<java.sql.Date> sqlDateTestField = unsetValue();
+        /**
+         * Tracked value for <code>utilDateTestField</code>: utilDateTestField.
+         */
         private TrackedValue<java.util.Date> utilDateTestField = unsetValue();
         """,
         """
-        private TrackedValue<java.sql.Date> sqlDateTestField = unsetValue();
+        public DateDtoBuilder sqlDateTestField(java.sql.Date sqlDateTestField) {
         """,
         """
         public DateDtoBuilder utilDateTestField(java.util.Date utilDateTestField) {
-        """,
-        """
-        public DateDtoBuilder sqlDateTestField(java.sql.Date sqlDateTestField) {
         """);
   }
 }

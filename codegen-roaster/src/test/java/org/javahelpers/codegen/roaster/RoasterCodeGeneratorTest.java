@@ -292,9 +292,11 @@ class RoasterCodeGeneratorTest {
     assertGeneratedSource(
         """
         package test;
+        import org.a.Nullable;
         public class AmbiguousBuilder {
-          private @org.b.Nullable String value;
-          @org.a.Nullable
+          @org.b.Nullable
+          private String value;
+          @Nullable
           public String x() {
             return null;
           }
