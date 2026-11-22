@@ -31,7 +31,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,8 +54,13 @@ import org.javahelpers.codegen.model.core.ClassFieldDto;
 import org.javahelpers.codegen.model.core.ClassFieldDtoBuilder;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDtoBuilder;
+import org.javahelpers.codegen.model.imports.StaticImport;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
+import org.javahelpers.codegen.model.javadoc.JavadocTagDto;
 import org.javahelpers.codegen.model.method.ConstructorDtoBuilder;
+import org.javahelpers.codegen.model.method.MethodCodeDtoBuilder;
+import org.javahelpers.codegen.model.method.MethodCodeStringPlaceholder;
+import org.javahelpers.codegen.model.method.MethodCodeTypePlaceholder;
 import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.method.MethodDtoBuilder;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
@@ -111,24 +119,27 @@ public class GeneratorConformanceTest {
   @MethodSource("backends")
   void simpleClassWithFieldsMethodsAndConstructor_compiles(TestBackendProvider backend)
       throws Exception {
-    GenerationTargetClassDto classDef = baseClass("SimpleClass");
-
-    addField(classDef, "name", TypeName.of(String.class));
-    addField(classDef, "age", TypeNamePrimitive.INT);
-    addField(classDef, "active", TypeNamePrimitive.BOOLEAN);
-
-    var ctor = ConstructorDtoBuilder.create().visibility(AccessModifier.PUBLIC).build();
-    ctor.getMethodCodeDto().setCodeFormat("this.name = name;");
-    ctor.addParameter(param("name", TypeName.of(String.class)));
-    classDef.addConstructor(ctor);
-
-    classDef.addMethod(
-        MethodDtoBuilder.create()
-            .methodName("describe")
-            .returnType(TypeName.of(String.class))
-            .modifier(AccessModifier.PUBLIC)
-            .code("return name + \"#\" + age;")
-            .build());
+    GenerationTargetClassDto classDef =
+        baseClass("SimpleClass")
+            .classFields(
+                field("name", TypeName.of(String.class)),
+                field("age", TypeNamePrimitive.INT),
+                field("active", TypeNamePrimitive.BOOLEAN))
+            .constructors(
+                ConstructorDtoBuilder.create()
+                    .visibility(AccessModifier.PUBLIC)
+                    .methodCodeDto(
+                        MethodCodeDtoBuilder.create().codeFormat("this.name = name;").build())
+                    .parameters(param("name", TypeName.of(String.class)))
+                    .build())
+            .methods(
+                MethodDtoBuilder.create()
+                    .methodName("describe")
+                    .returnType(TypeName.of(String.class))
+                    .modifier(AccessModifier.PUBLIC)
+                    .code("return name + \"#\" + age;")
+                    .build())
+            .build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -152,11 +163,12 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void genericClassAndMethodBounds_compile(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("GenericBox");
-    var generic = GenericParameterDtoBuilder.create().name("T").build();
-    generic.addUpperBound(
-        new TypeNameGeneric(TypeName.of(Comparable.class), new TypeNameVariable("T")));
-    classDef.addGeneric(generic);
+    var generic =
+        GenericParameterDtoBuilder.create()
+            .name("T")
+            .upperBounds(
+                new TypeNameGeneric(TypeName.of(Comparable.class), new TypeNameVariable("T")))
+            .build();
 
     MethodDto method =
         MethodDtoBuilder.create()
@@ -165,13 +177,17 @@ public class GeneratorConformanceTest {
             .modifier(AccessModifier.PUBLIC)
             .isStatic(true)
             .code("return first;")
+            .genericParameters(
+                GenericParameterDtoBuilder.create()
+                    .name("R")
+                    .upperBounds(TypeName.of(Number.class))
+                    .build())
+            .parameters(
+                param("first", new TypeNameVariable("R")),
+                param("second", new TypeNameVariable("R")))
             .build();
-    var methodGeneric = GenericParameterDtoBuilder.create().name("R").build();
-    methodGeneric.addUpperBound(TypeName.of(Number.class));
-    method.addGenericParameter(methodGeneric);
-    method.addParameter(param("first", new TypeNameVariable("R")));
-    method.addParameter(param("second", new TypeNameVariable("R")));
-    classDef.addMethod(method);
+    GenerationTargetClassDto classDef =
+        baseClass("GenericBox").generics(generic).methods(method).build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -189,18 +205,19 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void collectionArrayAndOptionalTypes_compile(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("ContainerClass");
-
-    addField(classDef, "names", new TypeNameGeneric(List.class, String.class));
-    addField(
-        classDef,
-        "scores",
-        new TypeNameGeneric(
-            TypeName.of(java.util.Map.class),
-            TypeName.of(String.class),
-            TypeName.of(Integer.class)));
-    addField(classDef, "numbers", new TypeNameArray(TypeNamePrimitive.INT));
-    addField(classDef, "nickname", new TypeNameGeneric(java.util.Optional.class, String.class));
+    GenerationTargetClassDto classDef =
+        baseClass("ContainerClass")
+            .classFields(
+                field("names", new TypeNameGeneric(List.class, String.class)),
+                field(
+                    "scores",
+                    new TypeNameGeneric(
+                        TypeName.of(java.util.Map.class),
+                        TypeName.of(String.class),
+                        TypeName.of(Integer.class))),
+                field("numbers", new TypeNameArray(TypeNamePrimitive.INT)),
+                field("nickname", new TypeNameGeneric(java.util.Optional.class, String.class)))
+            .build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -221,20 +238,21 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void collidingSimpleNames_areDisambiguated(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("CollidingDates");
-
-    addField(classDef, "utilDate", new TypeName("java.util", "Date"));
-    addField(classDef, "sqlDate", new TypeName("java.sql", "Date"));
-
     MethodDto method =
         MethodDtoBuilder.create()
             .methodName("touch")
             .returnType(TypeNamePrimitive.VOID)
             .modifier(AccessModifier.PUBLIC)
             .code("if (when == null) { return; }")
+            .parameters(param("when", new TypeName("java.sql", "Date")))
             .build();
-    method.addParameter(param("when", new TypeName("java.sql", "Date")));
-    classDef.addMethod(method);
+    GenerationTargetClassDto classDef =
+        baseClass("CollidingDates")
+            .classFields(
+                field("utilDate", new TypeName("java.util", "Date")),
+                field("sqlDate", new TypeName("java.sql", "Date")))
+            .methods(method)
+            .build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -254,22 +272,20 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void nestedTypesWithMembers_compile(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("OuterClass");
-
     NestedTypeDto nested =
         NestedTypeDtoBuilder.create()
             .typeName("Helper")
             .kind(NestedTypeDto.NestedTypeKind.CLASS)
             .visibility(AccessModifier.PUBLIC)
+            .methods(
+                MethodDtoBuilder.create()
+                    .methodName("assist")
+                    .returnType(TypeNamePrimitive.VOID)
+                    .modifier(AccessModifier.PUBLIC)
+                    .code("int touched = 0;")
+                    .build())
             .build();
-    nested.addMethod(
-        MethodDtoBuilder.create()
-            .methodName("assist")
-            .returnType(TypeNamePrimitive.VOID)
-            .modifier(AccessModifier.PUBLIC)
-            .code("int touched = 0;")
-            .build());
-    classDef.addNestedType(nested);
+    GenerationTargetClassDto classDef = baseClass("OuterClass").nestedTypes(nested).build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -287,29 +303,36 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void annotationsOnClassMembersAndTypeUse_compile(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("AnnotatedClass");
-
     AnnotationDto deprecated =
-        AnnotationDtoBuilder.create().annotationType(TypeName.of(Deprecated.class)).build();
-    deprecated.addMember("since", "\"0.9\"");
-    deprecated.addMember("forRemoval", "true");
-    classDef.addClassAnnotation(deprecated);
+        AnnotationDtoBuilder.create()
+            .annotationType(TypeName.of(Deprecated.class))
+            .members(
+                () ->
+                    Stream.of(Map.entry("since", "\"0.9\""), Map.entry("forRemoval", "true"))
+                        .collect(
+                            Collectors.toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (first, second) -> first,
+                                LinkedHashMap::new)))
+            .build();
 
     AnnotationDto generated =
         AnnotationDtoBuilder.create()
             .annotationType(new TypeName("javax.annotation.processing", "Generated"))
+            .members(Map.of("value", "\"conformance\""))
             .build();
-    generated.addMember("value", "\"conformance\"");
-    classDef.addClassAnnotation(generated);
 
     TypeName annotatedString = TypeName.of(String.class);
-    annotatedString
-        .getAnnotations()
-        .add(
-            AnnotationDtoBuilder.create()
-                .annotationType(TypeName.of(TestTypeUseAnnotation.class))
-                .build());
-    addField(classDef, "flagged", annotatedString);
+    annotatedString.addAnnotation(
+        AnnotationDtoBuilder.create()
+            .annotationType(TypeName.of(TestTypeUseAnnotation.class))
+            .build());
+    GenerationTargetClassDto classDef =
+        baseClass("AnnotatedClass")
+            .classAnnotations(new LinkedHashSet<>(List.of(deprecated, generated)))
+            .classFields(field("flagged", annotatedString))
+            .build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -328,22 +351,22 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void codeTemplatePlaceholders_resolve(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("TemplateClass");
-
     MethodDto method =
         MethodDtoBuilder.create()
             .methodName("parse")
             .returnType(TypeNamePrimitive.LONG)
             .modifier(AccessModifier.PUBLIC)
+            .methodCodeDto(
+                MethodCodeDtoBuilder.create()
+                    .codeFormat("int $l:L = 0;\n$b:B box = null;\nreturn $t:T.parseLong($s:S);")
+                    .codeArguments(
+                        new MethodCodeStringPlaceholder("l", "count"),
+                        new MethodCodeTypePlaceholder("b", TypeNamePrimitive.INT),
+                        new MethodCodeTypePlaceholder("t", TypeName.of(Long.class)),
+                        new MethodCodeStringPlaceholder("s", "42"))
+                    .build())
             .build();
-    method
-        .getMethodCodeDto()
-        .setCodeFormat("int $l:L = 0;\n$b:B box = null;\nreturn $t:T.parseLong($s:S);");
-    method.getMethodCodeDto().addArgument("l", "count");
-    method.getMethodCodeDto().addArgument("b", TypeNamePrimitive.INT);
-    method.getMethodCodeDto().addArgument("t", TypeName.of(Long.class));
-    method.getMethodCodeDto().addArgument("s", "42");
-    classDef.addMethod(method);
+    GenerationTargetClassDto classDef = baseClass("TemplateClass").methods(method).build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -361,10 +384,15 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void superTypeAndInterfaces_compile(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("DerivedClass");
-    classDef.setSuperType(new TypeNameGeneric(java.util.ArrayList.class, String.class));
-    classDef.addInterface(new InterfaceName("java.io", "Serializable"));
-    classDef.addInterface(new InterfaceName("java.lang", "Cloneable"));
+    GenerationTargetClassDto classDef =
+        baseClass("DerivedClass")
+            .superType(new TypeNameGeneric(java.util.ArrayList.class, String.class))
+            .interfaces(
+                new LinkedHashSet<>(
+                    List.of(
+                        new InterfaceName("java.io", "Serializable"),
+                        new InterfaceName("java.lang", "Cloneable"))))
+            .build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -379,9 +407,6 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void staticImportsAndStaticFactory_compile(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("FactoryClass");
-    classDef.addStaticImport(java.util.Collections.class, "emptyList");
-
     ClassFieldDto field =
         ClassFieldDtoBuilder.create()
             .fieldName("initial")
@@ -389,7 +414,6 @@ public class GeneratorConformanceTest {
             .visibility(AccessModifier.PRIVATE)
             .literalInitializer("emptyList()")
             .build();
-    classDef.addClassField(field);
 
     MethodDto factory =
         MethodDtoBuilder.create()
@@ -398,9 +422,14 @@ public class GeneratorConformanceTest {
             .modifier(AccessModifier.PUBLIC)
             .isStatic(true)
             .code("return names.length;")
+            .parameters(param("names", new TypeNameArray(TypeName.of(String.class))))
             .build();
-    factory.addParameter(param("names", new TypeNameArray(TypeName.of(String.class))));
-    classDef.addMethod(factory);
+    GenerationTargetClassDto classDef =
+        baseClass("FactoryClass")
+            .imports(new StaticImport(TypeName.of(java.util.Collections.class), "emptyList"))
+            .classFields(field)
+            .methods(factory)
+            .build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -422,13 +451,14 @@ public class GeneratorConformanceTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("backends")
   void javadocIsEmittedForClassAndMembers(TestBackendProvider backend) throws Exception {
-    GenerationTargetClassDto classDef = baseClass("DocumentedClass");
-    classDef.setClassJavadoc(
-        JavadocDtoBuilder.create().format("Documented conformance class.").args().build());
-
-    var javadoc = JavadocDtoBuilder.create().format("Echoes the value.").args().build();
-    javadoc.addParam("value", "the input");
-    javadoc.addReturn("the echoed value");
+    var javadoc =
+        JavadocDtoBuilder.create()
+            .format("Echoes the value.")
+            .args()
+            .tags(
+                new JavadocTagDto("param", "value the input"),
+                new JavadocTagDto("return", "the echoed value"))
+            .build();
     MethodDto method =
         MethodDtoBuilder.create()
             .methodName("echo")
@@ -436,9 +466,14 @@ public class GeneratorConformanceTest {
             .modifier(AccessModifier.PUBLIC)
             .javadoc(javadoc)
             .code("return value;")
+            .parameters(param("value", TypeName.of(String.class)))
             .build();
-    method.addParameter(param("value", TypeName.of(String.class)));
-    classDef.addMethod(method);
+    GenerationTargetClassDto classDef =
+        baseClass("DocumentedClass")
+            .classJavadoc(
+                JavadocDtoBuilder.create().format("Documented conformance class.").args().build())
+            .methods(method)
+            .build();
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
@@ -514,21 +549,19 @@ public class GeneratorConformanceTest {
     }
   }
 
-  private static GenerationTargetClassDto baseClass(String simpleName) {
+  private static GenerationTargetClassDtoBuilder baseClass(String simpleName) {
     return GenerationTargetClassDtoBuilder.create()
         .typeName(new TypeName(PACKAGE, simpleName))
         .classAccessModifier(AccessModifier.PUBLIC)
-        .formattingMode(FormattingMode.NONE)
-        .build();
+        .formattingMode(FormattingMode.NONE);
   }
 
-  private static void addField(GenerationTargetClassDto classDef, String name, TypeName type) {
-    classDef.addClassField(
-        ClassFieldDtoBuilder.create()
-            .fieldName(name)
-            .fieldType(type)
-            .visibility(AccessModifier.PRIVATE)
-            .build());
+  private static ClassFieldDto field(String name, TypeName type) {
+    return ClassFieldDtoBuilder.create()
+        .fieldName(name)
+        .fieldType(type)
+        .visibility(AccessModifier.PRIVATE)
+        .build();
   }
 
   private static MethodParameterDto param(String name, TypeName type) {
