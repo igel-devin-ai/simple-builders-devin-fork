@@ -77,7 +77,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * {@link TestBackendProvider} on its test classpath (see {@link TestBackendProvider} for the
  * contract). Every test in this class then runs once per discovered backend, with the provider's
  * {@link TestBackendProvider#name() name} in the test display name — so a failure always identifies
- * the failing generator. New backends (issue #366) gain identical coverage without writing or
+ * the failing generator. New backends (issue #364) gain identical coverage without writing or
  * copying any test.
  *
  * <p>Each fixture is asserted on two levels:
@@ -85,8 +85,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * <ul>
  *   <li><b>Compilability</b> — the emitted source is fed through {@code javac} and must compile
  *       without errors
- *   <li><b>Semantic content</b> — backend-independent fragments (declaration kinds, member names,
- *       disambiguated type references), not exact formatting
+ *   <li><b>Semantic content</b> — exact declarations and blocks, ignoring whitespace
  * </ul>
  *
  * <p>Backend modules must configure surefire's {@code dependenciesToScan} to include {@code
@@ -104,7 +103,8 @@ public class GeneratorConformanceTest {
    */
   static Stream<Arguments> backends() {
     return ServiceLoader.load(TestBackendProvider.class).stream()
-        .map(provider -> Arguments.of(Named.of(provider.get().name(), provider.get())));
+        .map(ServiceLoader.Provider::get)
+        .map(provider -> Arguments.of(Named.of(provider.name(), provider)));
   }
 
   @ParameterizedTest(name = "{0}")
@@ -133,7 +133,20 @@ public class GeneratorConformanceTest {
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
     assertContaining(
-        source, "public class SimpleClass", "String describe(", "SimpleClass(String name)");
+        source,
+        """
+        public class SimpleClass {
+          private String name;
+          private int age;
+          private boolean active;
+          public SimpleClass(String name) {
+            this.name = name;
+          }
+          public String describe() {
+            return name + "#" + age;
+          }
+        }
+        """);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -162,7 +175,15 @@ public class GeneratorConformanceTest {
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
-    assertContaining(source, "class GenericBox<T extends Comparable<T>>", "<R extends Number>");
+    assertContaining(
+        source,
+        """
+        public class GenericBox<T extends Comparable<T>> {
+          public static <R extends Number> R pick(R first, R second) {
+            return first;
+          }
+        }
+        """);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -184,7 +205,13 @@ public class GeneratorConformanceTest {
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
     assertContaining(
-        source, "List<String> names", "Map<String, Integer> scores", "Optional<String> nickname");
+        source,
+        """
+        private List<String> names;
+        private Map<String, Integer> scores;
+        private int[] numbers;
+        private Optional<String> nickname;
+        """);
   }
 
   /**
@@ -210,10 +237,18 @@ public class GeneratorConformanceTest {
     classDef.addMethod(method);
 
     String source = generate(backend, classDef);
-    assertTrue(
-        source.contains("java.util.Date") || source.contains("java.sql.Date"),
-        () -> "colliding Date types must be qualified in the generated source, was:\n" + source);
     assertCompiles(classDef, source);
+    assertContaining(
+        source,
+        """
+        private java.util.Date utilDate;
+        private java.sql.Date sqlDate;
+        public void touch(java.sql.Date when) {
+          if (when == null) {
+            return;
+          }
+        }
+        """);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -238,7 +273,15 @@ public class GeneratorConformanceTest {
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
-    assertContaining(source, "class Helper", "void assist(");
+    assertContaining(
+        source,
+        """
+        public class Helper {
+          public void assist() {
+            int touched = 0;
+          }
+        }
+        """);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -270,7 +313,16 @@ public class GeneratorConformanceTest {
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
-    assertContaining(source, "@Deprecated", "@Generated", "TestTypeUseAnnotation");
+    assertContaining(
+        source,
+        """
+        @Deprecated(since = "0.9", forRemoval = true)
+        @Generated("conformance")
+        public class AnnotatedClass {
+          @TestTypeUseAnnotation
+          private String flagged;
+        }
+        """);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -295,7 +347,15 @@ public class GeneratorConformanceTest {
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
-    assertContaining(source, "int count = 0", "Integer box", "Long.parseLong(\"42\")");
+    assertContaining(
+        source,
+        """
+        public long parse() {
+          int count = 0;
+          Integer box = null;
+          return Long.parseLong("42");
+        }
+        """);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -308,7 +368,12 @@ public class GeneratorConformanceTest {
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
-    assertContaining(source, "extends ArrayList<String>", "implements Serializable, Cloneable");
+    assertContaining(
+        source,
+        """
+        public class DerivedClass extends ArrayList<String> implements Serializable, Cloneable {
+        }
+        """);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -339,11 +404,19 @@ public class GeneratorConformanceTest {
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
-    // array types in parameter position may render as "String[]" or normalized "String..."
-    assertTrue(
-        source.contains("String[] names") || source.contains("String... names"),
-        () -> "array parameter must be rendered as array or varargs, was:\n" + source);
-    assertContaining(source, "import static");
+    assertContaining(
+        source,
+        """
+        import static java.util.Collections.emptyList;
+        """,
+        """
+        private List<String> initial = emptyList();
+        """,
+        """
+        public static int of(String... names) {
+          return names.length;
+        }
+        """);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -368,7 +441,24 @@ public class GeneratorConformanceTest {
     classDef.addMethod(method);
 
     String source = generate(backend, classDef);
-    assertContaining(source, "Documented conformance class.", "@param", "@return");
+    assertCompiles(classDef, source);
+    assertContaining(
+        source,
+        """
+        /**
+         * Documented conformance class.
+         */
+        public class DocumentedClass {
+          /**
+           * Echoes the value.
+           * @param value the input
+           * @return the echoed value
+           */
+          public String echo(String value) {
+            return value;
+          }
+        }
+        """);
   }
 
   /** Generates {@code classDef} through {@code provider}'s backend and returns the source text. */

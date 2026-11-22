@@ -42,7 +42,8 @@ public class RoasterTestBackendProvider implements TestBackendProvider {
 
   @Override
   public CodegenBackend create(GenerationEnvironment environment, ProcessingLogger logger) {
-    return new RoasterBackend(environment, logger, null);
+    return new RoasterBackend(
+        environment, logger, RoasterSourceFormatter.DEFAULT_FORMATTER_PROFILE_RESOURCE);
   }
 
   @Override

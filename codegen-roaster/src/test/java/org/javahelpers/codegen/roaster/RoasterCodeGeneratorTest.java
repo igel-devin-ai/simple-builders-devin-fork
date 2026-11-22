@@ -245,7 +245,7 @@ class RoasterCodeGeneratorTest {
         import java.sql.Date;
         public class DateBuilder {
           private java.util.Date utilDate;
-          private Date sqlDate;
+          private java.sql.Date sqlDate;
         }""",
         classDef);
   }

@@ -33,7 +33,7 @@ import org.javahelpers.codegen.logging.ProcessingLogger;
  * generator conformance suite.
  *
  * <p>Every backend module (Roaster today; JavaPoet or the built-in lightweight generator planned in
- * issue #366) registers exactly one implementation in its test sources:
+ * issue #364) registers exactly one implementation in its test sources:
  *
  * <ul>
  *   <li>a provider class implementing this interface
