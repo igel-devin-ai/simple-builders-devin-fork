@@ -156,8 +156,6 @@ public class ChildDto extends ParentDto { ... }
 
 ## Excluding Types from Builder Generation
 
-**Breaking change:** `@Ignore4BuilderGeneration` has been removed. Replace the import `org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration` with `org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration` and replace `@Ignore4BuilderGeneration` with `@IgnoreForBuilderGeneration`.
-
 You can opt a whole DTO out of builder generation with `@IgnoreForBuilderGeneration`. This is useful when a class inherits `@SimpleBuilder` (which is itself `@Inherited`) or an `@SimpleBuilder.Template`-based annotation from a parent and you do not want a builder for that specific subclass.
 
 ```java
