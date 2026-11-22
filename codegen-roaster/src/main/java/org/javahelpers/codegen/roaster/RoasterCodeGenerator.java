@@ -71,6 +71,7 @@ import org.jboss.forge.roaster.model.source.FieldSource;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
+import org.jboss.forge.roaster.model.source.MethodHolderSource;
 import org.jboss.forge.roaster.model.source.MethodSource;
 import org.jboss.forge.roaster.model.source.ParameterSource;
 import org.jboss.forge.roaster.model.source.TypeVariableSource;
@@ -233,9 +234,8 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
   }
 
   private void appendField(JavaClassSource source, ClassFieldDto fieldDto) {
-    FieldSource<JavaClassSource> field = source.addField();
-    field.setName(fieldDto.getFieldName());
-    field.setType(mapType(fieldDto.getFieldType()));
+    FieldSource<JavaClassSource> field =
+        source.addField(mapType(fieldDto.getFieldType()) + " " + fieldDto.getFieldName() + ";");
     applyVisibility(field, fieldDto.getVisibility());
     applyLiteralInitializer(field, fieldDto.getLiteralInitializer());
     applyJavadoc(field, fieldDto.getJavadoc());
@@ -320,7 +320,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       MethodDto methodDto,
       boolean nestedTypeMethod,
       boolean interfaceMethod) {
-    MethodSource<JavaClassSource> method = source.addMethod();
+    MethodSource<?> method = createMethod(source, methodDto);
     configureMethod(method, methodDto, nestedTypeMethod, interfaceMethod);
     applyCodeBlock(method, methodDto.getMethodCodeDto());
   }
@@ -356,7 +356,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
   private void appendNestedMethod(JavaSource<?> source, MethodDto methodDto, boolean isInterface) {
     org.jboss.forge.roaster.model.source.MethodHolderSource<?> methodHolder =
         (org.jboss.forge.roaster.model.source.MethodHolderSource<?>) source;
-    MethodSource<?> method = methodHolder.addMethod();
+    MethodSource<?> method = createMethod(methodHolder, methodDto);
     configureMethod(method, methodDto, true, isInterface);
     if (methodDto.getMethodCodeDto() != null
         && StringUtils.isNotBlank(methodDto.getMethodCodeDto().getCodeFormat())) {
@@ -507,18 +507,17 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     }
   }
 
+  private MethodSource<?> createMethod(MethodHolderSource<?> source, MethodDto methodDto) {
+    String returnType =
+        methodDto.getReturnType() == null ? "void" : mapType(methodDto.getReturnType());
+    return source.addMethod(returnType + " " + methodDto.getMethodName() + "();");
+  }
+
   private void configureMethod(
       MethodSource<?> method,
       MethodDto methodDto,
       boolean nestedTypeMethod,
       boolean interfaceMethod) {
-    method.setName(methodDto.getMethodName());
-    if (methodDto.getReturnType() == null) {
-      method.setReturnTypeVoid();
-    } else {
-      method.setReturnType(mapType(methodDto.getReturnType()));
-    }
-
     if (nestedTypeMethod) {
       boolean hasBody =
           interfaceMethod
