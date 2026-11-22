@@ -120,12 +120,12 @@ public final class RoasterMapper {
     // Nested generic types keep the fully qualified name: Roaster parses "pkg.Outer.Pair<T>" by
     // importing "pkg.Outer.Pair" and using "Pair<T>" in code. The raw type's FQN is used because
     // TypeNameGeneric.getFullQualifiedName() already includes the type arguments.
-    String baseName =
-        genericType.isNestedType()
-            ? genericType.getRawType().getFullQualifiedName()
-            : collidingSimpleNames.contains(genericType.getClassName())
-                ? genericType.getRawType().getFullQualifiedName()
-                : genericType.getClassName();
+    String baseName;
+    if (genericType.isNestedType() || collidingSimpleNames.contains(genericType.getClassName())) {
+      baseName = genericType.getRawType().getFullQualifiedName();
+    } else {
+      baseName = genericType.getClassName();
+    }
     if (genericType.getInnerTypeArguments().isEmpty()) {
       return baseName;
     }
