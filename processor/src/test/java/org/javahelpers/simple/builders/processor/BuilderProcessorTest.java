@@ -238,10 +238,9 @@ class BuilderProcessorTest {
         .hadWarningContaining("The target class for generating a builder should not be abstract");
   }
 
+  /** A DTO created through a hand-written builder has only a private constructor. */
   @Test
-  void shouldWarnAndGenerateNoBuilderWhenOnlyConstructorIsPrivate() {
-    // Given: a DTO that is exclusively created through a hand-written builder, so its only
-    // constructor is private
+  void shouldSkipDtoWithOnlyPrivateConstructor() {
     JavaFileObject source =
         ProcessorTestUtils.forSource(
             """
@@ -261,14 +260,17 @@ class BuilderProcessorTest {
 
     // Then: compilation succeeds, but no builder is generated
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningContaining("No accessible constructor");
+    assertThat(compilation)
+        .hadWarningContaining("No accessible constructor")
+        .inFile(source)
+        .onLine(4);
     assertNoBuilderGenerated(
         compilation, "PersonDto", "A type without accessible constructor must not get a builder");
   }
 
+  /** A singleton-style DTO has only a private no-arg constructor. */
   @Test
-  void shouldWarnAndGenerateNoBuilderWhenNoArgConstructorIsPrivate() {
-    // Given: a singleton-style DTO whose only constructor is a private no-arg constructor
+  void shouldSkipDtoWithPrivateNoArgConstructor() {
     JavaFileObject source =
         ProcessorTestUtils.forSource(
             """
@@ -289,16 +291,19 @@ class BuilderProcessorTest {
 
     // Then: compilation succeeds, but no builder is generated
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningContaining("No accessible constructor");
+    assertThat(compilation)
+        .hadWarningContaining("No accessible constructor")
+        .inFile(source)
+        .onLine(4);
     assertNoBuilderGenerated(
         compilation,
         "SingletonDto",
         "A type without accessible constructor must not get a builder");
   }
 
+  /** A public constructor remains usable alongside a private constructor. */
   @Test
-  void shouldGenerateBuilderWhenAccessibleConstructorExistsNextToPrivateOne() {
-    // Given: a DTO with a private constructor and an accessible public constructor
+  void shouldUsePublicConstructorAlongsidePrivateOne() {
     JavaFileObject source =
         ProcessorTestUtils.forSource(
             """
@@ -320,13 +325,16 @@ class BuilderProcessorTest {
     // Then: the builder is generated using the accessible constructor
     String generatedCode = loadGeneratedSource(compilation, "PersonDtoBuilder");
     assertGenerationSucceeded(compilation, "PersonDtoBuilder", generatedCode);
+    ProcessorAsserts.assertContaining(
+        generatedCode,
+        """
+        PersonDto result = new PersonDto();
+        """);
   }
 
+  /** A package-private constructor is unreachable from a builder in another package. */
   @Test
-  void
-      shouldWarnAndGenerateNoBuilderWhenPackagePrivateConstructorIsNotReachableFromGeneratedPackage() {
-    // Given: a DTO with a package-private constructor whose builder is generated into another
-    // package, so the constructor is not reachable from the generated code
+  void shouldSkipUnreachablePackagePrivateConstructor() {
     JavaFileObject source =
         ProcessorTestUtils.forSource(
             """
@@ -346,14 +354,17 @@ class BuilderProcessorTest {
 
     // Then: compilation succeeds, but no builder is generated
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningContaining("No accessible constructor");
+    assertThat(compilation)
+        .hadWarningContaining("No accessible constructor")
+        .inFile(source)
+        .onLine(4);
     assertNoBuilderGenerated(
         compilation, "WidgetDto", "A type without accessible constructor must not get a builder");
   }
 
+  /** Strict mode rejects a DTO without an accessible constructor. */
   @Test
-  void shouldFailInStrictModeWhenNoAccessibleConstructor() {
-    // Given: a DTO without an accessible constructor, compiled with strict mode enabled
+  void shouldRejectPrivateConstructorInStrictMode() {
     JavaFileObject source =
         ProcessorTestUtils.forSource(
             """
@@ -376,7 +387,10 @@ class BuilderProcessorTest {
 
     // Then: compilation fails with an error
     assertThat(compilation).failed();
-    assertThat(compilation).hadErrorContaining("No accessible constructor");
+    assertThat(compilation)
+        .hadErrorContaining("No accessible constructor")
+        .inFile(source)
+        .onLine(4);
   }
 
   @Test
