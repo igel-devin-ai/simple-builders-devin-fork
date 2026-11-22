@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -905,6 +906,58 @@ public final class JavaLangAnalyser {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * Finds the accessible setter that writes a property, first by JavaBeans name convention ({@code
+   * set<Cap(fieldName)>}), then by scanning all setters whose derived property name — after the
+   * getter-based fallback for names that are not legal identifiers — matches.
+   *
+   * @param dtoType the enclosing DTO type element
+   * @param fieldName the resolved property name (uncapitalized)
+   * @param fieldTypeMirror the expected parameter type of the setter
+   * @param context processing context
+   * @return Optional containing the setter ExecutableElement if found
+   */
+  public static Optional<ExecutableElement> findSetterForProperty(
+      TypeElement dtoType,
+      String fieldName,
+      TypeMirror fieldTypeMirror,
+      AnnotationProcessingContext context) {
+    if (dtoType == null || fieldName == null || fieldTypeMirror == null) {
+      return Optional.empty();
+    }
+    Optional<ExecutableElement> conventional = findSetterForField(dtoType, fieldName, context);
+    if (conventional.isPresent()) {
+      return conventional;
+    }
+    return ElementFilter.methodsIn(context.getAllMembers(dtoType)).stream()
+        .filter(JavaLangAnalyser::isSetterForField)
+        .filter(m -> context.isAccessibleFromGeneratedPackage(m))
+        .filter(m -> context.isSameType(m.getParameters().get(0).asType(), fieldTypeMirror))
+        .filter(m -> resolveSetterPropertyName(m, dtoType, context).equals(fieldName))
+        .findFirst();
+  }
+
+  /**
+   * Derives the property name written by a setter: the JavaBeans name, or — when that is not a
+   * legal identifier — the name derived from a matching getter.
+   */
+  private static String resolveSetterPropertyName(
+      ExecutableElement setter, TypeElement dtoType, AnnotationProcessingContext context) {
+    String propertyName =
+        StringUtils.uncapitalize(Strings.CI.removeStart(setter.getSimpleName().toString(), "set"));
+    if (SourceVersion.isName(propertyName)) {
+      return propertyName;
+    }
+    return findGettersForField(
+            dtoType, propertyName, setter.getParameters().get(0).asType(), context)
+        .stream()
+        .map(getter -> getter.getSimpleName().toString())
+        .map(name -> StringUtils.uncapitalize(Strings.CI.removeStart(name, "get")))
+        .filter(SourceVersion::isName)
+        .findFirst()
+        .orElse(propertyName);
   }
 
   /**

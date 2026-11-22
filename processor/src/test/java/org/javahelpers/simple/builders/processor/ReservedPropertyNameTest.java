@@ -31,6 +31,7 @@ import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUti
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.forSource;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.simpleBuilderClass;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
@@ -126,6 +127,38 @@ class ReservedPropertyNameTest {
           return this;
         }
         """);
+  }
+
+  /**
+   * A constructor parameter whose name already matches the getter-derived property must not be
+   * duplicated by the deviating setter, and the field must reference the real setter name — {@code
+   * setIsStatic} does not exist on the DTO (issue #418).
+   */
+  @Test
+  void constructorPropertyIsNotDuplicatedByDeviatingSetter() {
+    JavaFileObject dto =
+        simpleBuilderClass(
+            PACKAGE,
+            "CtorStaticFlagDto",
+            """
+            private boolean isStatic;
+            public CtorStaticFlagDto(boolean isStatic) { this.isStatic = isStatic; }
+            public boolean isStatic() { return isStatic; }
+            public void setStatic(boolean value) { this.isStatic = value; }
+            """);
+
+    Compilation compilation = createCompiler().compile(dto);
+
+    assertThat(compilation).succeeded();
+    String generated = loadGeneratedSource(compilation, "CtorStaticFlagDtoBuilder");
+    assertGenerationSucceeded(compilation, "CtorStaticFlagDtoBuilder", generated);
+    assertContaining(
+        generated,
+        """
+        private TrackedValue<Boolean> isStatic = unsetValue();
+        """);
+    assertFalse(generated.contains("isStaticBoolean"));
+    assertFalse(generated.contains("setIsStatic"));
   }
 
   /** Strict mode reports the invalid property at its setter and fails compilation. */

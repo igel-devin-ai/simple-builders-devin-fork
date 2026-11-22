@@ -599,7 +599,7 @@ public class BuilderDefinitionCreator {
         }
 
         Optional<BuilderFieldDto> maybeField =
-            createFieldFromSetter(mth, builderType, context, fieldNameRegistry);
+            createFieldFromSetter(mth, builderType, context, fieldNameRegistry, ctorFieldNames);
         if (maybeField.isPresent()) {
           processedCount++;
           BuilderFieldDto field = maybeField.get();
@@ -669,7 +669,8 @@ public class BuilderDefinitionCreator {
       ExecutableElement mth,
       TypeName builderType,
       BuilderProcessingContext context,
-      Map<String, BuilderFieldDto> fieldNameRegistry) {
+      Map<String, BuilderFieldDto> fieldNameRegistry,
+      Set<String> ctorFieldNames) {
     String methodName = mth.getSimpleName().toString();
     String fieldName = StringUtils.uncapitalize(Strings.CI.removeStart(methodName, "set"));
 
@@ -706,7 +707,7 @@ public class BuilderDefinitionCreator {
                   dtoTypeElement, fieldName, fieldParameter.asType(), context)
               .stream()
               .map(getter -> getter.getSimpleName().toString())
-              .map(name -> StringUtils.uncapitalize(StringUtils.removeStart(name, "get")))
+              .map(name -> StringUtils.uncapitalize(Strings.CI.removeStart(name, "get")))
               .filter(SourceVersion::isName)
               .findFirst();
       if (legalFieldName.isEmpty()) {
@@ -725,6 +726,13 @@ public class BuilderDefinitionCreator {
               + "using getter-derived name '%s' for builder members",
           methodName, fieldName, legalFieldName.get());
       fieldName = legalFieldName.get();
+
+      // The getter-derived name may resolve to a property already handled by a constructor
+      // parameter (e.g. ctor arg "isStatic" matched by setter "setStatic") — skip the duplicate.
+      if (ctorFieldNames.contains(fieldName)) {
+        context.debug("Skipping setter field '%s' - already handled by constructor", fieldName);
+        return Optional.empty();
+      }
     }
 
     // Check for field name conflicts and rename if necessary
@@ -736,7 +744,6 @@ public class BuilderDefinitionCreator {
         createFieldDto(
             fieldName,
             finalFieldName,
-            methodName,
             javaDocDescription,
             fieldParameter,
             dtoType,
@@ -784,14 +791,7 @@ public class BuilderDefinitionCreator {
     // Pass both original field name (for methods) and final field name (for builder field)
     Optional<BuilderFieldDto> result =
         createFieldDto(
-            fieldName,
-            finalFieldName,
-            "set" + StringUtils.capitalize(fieldName),
-            javaDocDescription,
-            param,
-            dtoType,
-            builderType,
-            context);
+            fieldName, finalFieldName, javaDocDescription, param, dtoType, builderType, context);
 
     if (result.isPresent()) {
       fieldNameRegistry.put(finalFieldName, result.get());
@@ -865,7 +865,6 @@ public class BuilderDefinitionCreator {
    *
    * @param fieldName the estimated field name (used for method names)
    * @param fieldNameInBuilder the builder field name (used for storage, may be renamed)
-   * @param setterName the setter method name
    * @param javaDocDescription the javadoc for the field
    * @param param the parameter element (from constructor or setter)
    * @param dtoType the DTO type containing this field
@@ -876,7 +875,6 @@ public class BuilderDefinitionCreator {
   private static Optional<BuilderFieldDto> createFieldDto(
       String fieldName,
       String fieldNameInBuilder,
-      String setterName,
       String javaDocDescription,
       VariableElement param,
       TypeName dtoType,
@@ -891,7 +889,6 @@ public class BuilderDefinitionCreator {
     TypeMirror fieldTypeMirror = param.asType();
 
     BuilderFieldDto field = new BuilderFieldDto();
-    field.setSetterName(setterName);
     field.setFieldNameInBuilder(
         fieldNameInBuilder); // Use renamed field name for builder field storage
     field.setOriginalFieldName(fieldName);
@@ -912,6 +909,15 @@ public class BuilderDefinitionCreator {
 
     // Find matching getter on the DTO type using the builder field name
     TypeElement dtoTypeElement = context.getTypeElement(dtoType);
+
+    // Resolve the actual setter on the DTO — its name can deviate from the JavaBeans convention
+    // (e.g. setter "setStatic" for property "isStatic" after the reserved-name fallback). Fall
+    // back to the conventional name when no setter exists.
+    field.setSetterName(
+        JavaLangAnalyser.findSetterForProperty(dtoTypeElement, fieldName, fieldTypeMirror, context)
+            .map(setter -> setter.getSimpleName().toString())
+            .orElse("set" + StringUtils.capitalize(fieldName)));
+
     Optional<ExecutableElement> getter =
         JavaLangAnalyser.findGetterForField(
             dtoTypeElement, fieldNameInBuilder, fieldTypeMirror, context);
@@ -1008,19 +1014,16 @@ public class BuilderDefinitionCreator {
 
     Optional<? extends Element> recordComponent =
         JavaLangAnalyser.findRecordComponent(dtoTypeElement, fieldName);
-    // The setter name is usually set<Cap(fieldName)>; after reserved-name fallback (e.g.
-    // setStatic -> getter-derived property "isStatic") the name-derived lookup misses, so the
-    // enclosing
-    // executable of the parameter is used as an additional candidate — for setter fields
-    // that enclosing element IS the setter.
+    // Property-aware lookup also covers setters whose name deviates from the JavaBeans
+    // convention (e.g. "setStatic" for property "isStatic"). For setter-based fields the
+    // enclosing executable of the parameter IS the setter and serves as an additional candidate.
     Optional<ExecutableElement> setter =
-        JavaLangAnalyser.findSetterForField(dtoTypeElement, fieldName, context)
-            .or(
-                () ->
-                    param.getEnclosingElement() instanceof ExecutableElement e
-                            && e.getKind() == ElementKind.METHOD
-                        ? Optional.of(e)
-                        : Optional.empty());
+        JavaLangAnalyser.findSetterForProperty(dtoTypeElement, fieldName, param.asType(), context);
+    if (setter.isEmpty()
+        && param.getEnclosingElement() instanceof ExecutableElement enclosing
+        && enclosing.getKind() == ElementKind.METHOD) {
+      setter = Optional.of(enclosing);
+    }
 
     // Search the relevant elements in priority order for the @Deprecated annotation to propagate.
     // Note: the backing field is intentionally NOT checked — it is uncommon to deprecate a

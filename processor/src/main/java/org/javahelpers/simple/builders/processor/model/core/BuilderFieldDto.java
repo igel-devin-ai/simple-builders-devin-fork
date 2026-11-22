@@ -45,9 +45,9 @@ public class BuilderFieldDto {
   private String originalFieldName;
 
   /**
-   * Name of the DTO setter invoked for this field. {@code null} when the setter name can be derived
-   * from {@link #originalFieldName} via JavaBeans conventions; set explicitly when the real setter
-   * name deviates (e.g. {@code setStatic} for a field renamed to {@code isStatic}).
+   * Name of the DTO setter invoked for this field. Always resolved from the actual setter method on
+   * the DTO; falls back to the JavaBeans {@code set<Cap(fieldName)>} convention when no setter
+   * exists (e.g. {@code setStatic} for a property renamed to {@code isStatic}).
    */
   private String setterName;
 
