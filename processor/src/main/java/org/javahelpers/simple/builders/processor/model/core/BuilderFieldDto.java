@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.core.DeprecationInfoDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
@@ -44,6 +43,13 @@ import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 public class BuilderFieldDto {
   /** Name of the field as it appears in the original DTO (used for method names and setters). */
   private String originalFieldName;
+
+  /**
+   * Name of the DTO setter invoked for this field. {@code null} when the setter name can be derived
+   * from {@link #originalFieldName} via JavaBeans conventions; set explicitly when the real setter
+   * name deviates (e.g. {@code setStatic} for a field renamed to {@code isStatic}).
+   */
+  private String setterName;
 
   /** Name of the field as stored in the builder (may be renamed to avoid conflicts). */
   private String fieldNameInBuilder;
@@ -138,13 +144,21 @@ public class BuilderFieldDto {
   }
 
   /**
-   * Gets the setter method name for this field. The setter name is derived from the original field
-   * name and follows JavaBean conventions (e.g., "userName" becomes "setUserName").
+   * Gets the setter method name for this field.
    *
    * @return the setter method name for this field (never null)
    */
   public String getSetterName() {
-    return "set" + StringUtils.capitalize(originalFieldName);
+    return setterName;
+  }
+
+  /**
+   * Sets the setter method name to invoke for this field.
+   *
+   * @param setterName the setter method name
+   */
+  public void setSetterName(String setterName) {
+    this.setterName = setterName;
   }
 
   /**

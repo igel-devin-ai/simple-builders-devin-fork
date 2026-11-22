@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -699,6 +700,33 @@ public class BuilderDefinitionCreator {
     String fullJavaDoc = context.getDocComment(mth);
     String javaDocDescription = JavaLangAnalyser.extractParamJavaDoc(fullJavaDoc, fieldParameter);
 
+    if (!SourceVersion.isName(fieldName)) {
+      Optional<String> legalFieldName =
+          JavaLangAnalyser.findGettersForField(
+                  dtoTypeElement, fieldName, fieldParameter.asType(), context)
+              .stream()
+              .map(getter -> getter.getSimpleName().toString())
+              .map(name -> StringUtils.uncapitalize(StringUtils.removeStart(name, "get")))
+              .filter(SourceVersion::isName)
+              .findFirst();
+      if (legalFieldName.isEmpty()) {
+        context.reportBasedOnStrictMode(
+            mth,
+            "Setter '%s' derives property name '%s', which is not a legal Java identifier. "
+                + "No getter yielding a legal name was found, so this property is skipped. "
+                + "Rename the setter, add a getter, or use @IgnoreInBuilder to silence "
+                + "this message.",
+            methodName,
+            fieldName);
+        return Optional.empty();
+      }
+      context.debug(
+          "Setter '%s' derives property name '%s', which is not a legal Java identifier - "
+              + "using getter-derived name '%s' for builder members",
+          methodName, fieldName, legalFieldName.get());
+      fieldName = legalFieldName.get();
+    }
+
     // Check for field name conflicts and rename if necessary
     String finalFieldName =
         resolveFieldNameConflict(fieldName, fieldParameter, fieldNameRegistry, context);
@@ -708,6 +736,7 @@ public class BuilderDefinitionCreator {
         createFieldDto(
             fieldName,
             finalFieldName,
+            methodName,
             javaDocDescription,
             fieldParameter,
             dtoType,
@@ -755,7 +784,14 @@ public class BuilderDefinitionCreator {
     // Pass both original field name (for methods) and final field name (for builder field)
     Optional<BuilderFieldDto> result =
         createFieldDto(
-            fieldName, finalFieldName, javaDocDescription, param, dtoType, builderType, context);
+            fieldName,
+            finalFieldName,
+            "set" + StringUtils.capitalize(fieldName),
+            javaDocDescription,
+            param,
+            dtoType,
+            builderType,
+            context);
 
     if (result.isPresent()) {
       fieldNameRegistry.put(finalFieldName, result.get());
@@ -829,7 +865,8 @@ public class BuilderDefinitionCreator {
    *
    * @param fieldName the estimated field name (used for method names)
    * @param fieldNameInBuilder the builder field name (used for storage, may be renamed)
-   * @param javaDoc the javadoc for the field
+   * @param setterName the setter method name
+   * @param javaDocDescription the javadoc for the field
    * @param param the parameter element (from constructor or setter)
    * @param dtoType the DTO type containing this field
    * @param builderType the builder type (may include generic type parameters)
@@ -839,6 +876,7 @@ public class BuilderDefinitionCreator {
   private static Optional<BuilderFieldDto> createFieldDto(
       String fieldName,
       String fieldNameInBuilder,
+      String setterName,
       String javaDocDescription,
       VariableElement param,
       TypeName dtoType,
@@ -853,6 +891,7 @@ public class BuilderDefinitionCreator {
     TypeMirror fieldTypeMirror = param.asType();
 
     BuilderFieldDto field = new BuilderFieldDto();
+    field.setSetterName(setterName);
     field.setFieldNameInBuilder(
         fieldNameInBuilder); // Use renamed field name for builder field storage
     field.setOriginalFieldName(fieldName);
@@ -870,8 +909,6 @@ public class BuilderDefinitionCreator {
             "Tracked value for <code>%s</code>: %s.",
             fieldNameInBuilder, javaDocDescriptionOrFieldname);
     field.setJavaDoc(trackedValueJavadoc);
-
-    // Note: setterName will be set explicitly by the caller before field renaming
 
     // Find matching getter on the DTO type using the builder field name
     TypeElement dtoTypeElement = context.getTypeElement(dtoType);
@@ -971,8 +1008,19 @@ public class BuilderDefinitionCreator {
 
     Optional<? extends Element> recordComponent =
         JavaLangAnalyser.findRecordComponent(dtoTypeElement, fieldName);
+    // The setter name is usually set<Cap(fieldName)>; after reserved-name fallback (e.g.
+    // setStatic -> getter-derived property "isStatic") the name-derived lookup misses, so the
+    // enclosing
+    // executable of the parameter is used as an additional candidate — for setter fields
+    // that enclosing element IS the setter.
     Optional<ExecutableElement> setter =
-        JavaLangAnalyser.findSetterForField(dtoTypeElement, fieldName, context);
+        JavaLangAnalyser.findSetterForField(dtoTypeElement, fieldName, context)
+            .or(
+                () ->
+                    param.getEnclosingElement() instanceof ExecutableElement e
+                            && e.getKind() == ElementKind.METHOD
+                        ? Optional.of(e)
+                        : Optional.empty());
 
     // Search the relevant elements in priority order for the @Deprecated annotation to propagate.
     // Note: the backing field is intentionally NOT checked — it is uncommon to deprecate a
