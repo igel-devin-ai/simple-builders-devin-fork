@@ -225,7 +225,7 @@ class SimpleBuilderForTest {
   }
 
   @Test
-  void ignore4BuilderGenerationOnTarget_ExplicitDeclarationStillGenerates() {
+  void ignoreForBuilderGenerationOnTarget_ExplicitDeclarationStillGenerates() {
     JavaFileObject optedOut =
         ProcessorTestUtils.forSource(
             """
