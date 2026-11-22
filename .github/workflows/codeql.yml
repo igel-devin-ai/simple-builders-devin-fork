@@ -91,7 +91,7 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
-        # Run the extended security and code-quality query packs (see matrix above)
+        # Run the extended security and code-quality query packs for every language
         # in addition to the default suite, for higher-recall security analysis.
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         queries: security-extended,security-and-quality
