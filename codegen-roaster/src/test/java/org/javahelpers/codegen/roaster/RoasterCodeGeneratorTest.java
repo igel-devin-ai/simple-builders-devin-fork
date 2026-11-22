@@ -178,7 +178,7 @@ class RoasterCodeGeneratorTest {
   }
 
   @Test
-  void qualifiesCollidingSimpleTypeNames() throws Exception {
+  void qualifiesCollidingDateTypeNames() throws Exception {
     GenerationTargetClassDto classDef = new GenerationTargetClassDto();
     classDef.setTypeName(new TypeName("test", "DateBuilder"));
     classDef.setClassAccessModifier(AccessModifier.PUBLIC);
@@ -194,6 +194,24 @@ class RoasterCodeGeneratorTest {
     sqlDate.setFieldType(new TypeName("java.sql", "Date"));
     classDef.addClassField(sqlDate);
 
+    assertGeneratedSource(
+        """
+        package test;
+        import java.sql.Date;
+        public class DateBuilder {
+          private java.util.Date utilDate;
+          private Date sqlDate;
+        }""",
+        classDef);
+  }
+
+  @Test
+  void qualifiesCollidingGenericListTypeNames() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "ListBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
     ClassFieldDto utilList = new ClassFieldDto();
     utilList.setFieldName("utilList");
     utilList.setFieldType(new TypeNameGeneric(java.util.List.class, String.class));
@@ -208,10 +226,7 @@ class RoasterCodeGeneratorTest {
         """
         package test;
         import java.awt.List;
-        import java.sql.Date;
-        public class DateBuilder {
-          private java.util.Date utilDate;
-          private Date sqlDate;
+        public class ListBuilder {
           private java.util.List<String> utilList;
           private List awtList;
         }""",

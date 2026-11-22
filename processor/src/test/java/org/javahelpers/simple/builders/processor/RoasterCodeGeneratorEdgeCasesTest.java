@@ -368,8 +368,8 @@ class RoasterCodeGeneratorEdgeCasesTest {
    * compilable builder.
    *
    * <p>Regression test for the {@code java.util.Date} / {@code java.sql.Date} collision: the
-   * generated builder must qualify at least one of the two types instead of emitting the ambiguous
-   * simple name for both.
+   * generated builder must fully qualify both types in its tracked-value fields and setter
+   * parameters instead of emitting an ambiguous simple name.
    */
   @Test
   void shouldQualifyCollidingSimpleTypeNames() {
