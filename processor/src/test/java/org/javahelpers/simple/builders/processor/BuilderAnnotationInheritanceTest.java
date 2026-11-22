@@ -168,9 +168,9 @@ class BuilderAnnotationInheritanceTest {
   }
 
   /**
-   * A subclass annotated with {@code @IgnoreForBuilderGeneration} must NOT get a builder even though
-   * it would otherwise inherit {@code @SimpleBuilder} from its parent. The parent's builder is
-   * still generated.
+   * A subclass annotated with {@code @IgnoreForBuilderGeneration} must NOT get a builder even
+   * though it would otherwise inherit {@code @SimpleBuilder} from its parent. The parent's builder
+   * is still generated.
    */
   @Test
   void subclassOptedOutViaIgnoreDoesNotGetInheritedBuilder() {

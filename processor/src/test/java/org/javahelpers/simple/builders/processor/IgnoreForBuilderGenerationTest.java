@@ -108,9 +108,9 @@ class IgnoreForBuilderGenerationTest {
   }
 
   /**
-   * (b) A DTO field whose type is annotated with {@code @IgnoreForBuilderGeneration} must not trigger
-   * nested-builder consumer generation in the referencing DTO. The referencing builder falls back
-   * to a plain setter and must not reference a non-existent builder class.
+   * (b) A DTO field whose type is annotated with {@code @IgnoreForBuilderGeneration} must not
+   * trigger nested-builder consumer generation in the referencing DTO. The referencing builder
+   * falls back to a plain setter and must not reference a non-existent builder class.
    */
   @Test
   void referencedOptedOutDtoFallsBackToPlainSetter() {

@@ -275,13 +275,14 @@ public class MapStructBuilderProvider implements BuilderProvider {
 
   /**
    * Whether {@code beanElement} is marked for builder generation ({@code @SimpleBuilder} or a
-   * builder template annotation, not opted out via {@code @IgnoreForBuilderGeneration}), directly or
-   * through an inherited annotation. The marker decides the finished-state warning and whether an
-   * unfinished miss can be answered as "no builder" — deferral and claiming never depend on it.
+   * builder template annotation, not opted out via {@code @IgnoreForBuilderGeneration}), directly
+   * or through an inherited annotation. The marker decides the finished-state warning and whether
+   * an unfinished miss can be answered as "no builder" — deferral and claiming never depend on it.
    */
   private boolean isBuilderGenerationTarget(TypeElement beanElement) {
     Objects.requireNonNull(beanElement, "beanElement must not be null");
-    if (JavaLangAnalyser.findAnnotation(beanElement, IgnoreForBuilderGeneration.class).isPresent()) {
+    if (JavaLangAnalyser.findAnnotation(beanElement, IgnoreForBuilderGeneration.class)
+        .isPresent()) {
       return false;
     }
     for (AnnotationMirror mirror : elementUtils.getAllAnnotationMirrors(beanElement)) {

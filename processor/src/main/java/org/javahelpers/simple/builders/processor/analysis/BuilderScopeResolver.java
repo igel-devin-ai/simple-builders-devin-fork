@@ -772,6 +772,7 @@ public final class BuilderScopeResolver {
     if (typeElement == null) {
       return false;
     }
-    return JavaLangAnalyser.findAnnotation(typeElement, IgnoreForBuilderGeneration.class).isPresent();
+    return JavaLangAnalyser.findAnnotation(typeElement, IgnoreForBuilderGeneration.class)
+        .isPresent();
   }
 }
