@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
+import java.util.Set;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.InterfaceName;
 import org.javahelpers.codegen.model.method.CodeTemplateDto;
@@ -47,34 +48,44 @@ class RoasterMapperTest {
 
   @Test
   void mapType_rendersPlainClassName() {
-    assertEquals("String", RoasterMapper.mapType(TypeName.of(String.class)));
+    assertEquals("String", RoasterMapper.mapType(TypeName.of(String.class), Set.of()));
   }
 
   @Test
   void mapType_rendersVariableName() {
-    assertEquals("T", RoasterMapper.mapType(new TypeNameVariable("T")));
+    assertEquals("T", RoasterMapper.mapType(new TypeNameVariable("T"), Set.of()));
   }
 
   @Test
   void mapType_rendersPrimitive() {
-    assertEquals("int", RoasterMapper.mapType(TypeNamePrimitive.INT));
+    assertEquals("int", RoasterMapper.mapType(TypeNamePrimitive.INT, Set.of()));
   }
 
   @Test
   void mapType_rendersArrayOfInnerType() {
-    assertEquals("String[]", RoasterMapper.mapType(new TypeNameArray(TypeName.of(String.class))));
+    assertEquals(
+        "String[]", RoasterMapper.mapType(new TypeNameArray(TypeName.of(String.class)), Set.of()));
   }
 
   @Test
   void mapType_rendersGenericWithInnerArguments() {
     TypeNameGeneric generic = new TypeNameGeneric(List.class, String.class);
-    assertEquals("List<String>", RoasterMapper.mapType(generic));
+    assertEquals("List<String>", RoasterMapper.mapType(generic, Set.of()));
+  }
+
+  @Test
+  void mapType_qualifiesCollidingGenericRawTypeOnly() {
+    TypeNameGeneric generic = new TypeNameGeneric(List.class, String.class);
+    assertEquals("java.util.List<String>", RoasterMapper.mapType(generic, Set.of("List")));
+    assertEquals(
+        "java.util.List<java.lang.String>",
+        RoasterMapper.mapType(generic, Set.of("List", "String")));
   }
 
   @Test
   void mapType_rendersRawGenericWithoutArguments() {
     TypeNameGeneric generic = new TypeNameGeneric(List.class);
-    assertEquals("List", RoasterMapper.mapType(generic));
+    assertEquals("List", RoasterMapper.mapType(generic, Set.of()));
   }
 
   @Test
@@ -83,32 +94,32 @@ class RoasterMapperTest {
     AnnotationDto nonNull = new AnnotationDto();
     nonNull.setAnnotationType(new TypeName("test.anno", "NonNull"));
     annotated.addAnnotation(nonNull);
-    assertEquals("@NonNull String", RoasterMapper.mapType(annotated));
+    assertEquals("@NonNull String", RoasterMapper.mapType(annotated, Set.of()));
   }
 
   @Test
   void mapBoxedType_boxesAllPrimitives() {
-    assertEquals("Boolean", RoasterMapper.mapBoxedType(TypeNamePrimitive.BOOLEAN));
-    assertEquals("Byte", RoasterMapper.mapBoxedType(TypeNamePrimitive.BYTE));
-    assertEquals("Character", RoasterMapper.mapBoxedType(TypeNamePrimitive.CHAR));
-    assertEquals("Double", RoasterMapper.mapBoxedType(TypeNamePrimitive.DOUBLE));
-    assertEquals("Float", RoasterMapper.mapBoxedType(TypeNamePrimitive.FLOAT));
-    assertEquals("Integer", RoasterMapper.mapBoxedType(TypeNamePrimitive.INT));
-    assertEquals("Long", RoasterMapper.mapBoxedType(TypeNamePrimitive.LONG));
-    assertEquals("Short", RoasterMapper.mapBoxedType(TypeNamePrimitive.SHORT));
-    assertEquals("Void", RoasterMapper.mapBoxedType(TypeNamePrimitive.VOID));
+    assertEquals("Boolean", RoasterMapper.mapBoxedType(TypeNamePrimitive.BOOLEAN, Set.of()));
+    assertEquals("Byte", RoasterMapper.mapBoxedType(TypeNamePrimitive.BYTE, Set.of()));
+    assertEquals("Character", RoasterMapper.mapBoxedType(TypeNamePrimitive.CHAR, Set.of()));
+    assertEquals("Double", RoasterMapper.mapBoxedType(TypeNamePrimitive.DOUBLE, Set.of()));
+    assertEquals("Float", RoasterMapper.mapBoxedType(TypeNamePrimitive.FLOAT, Set.of()));
+    assertEquals("Integer", RoasterMapper.mapBoxedType(TypeNamePrimitive.INT, Set.of()));
+    assertEquals("Long", RoasterMapper.mapBoxedType(TypeNamePrimitive.LONG, Set.of()));
+    assertEquals("Short", RoasterMapper.mapBoxedType(TypeNamePrimitive.SHORT, Set.of()));
+    assertEquals("Void", RoasterMapper.mapBoxedType(TypeNamePrimitive.VOID, Set.of()));
   }
 
   @Test
   void mapBoxedType_passesThroughNonPrimitives() {
-    assertEquals("String", RoasterMapper.mapBoxedType(TypeName.of(String.class)));
+    assertEquals("String", RoasterMapper.mapBoxedType(TypeName.of(String.class), Set.of()));
   }
 
   @Test
   void mapAnnotation_rendersMarkerWithoutMembers() {
     AnnotationDto annotation = new AnnotationDto();
     annotation.setAnnotationType(new TypeName("test.anno", "Marker"));
-    assertEquals("@Marker", RoasterMapper.mapAnnotation(annotation));
+    assertEquals("@Marker", RoasterMapper.mapAnnotation(annotation, Set.of()));
   }
 
   @Test
@@ -117,7 +128,7 @@ class RoasterMapperTest {
     annotation.setAnnotationType(new TypeName("test.anno", "Meta"));
     annotation.addMember("value", "\"x\"");
     annotation.addMember("order", "3");
-    assertEquals("@Meta(\"x\", order = 3)", RoasterMapper.mapAnnotation(annotation));
+    assertEquals("@Meta(\"x\", order = 3)", RoasterMapper.mapAnnotation(annotation, Set.of()));
   }
 
   @Test
@@ -130,17 +141,18 @@ class RoasterMapperTest {
             throw new IllegalStateException("boom");
           }
         });
-    assertThrows(RoasterMapperException.class, () -> RoasterMapper.mapAnnotation(annotation));
+    assertThrows(
+        RoasterMapperException.class, () -> RoasterMapper.mapAnnotation(annotation, Set.of()));
   }
 
   @Test
   void mapInterfaceToTypeName_rendersSimpleAndParameterized() {
     InterfaceName plain = new InterfaceName("java.util.function", "Supplier");
-    assertEquals("Supplier", RoasterMapper.mapInterfaceToTypeName(plain));
+    assertEquals("Supplier", RoasterMapper.mapInterfaceToTypeName(plain, Set.of()));
 
     InterfaceName generic = new InterfaceName("java.util.function", "Supplier");
     generic.addTypeParameter(TypeName.of(String.class));
-    assertEquals("Supplier<String>", RoasterMapper.mapInterfaceToTypeName(generic));
+    assertEquals("Supplier<String>", RoasterMapper.mapInterfaceToTypeName(generic, Set.of()));
   }
 
   @Test
@@ -149,7 +161,7 @@ class RoasterMapperTest {
     AnnotationDto marker = new AnnotationDto();
     marker.setAnnotationType(new TypeName("test.anno", "Tag"));
     iface.addAnnotation(marker);
-    assertEquals("@Tag Serializable", RoasterMapper.mapInterfaceToTypeName(iface));
+    assertEquals("@Tag Serializable", RoasterMapper.mapInterfaceToTypeName(iface, Set.of()));
   }
 
   @Test
@@ -163,7 +175,8 @@ class RoasterMapperTest {
         };
     iface.addTypeParameter(TypeName.of(String.class));
     // hasTypeParameters() calls getTypeParameters() -> throws
-    assertThrows(RoasterMapperException.class, () -> RoasterMapper.mapInterfaceToTypeName(iface));
+    assertThrows(
+        RoasterMapperException.class, () -> RoasterMapper.mapInterfaceToTypeName(iface, Set.of()));
   }
 
   @Test
@@ -175,7 +188,9 @@ class RoasterMapperTest {
     code.addCodeArgument(new MethodCodeTypePlaceholder("boxed", TypeNamePrimitive.INT));
     code.addCodeArgument(new MethodCodeStringPlaceholder("raw", "literal"));
 
-    assertEquals("return \"val\", int, Integer, literal;", RoasterMapper.resolveCodeTemplate(code));
+    assertEquals(
+        "return \"val\", int, Integer, literal;",
+        RoasterMapper.resolveCodeTemplate(code, Set.of()));
   }
 
   @Test
@@ -184,7 +199,8 @@ class RoasterMapperTest {
     code.setCodeFormat(
         "TrackedValue.initialValue(x); TrackedValue.changedValue(y); TrackedValue.unsetValue();");
     assertEquals(
-        "initialValue(x); changedValue(y); unsetValue();", RoasterMapper.resolveCodeTemplate(code));
+        "initialValue(x); changedValue(y); unsetValue();",
+        RoasterMapper.resolveCodeTemplate(code, Set.of()));
   }
 
   @Test
@@ -192,7 +208,8 @@ class RoasterMapperTest {
     CodeTemplateDto code = new CodeTemplateDto();
     code.setCodeFormat("return $x:X;");
     code.addCodeArgument(new MethodCodePlaceholder<String>("x", "v") {});
-    assertThrows(RoasterMapperException.class, () -> RoasterMapper.resolveCodeTemplate(code));
+    assertThrows(
+        RoasterMapperException.class, () -> RoasterMapper.resolveCodeTemplate(code, Set.of()));
   }
 
   @Test

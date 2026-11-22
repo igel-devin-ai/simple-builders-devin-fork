@@ -395,8 +395,19 @@ class RoasterCodeGeneratorEdgeCasesTest {
 
     String generatedCode = loadGeneratedSource(compilation, "DateDtoBuilder");
     assertGenerationSucceeded(compilation, "DateDtoBuilder", generatedCode);
-    assertTrue(
-        generatedCode.contains("java.util.Date") || generatedCode.contains("java.sql.Date"),
-        () -> "colliding types must be qualified in the generated builder, was: " + generatedCode);
+    assertContaining(
+        generatedCode,
+        """
+        private TrackedValue<java.util.Date> utilDateTestField = unsetValue();
+        """,
+        """
+        private TrackedValue<java.sql.Date> sqlDateTestField = unsetValue();
+        """,
+        """
+        public DateDtoBuilder utilDateTestField(java.util.Date utilDateTestField) {
+        """,
+        """
+        public DateDtoBuilder sqlDateTestField(java.sql.Date sqlDateTestField) {
+        """);
   }
 }

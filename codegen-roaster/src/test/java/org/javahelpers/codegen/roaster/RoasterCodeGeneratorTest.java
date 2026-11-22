@@ -102,13 +102,26 @@ class RoasterCodeGeneratorTest {
     sqlDate.setFieldType(new TypeName("java.sql", "Date"));
     classDef.addClassField(sqlDate);
 
+    ClassFieldDto utilList = new ClassFieldDto();
+    utilList.setFieldName("utilList");
+    utilList.setFieldType(new TypeNameGeneric(java.util.List.class, String.class));
+    classDef.addClassField(utilList);
+
+    ClassFieldDto awtList = new ClassFieldDto();
+    awtList.setFieldName("awtList");
+    awtList.setFieldType(new TypeName("java.awt", "List"));
+    classDef.addClassField(awtList);
+
     assertGeneratedSource(
         """
         package test;
+        import java.awt.List;
         import java.sql.Date;
         public class DateBuilder {
           private java.util.Date utilDate;
           private Date sqlDate;
+          private java.util.List<String> utilList;
+          private List awtList;
         }""",
         classDef);
   }

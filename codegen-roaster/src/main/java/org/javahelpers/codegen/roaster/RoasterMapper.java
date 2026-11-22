@@ -48,16 +48,6 @@ public final class RoasterMapper {
   private RoasterMapper() {}
 
   /**
-   * Maps a type model to Java source code.
-   *
-   * @param typeName type to map
-   * @return Java source representation of the type
-   */
-  public static String mapType(TypeName typeName) {
-    return mapType(typeName, Set.of());
-  }
-
-  /**
    * Maps a type model to Java source code, qualifying types whose simple name is ambiguous within
    * the generated class.
    *
@@ -89,16 +79,6 @@ public final class RoasterMapper {
     }
 
     return prependTypeUseAnnotations(mappedType, typeName.getAnnotations(), collidingSimpleNames);
-  }
-
-  /**
-   * Maps a type to a boxed Java source representation.
-   *
-   * @param typeName type to map
-   * @return boxed Java source representation of the type
-   */
-  public static String mapBoxedType(TypeName typeName) {
-    return mapBoxedType(typeName, Set.of());
   }
 
   /**
@@ -137,7 +117,7 @@ public final class RoasterMapper {
         genericType.isNestedType()
             ? genericType.getRawType().getFullQualifiedName()
             : collidingSimpleNames.contains(genericType.getClassName())
-                ? genericType.getFullQualifiedName()
+                ? genericType.getRawType().getFullQualifiedName()
                 : genericType.getClassName();
     if (genericType.getInnerTypeArguments().isEmpty()) {
       return baseName;
@@ -148,16 +128,6 @@ public final class RoasterMapper {
             .reduce((a, b) -> a + ", " + b)
             .orElse("");
     return baseName + "<" + innerTypes + ">";
-  }
-
-  /**
-   * Maps an annotation to source code.
-   *
-   * @param annotationDto annotation DTO
-   * @return Java source representation of the annotation
-   */
-  public static String mapAnnotation(AnnotationDto annotationDto) {
-    return mapAnnotation(annotationDto, Set.of());
   }
 
   /**
@@ -198,16 +168,6 @@ public final class RoasterMapper {
   }
 
   /**
-   * Maps an interface name to Java source code.
-   *
-   * @param interfaceName interface model
-   * @return source representation of the interface type
-   */
-  public static String mapInterfaceToTypeName(InterfaceName interfaceName) {
-    return mapInterfaceToTypeName(interfaceName, Set.of());
-  }
-
-  /**
    * Maps an interface name to Java source code, qualifying ambiguous simple names.
    *
    * @param interfaceName interface model
@@ -236,19 +196,6 @@ public final class RoasterMapper {
       throw new RoasterMapperException(
           e, "Failed to map interface %s: %s", interfaceName.toString(), e.getMessage());
     }
-  }
-
-  /**
-   * Resolves the JavaPoet-style named template used in CodeTemplateDto to plain Java source code.
-   *
-   * <p>Type placeholders support {@code $label:T} for the plain type and {@code $label:B} for its
-   * boxed representation.
-   *
-   * @param codeDto code template DTO
-   * @return resolved Java source code
-   */
-  public static String resolveCodeTemplate(CodeTemplateDto codeDto) {
-    return resolveCodeTemplate(codeDto, Set.of());
   }
 
   /**
