@@ -49,6 +49,7 @@ public class TypeNameGeneric extends TypeName {
    *
    * @return true if an immediate argument is a wildcard
    */
+  @Override
   public boolean hasWildcardArguments() {
     return innerTypeArguments.stream().anyMatch(TypeNameWildcard.class::isInstance);
   }

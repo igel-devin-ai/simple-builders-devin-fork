@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.codegen.model.type.TypeName;
-import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
@@ -94,8 +93,7 @@ public class NestedBuilderConsumerGenerator implements MethodGenerator {
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     // The field's builder is resolved from the field type and instantiated; a
     // wildcard-parameterized type cannot resolve to an instantiable builder type.
-    if (field.getFieldType() instanceof TypeNameGeneric genericType
-        && genericType.hasWildcardArguments()) {
+    if (field.getFieldType().hasWildcardArguments()) {
       return false;
     }
 

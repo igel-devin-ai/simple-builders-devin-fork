@@ -100,8 +100,7 @@ public class SetConsumerGenerator implements MethodGenerator {
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     // The generated method instantiates the set builder, and `new HashSetBuilder<? extends X>()`
     // is not legal Java, so no consumer is generated for wildcard element types.
-    if (field.getFieldType() instanceof TypeNameGeneric genericType
-        && genericType.hasWildcardArguments()) {
+    if (field.getFieldType().hasWildcardArguments()) {
       return false;
     }
 

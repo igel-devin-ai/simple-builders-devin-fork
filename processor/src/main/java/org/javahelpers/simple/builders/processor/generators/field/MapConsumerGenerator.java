@@ -108,8 +108,7 @@ public class MapConsumerGenerator implements MethodGenerator {
       final BuilderFieldDto field, final TypeName dtoType, final BuilderProcessingContext context) {
     // The generated method instantiates the map builder, and `new HashMapBuilder<wildcard>`
     // is not legal Java, so no consumer is generated for wildcard key/value types.
-    if (field.getFieldType() instanceof TypeNameGeneric genericType
-        && genericType.hasWildcardArguments()) {
+    if (field.getFieldType().hasWildcardArguments()) {
       return false;
     }
 

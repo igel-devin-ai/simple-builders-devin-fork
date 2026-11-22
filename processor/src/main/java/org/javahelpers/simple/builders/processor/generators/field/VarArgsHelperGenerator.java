@@ -92,8 +92,7 @@ public class VarArgsHelperGenerator implements MethodGenerator {
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
     // The element type becomes the varargs parameter type, and a wildcard is not a legal
     // parameter type.
-    if (field.getFieldType() instanceof TypeNameGeneric genericType
-        && genericType.hasWildcardArguments()) {
+    if (field.getFieldType().hasWildcardArguments()) {
       return false;
     }
 
