@@ -46,6 +46,7 @@ import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
+import org.javahelpers.codegen.model.type.TypeNameWildcard;
 
 /**
  * Utility class for collecting, deduplicating, and sorting imports for generated classes.
@@ -84,6 +85,10 @@ public class ImportCollector {
     type.getAnnotations().forEach(this::addAnnotationImports);
 
     // Adding the type
+    if (type instanceof TypeNameWildcard wildcard) {
+      wildcard.getBound().ifPresent(this::addTypeImports);
+      return this;
+    }
     addImport(type);
 
     return this;

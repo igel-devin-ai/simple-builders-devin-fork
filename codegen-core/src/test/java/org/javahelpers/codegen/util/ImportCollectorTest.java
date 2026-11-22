@@ -31,13 +31,53 @@ import java.util.List;
 import org.javahelpers.codegen.model.core.ClassFieldDto;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.imports.ImportStatement;
+import org.javahelpers.codegen.model.method.CodeTemplateDto;
 import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameWildcard;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ImportCollector}: skip rules, generic args and sort order. */
 class ImportCollectorTest {
+
+  @Test
+  void convenienceImportMethodsTraverseWildcardBounds() {
+    TypeNameWildcard wildcard = TypeNameWildcard.extendsBound(new TypeName("java.time", "Instant"));
+    GenerationTargetClassDto target = classDef("test", "Target");
+    ClassFieldDto field = new ClassFieldDto();
+    CodeTemplateDto code = new CodeTemplateDto();
+    target.addImport(new TypeNameWildcard());
+    target.addImport(wildcard);
+    field.addImport(new TypeNameWildcard());
+    field.addImport(wildcard);
+    code.addCodeBlockImport(new TypeNameWildcard());
+    code.addCodeBlockImport(wildcard);
+    assertEquals(
+        List.of("java.time.Instant"),
+        target.getImports().stream().map(ImportStatement::getFullyQualifiedName).toList());
+    assertEquals(
+        List.of("java.time.Instant"),
+        field.getFieldTypeImports().stream().map(ImportStatement::getFullyQualifiedName).toList());
+    assertEquals(
+        List.of("java.time.Instant"),
+        code.getCodeBlockImports().stream().map(ImportStatement::getFullyQualifiedName).toList());
+  }
+
+  @Test
+  void collectsWildcardBoundImportsInsteadOfWildcardTokens() {
+    ImportCollector collector = new ImportCollector(new TypeName("test", "Target"));
+    collector.addTypeImports(new TypeNameWildcard());
+    collector.addTypeImports(TypeNameWildcard.extendsBound(new TypeName("java.time", "Instant")));
+    collector.addTypeImports(
+        TypeNameWildcard.superBound(
+            new TypeNameGeneric(
+                TypeName.of(List.class), List.of(new TypeName("java.io", "File")))));
+    assertEquals(
+        List.of("java.io.File", "java.time.Instant", "java.util.List"),
+        collector.getSortedImports().stream().map(ImportStatement::getFullyQualifiedName).toList());
+  }
 
   private static List<String> fqns(GenerationTargetClassDto classDef) {
     return ImportCollector.collectAndSortImports(classDef).stream()

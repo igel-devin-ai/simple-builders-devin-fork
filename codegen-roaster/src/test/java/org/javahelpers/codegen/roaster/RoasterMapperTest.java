@@ -39,11 +39,28 @@ import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
+import org.javahelpers.codegen.model.type.TypeNameWildcard;
 import org.javahelpers.codegen.roaster.exceptions.RoasterMapperException;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RoasterMapper}'s type/annotation/code-template rendering. */
 class RoasterMapperTest {
+
+  @Test
+  void rendersWildcardBoundsRecursively() {
+    assertEquals("?", RoasterMapper.mapType(new TypeNameWildcard()));
+    assertEquals(
+        "? extends Number",
+        RoasterMapper.mapType(TypeNameWildcard.extendsBound(TypeName.of(Number.class))));
+    assertEquals(
+        "? super List<String>",
+        RoasterMapper.mapType(
+            TypeNameWildcard.superBound(new TypeNameGeneric(List.class, String.class))));
+    assertEquals(
+        "List<?>",
+        RoasterMapper.mapType(
+            new TypeNameGeneric(TypeName.of(List.class), List.of(new TypeNameWildcard()))));
+  }
 
   @Test
   void mapType_rendersPlainClassName() {

@@ -38,6 +38,7 @@ import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameWildcard;
 
 /**
  * Represents a field declaration in the generated class.
@@ -129,7 +130,9 @@ public class ClassFieldDto {
    * @param typeName the type to import
    */
   public void addImport(TypeName typeName) {
-    if (typeName instanceof TypeNameGeneric generic) {
+    if (typeName instanceof TypeNameWildcard wildcard) {
+      wildcard.getBound().ifPresent(this::addImport);
+    } else if (typeName instanceof TypeNameGeneric generic) {
       addImport(generic.getRawType());
       generic.getInnerTypeArguments().forEach(this::addImport);
     } else if (typeName instanceof TypeNameArray array) {

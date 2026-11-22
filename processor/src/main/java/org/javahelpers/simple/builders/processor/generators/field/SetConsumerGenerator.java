@@ -98,6 +98,11 @@ public class SetConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    if (field.getFieldType() instanceof TypeNameGeneric genericType
+        && genericType.hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateBuilderConsumer()) {
       return false;
     }
