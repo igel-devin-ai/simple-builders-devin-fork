@@ -98,6 +98,11 @@ public class SetConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    if (field.getFieldType() instanceof TypeNameGeneric genericType
+        && genericType.hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateBuilderConsumer()) {
       return false;
     }
@@ -176,6 +181,7 @@ public class SetConsumerGenerator implements MethodGenerator {
    * @param method the method to add the example to
    * @param elementType the element type
    * @param fieldName the original field name used for String example values
+   * @param builderResolver resolves a type's builder for builder-backed examples
    */
   private void addExampleToSetConsumerWithSimpleValue(
       BuilderMethodDto method,

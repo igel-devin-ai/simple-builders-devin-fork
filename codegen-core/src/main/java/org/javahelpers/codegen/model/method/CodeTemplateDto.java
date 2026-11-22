@@ -36,6 +36,7 @@ import org.javahelpers.codegen.model.imports.StaticImport;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameWildcard;
 
 /**
  * Base DTO for holding code template information with placeholders.
@@ -45,6 +46,31 @@ import org.javahelpers.codegen.model.type.TypeNameGeneric;
  * code generation.
  */
 public class CodeTemplateDto {
+
+  /**
+   * Replaces codeArguments with a defensive copy; the DTO retains its own mutable collection.
+   *
+   * @param codeArguments the replacement collection (not null)
+   * @throws NullPointerException if codeArguments is null
+   */
+  public void setCodeArguments(List<MethodCodePlaceholder<?>> codeArguments) {
+    List<MethodCodePlaceholder<?>> copy = new ArrayList<>(codeArguments);
+    this.codeArguments.clear();
+    this.codeArguments.addAll(copy);
+  }
+
+  /**
+   * Replaces codeBlockImports with a defensive copy; the DTO retains its own mutable collection.
+   *
+   * @param codeBlockImports the replacement collection (not null)
+   * @throws NullPointerException if codeBlockImports is null
+   */
+  public void setCodeBlockImports(Set<ImportStatement> codeBlockImports) {
+    Set<ImportStatement> copy = new LinkedHashSet<>(codeBlockImports);
+    this.codeBlockImports.clear();
+    this.codeBlockImports.addAll(copy);
+  }
+
   /** Format of code. Holding placeholder for dynamic values. */
   private String codeFormat;
 
@@ -131,7 +157,9 @@ public class CodeTemplateDto {
    * @param typeName type to import
    */
   public void addCodeBlockImport(TypeName typeName) {
-    if (typeName instanceof TypeNameGeneric generic) {
+    if (typeName instanceof TypeNameWildcard wildcard) {
+      wildcard.getBound().ifPresent(this::addCodeBlockImport);
+    } else if (typeName instanceof TypeNameGeneric generic) {
       addCodeBlockImport(generic.getRawType());
       generic.getInnerTypeArguments().forEach(this::addCodeBlockImport);
     } else if (typeName instanceof TypeNameArray array) {

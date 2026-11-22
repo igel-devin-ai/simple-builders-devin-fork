@@ -102,8 +102,7 @@ class GenerationTargetClassDtoBuilderTest {
 
   @Test
   void methodDtoBuilderCoversIsStaticFlag() {
-    // MethodDto.setStatic resolves to property "static" (a Java keyword) and is ignored; the
-    // setIsStatic alias exposes the flag to the generated builder instead.
+    // The isStatic getter supplies a legal property name for the setStatic setter.
     MethodDto method = MethodDtoBuilder.create().methodName("m").isStatic(true).build();
 
     assertEquals("m", method.getMethodName());

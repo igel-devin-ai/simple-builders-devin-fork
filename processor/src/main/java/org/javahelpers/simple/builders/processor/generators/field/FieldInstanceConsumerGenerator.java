@@ -29,6 +29,7 @@ import static org.javahelpers.simple.builders.processor.generators.util.MethodGe
 import java.util.Collections;
 import java.util.List;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNameSet;
@@ -92,6 +93,11 @@ public class FieldInstanceConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    if (field.getFieldType() instanceof TypeNameGeneric genericType
+        && genericType.hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateFieldConsumer()) {
       return false;
     }
