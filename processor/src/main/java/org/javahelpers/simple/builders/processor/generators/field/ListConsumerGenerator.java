@@ -101,8 +101,8 @@ public class ListConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
-    // Wildcard type arguments cannot serve as the element type of the generated helper
-    // method (e.g. nothing can be added to a List<? extends X>), so no helper is generated.
+    // The generated method instantiates the list builder with the element type, and
+    // `new ArrayListBuilder<? extends X>()` is not legal Java, so no consumer is generated.
     if (field.getFieldType() instanceof TypeNameGeneric genericType
         && genericType.hasWildcardArguments()) {
       return false;

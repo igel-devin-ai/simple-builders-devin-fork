@@ -93,8 +93,8 @@ public class FieldInstanceConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
-    // Wildcard type arguments cannot serve as the element type of the generated helper
-    // method (e.g. nothing can be added to a List<? extends X>), so no helper is generated.
+    // The helper instantiates the field type with `new`; `new Foo<? extends X>()` is not
+    // legal Java, so no consumer is generated for wildcard-parameterized fields.
     if (field.getFieldType() instanceof TypeNameGeneric genericType
         && genericType.hasWildcardArguments()) {
       return false;

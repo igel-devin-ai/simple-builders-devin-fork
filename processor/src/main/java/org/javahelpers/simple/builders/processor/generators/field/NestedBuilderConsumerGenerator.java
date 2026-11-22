@@ -92,8 +92,8 @@ public class NestedBuilderConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
-    // Wildcard type arguments cannot serve as the element type of the generated helper
-    // method (e.g. nothing can be added to a List<? extends X>), so no helper is generated.
+    // The field's builder is resolved from the field type and instantiated; a
+    // wildcard-parameterized type cannot resolve to an instantiable builder type.
     if (field.getFieldType() instanceof TypeNameGeneric genericType
         && genericType.hasWildcardArguments()) {
       return false;
