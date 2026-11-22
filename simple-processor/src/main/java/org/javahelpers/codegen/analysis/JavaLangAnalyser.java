@@ -806,23 +806,40 @@ public final class JavaLangAnalyser {
       String fieldName,
       TypeMirror fieldTypeMirror,
       AnnotationProcessingContext context) {
+    return findGettersForField(dtoType, fieldName, fieldTypeMirror, context).stream().findFirst();
+  }
+
+  /**
+   * Finds accessible, parameterless getters whose names and return types match a property.
+   *
+   * @param dtoType the enclosing type
+   * @param fieldName the property name
+   * @param fieldTypeMirror the expected return type
+   * @param context processing context
+   * @return matching getters in member order
+   */
+  public static List<ExecutableElement> findGettersForField(
+      TypeElement dtoType,
+      String fieldName,
+      TypeMirror fieldTypeMirror,
+      AnnotationProcessingContext context) {
     if (dtoType == null || fieldName == null || fieldTypeMirror == null) {
-      return Optional.empty();
+      return List.of();
     }
     List<ExecutableElement> methods = ElementFilter.methodsIn(context.getAllMembers(dtoType));
 
     // Check for accessor methods:
     // Record-style (fieldName), boolean-style (isXxx), or standard (getXxx)
-    for (ExecutableElement candidate : methods) {
-      String name = candidate.getSimpleName().toString();
-      if (Strings.CI.equalsAny(name, fieldName, "is" + fieldName, "get" + fieldName)
-          && candidate.getParameters().isEmpty()
-          && context.isSameType(candidate.getReturnType(), fieldTypeMirror)
-          && context.isAccessibleFromGeneratedPackage(candidate)) {
-        return Optional.of(candidate);
-      }
-    }
-    return Optional.empty();
+    return methods.stream()
+        .filter(
+            candidate -> {
+              String name = candidate.getSimpleName().toString();
+              return Strings.CI.equalsAny(name, fieldName, "is" + fieldName, "get" + fieldName)
+                  && candidate.getParameters().isEmpty()
+                  && context.isSameType(candidate.getReturnType(), fieldTypeMirror)
+                  && context.isAccessibleFromGeneratedPackage(candidate);
+            })
+        .toList();
   }
 
   /**

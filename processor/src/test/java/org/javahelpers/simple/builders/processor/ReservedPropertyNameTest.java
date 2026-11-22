@@ -28,98 +28,130 @@ import static com.google.testing.compile.CompilationSubject.assertThat;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertContaining;
 import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.createCompiler;
+import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.forSource;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.simpleBuilderClass;
 
 import com.google.testing.compile.Compilation;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Tests for setters whose JavaBeans-derived property name is a reserved Java identifier (issue
  * #418). {@code setStatic} derives the property name {@code static}, {@code setDefault} derives
  * {@code default} — both illegal as generated method names. Generation must not fail for the whole
- * target: if a backing field with a legal name exists (e.g. {@code isStatic}), its name is used for
- * builder members; otherwise only the offending property is skipped.
+ * target: a matching getter supplies a legal name; otherwise only the offending property is
+ * skipped.
  */
 class ReservedPropertyNameTest {
 
   private static final String PACKAGE = "pkg.reserved";
 
   /**
-   * A setter {@code setStatic} with a backing field {@code isStatic} yields a builder whose helpers
-   * are named {@code isStatic(...)} while {@code build()} still invokes the real setter {@code
-   * setStatic(...)}.
+   * The getter determines the property name independently of the backing field and setter prefix.
    */
-  @Test
-  void reservedPropertyName_fallsBackToBackingFieldName() {
+  @ParameterizedTest
+  @CsvSource({"'', isStatic", "with, withIsStatic"})
+  void reservedPropertyUsesGetterName(String prefix, String methodName) {
     JavaFileObject dto =
         simpleBuilderClass(
             PACKAGE,
             "StaticFlagDto",
             """
-            private boolean isStatic;
-            private String name;
-            public boolean isStatic() { return isStatic; }
-            public void setStatic(boolean isStatic) { this.isStatic = isStatic; }
-            public String getName() { return name; }
-            public void setName(String name) { this.name = name; }
+            private boolean staticValue;
+            public boolean getStatic() { return staticValue; }
+            public boolean isStatic() { return staticValue; }
+            public void setStatic(boolean value) { this.staticValue = value; }
             """);
 
-    Compilation compilation = createCompiler().compile(dto);
+    Compilation compilation =
+        createCompiler().withOptions("-Asimplebuilder.setterPrefix=" + prefix).compile(dto);
 
     String generated = loadGeneratedSource(compilation, "StaticFlagDtoBuilder");
     assertGenerationSucceeded(compilation, "StaticFlagDtoBuilder", generated);
     assertContaining(
-        generated, "isStatic(boolean isStatic)", "name(String name)", "setStatic", "setName");
+        generated,
+        """
+        private TrackedValue<Boolean> isStatic = unsetValue();
+        """,
+        """
+        public StaticFlagDtoBuilder %s(boolean isStatic) {
+          this.isStatic = changedValue(isStatic);
+          return this;
+        }
+        """
+            .formatted(methodName));
   }
 
-  /**
-   * A setter {@code setDefault} without a legally named backing field is skipped with a warning;
-   * the other properties are still generated and compilation succeeds.
-   */
-  @Test
-  void reservedPropertyName_withoutBackingField_isSkippedWithWarning() {
+  /** A matching backing field cannot rescue a property without a usable getter. */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "",
+        "public boolean getDefault() { return isDefault; }",
+        "private boolean isDefault() { return isDefault; }",
+        "public String isDefault() { return null; }",
+        "public boolean isDefault(boolean value) { return value; }"
+      })
+  void reservedPropertyWithoutLegalGetterIsSkipped(String getter) {
     JavaFileObject dto =
         simpleBuilderClass(
             PACKAGE,
             "DefaultFlagDto",
             """
-            private boolean defaultValue;
+            private boolean isDefault;
             private String name;
-            public boolean isDefaultValue() { return defaultValue; }
-            public void setDefault(boolean defaultValue) { this.defaultValue = defaultValue; }
+            public void setDefault(boolean value) { this.isDefault = value; }
             public String getName() { return name; }
             public void setName(String name) { this.name = name; }
-            """);
+            """
+                + getter);
 
     Compilation compilation = createCompiler().compile(dto);
 
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningContaining("not a legal Java identifier");
+    assertThat(compilation)
+        .hadWarningContaining("No getter yielding a legal name was found")
+        .inFile(dto)
+        .onLine(9);
     String generated = loadGeneratedSource(compilation, "DefaultFlagDtoBuilder");
-    assertContaining(generated, "name(String name)");
+    assertContaining(
+        generated,
+        """
+        public DefaultFlagDtoBuilder name(String name) {
+          this.name = changedValue(name);
+          return this;
+        }
+        """);
   }
 
-  /**
-   * In strict mode the skipped property is reported as an error instead of a warning, consistent
-   * with the existing strict diagnostics handling.
-   */
+  /** Strict mode reports the invalid property at its setter and fails compilation. */
   @Test
-  void reservedPropertyName_strictMode_isError() {
+  void reservedPropertyWithoutGetterFailsInStrictMode() {
     JavaFileObject dto =
-        simpleBuilderClass(
-            PACKAGE,
-            "StrictDefaultDto",
+        forSource(
             """
-            private boolean defaultValue;
-            public boolean isDefaultValue() { return defaultValue; }
-            public void setDefault(boolean defaultValue) { this.defaultValue = defaultValue; }
+            package pkg.reserved;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            @SimpleBuilder
+            public class StrictDefaultDto {
+              private boolean isDefault;
+              public void setDefault(boolean value) { this.isDefault = value; }
+            }
             """);
 
     Compilation compilation =
         createCompiler().withOptions("-Asimplebuilder.strict=true").compile(dto);
 
-    assertThat(compilation).hadErrorContaining("not a legal Java identifier");
+    assertThat(compilation).failed();
+    assertThat(compilation)
+        .hadErrorContaining(
+            "Setter 'setDefault' derives property name 'default', which is not a legal Java identifier. "
+                + "No getter yielding a legal name was found")
+        .inFile(dto)
+        .onLine(6);
   }
 }
