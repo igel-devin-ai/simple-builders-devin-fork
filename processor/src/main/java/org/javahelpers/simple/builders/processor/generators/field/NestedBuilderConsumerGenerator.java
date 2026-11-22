@@ -91,6 +91,12 @@ public class NestedBuilderConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    // The field's builder is resolved from the field type and instantiated; a
+    // wildcard-parameterized type cannot resolve to an instantiable builder type.
+    if (field.getFieldType().hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateBuilderConsumer()) {
       return false;
     }
