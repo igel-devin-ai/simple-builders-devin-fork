@@ -27,7 +27,11 @@ package org.javahelpers.codegen.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.time.Instant;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.javahelpers.codegen.model.core.ClassFieldDto;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.imports.ImportStatement;
@@ -44,7 +48,7 @@ class ImportCollectorTest {
 
   @Test
   void convenienceImportMethodsTraverseWildcardBounds() {
-    TypeNameWildcard wildcard = TypeNameWildcard.extendsBound(new TypeName("java.time", "Instant"));
+    TypeNameWildcard wildcard = TypeNameWildcard.extendsBound(TypeName.of(Instant.class));
     GenerationTargetClassDto target = classDef("test", "Target");
     ClassFieldDto field = new ClassFieldDto();
     CodeTemplateDto code = new CodeTemplateDto();
@@ -54,29 +58,33 @@ class ImportCollectorTest {
     field.addImport(wildcard);
     code.addCodeBlockImport(new TypeNameWildcard());
     code.addCodeBlockImport(wildcard);
-    assertEquals(
-        List.of("java.time.Instant"),
-        target.getImports().stream().map(ImportStatement::getFullyQualifiedName).toList());
-    assertEquals(
-        List.of("java.time.Instant"),
-        field.getFieldTypeImports().stream().map(ImportStatement::getFullyQualifiedName).toList());
-    assertEquals(
-        List.of("java.time.Instant"),
-        code.getCodeBlockImports().stream().map(ImportStatement::getFullyQualifiedName).toList());
+    String expected =
+        """
+        java.time.Instant""";
+    assertEquals(expected, fqnsText(target.getImports()));
+    assertEquals(expected, fqnsText(field.getFieldTypeImports()));
+    assertEquals(expected, fqnsText(code.getCodeBlockImports()));
   }
 
   @Test
   void collectsWildcardBoundImportsInsteadOfWildcardTokens() {
     ImportCollector collector = new ImportCollector(new TypeName("test", "Target"));
     collector.addTypeImports(new TypeNameWildcard());
-    collector.addTypeImports(TypeNameWildcard.extendsBound(new TypeName("java.time", "Instant")));
+    collector.addTypeImports(TypeNameWildcard.extendsBound(TypeName.of(Instant.class)));
     collector.addTypeImports(
-        TypeNameWildcard.superBound(
-            new TypeNameGeneric(
-                TypeName.of(List.class), List.of(new TypeName("java.io", "File")))));
+        TypeNameWildcard.superBound(new TypeNameGeneric(List.class, File.class)));
     assertEquals(
-        List.of("java.io.File", "java.time.Instant", "java.util.List"),
-        collector.getSortedImports().stream().map(ImportStatement::getFullyQualifiedName).toList());
+        """
+        java.io.File
+        java.time.Instant
+        java.util.List""",
+        fqnsText(collector.getSortedImports()));
+  }
+
+  private static String fqnsText(Set<ImportStatement> imports) {
+    return imports.stream()
+        .map(ImportStatement::getFullyQualifiedName)
+        .collect(Collectors.joining("\n"));
   }
 
   private static List<String> fqns(GenerationTargetClassDto classDef) {

@@ -26,6 +26,8 @@ package org.javahelpers.codegen.model.type;
 
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /** A wildcard type argument, optionally bounded above or below by another type. */
 public final class TypeNameWildcard extends TypeName {
@@ -89,15 +91,30 @@ public final class TypeNameWildcard extends TypeName {
   }
 
   @Override
-  public boolean equals(Object other) {
-    return other instanceof TypeNameWildcard wildcard
-        && super.equals(other)
-        && boundKind == wildcard.boundKind
-        && Objects.equals(bound, wildcard.bound);
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    TypeNameWildcard that = (TypeNameWildcard) o;
+
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(boundKind, that.boundKind)
+        .append(bound, that.bound)
+        .isEquals();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), boundKind, bound);
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(boundKind)
+        .append(bound)
+        .toHashCode();
   }
 }
