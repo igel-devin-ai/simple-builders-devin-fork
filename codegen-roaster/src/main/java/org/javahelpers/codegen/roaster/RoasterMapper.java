@@ -38,7 +38,6 @@ import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameNested;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
-import org.javahelpers.codegen.model.type.TypeNameVariable;
 import org.javahelpers.codegen.model.type.TypeNameWildcard;
 import org.javahelpers.codegen.roaster.exceptions.RoasterMapperException;
 
@@ -62,8 +61,6 @@ public final class RoasterMapper {
             case EXTENDS -> "? extends " + mapType(wildcard.getBound().orElseThrow());
             case SUPER -> "? super " + mapType(wildcard.getBound().orElseThrow());
           };
-    } else if (typeName instanceof TypeNameVariable) {
-      mappedType = typeName.getClassName();
     } else if (typeName instanceof TypeNamePrimitive primitive) {
       mappedType = primitive.getFullQualifiedName();
     } else if (typeName instanceof TypeNameArray arrayType) {
