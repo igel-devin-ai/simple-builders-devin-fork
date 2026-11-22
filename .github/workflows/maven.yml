@@ -25,12 +25,13 @@ jobs:
   build:
     # PR runs sent by igel-devin-ai (Devin: `opened`/`reopened` events) are
     # skipped as neutral instead of consuming CI - later pushes are sent by
-    # devin-ai-integration[bot] and already wait for maintainer approval. A
-    # maintainer "Re-run jobs" sets github.actor to themselves, so the job then
-    # executes normally. Scoped to pull_request events only: on `schedule`
-    # events github.actor is the workflow file's last modifier, which may be
-    # igel-devin-ai itself and would wrongly skip those runs.
-    if: github.event_name != 'pull_request' || github.actor != 'igel-devin-ai'
+    # devin-ai-integration[bot] and already wait for maintainer approval. The
+    # check uses github.triggering_actor: a maintainer "Re-run jobs" sets it to
+    # themselves, while github.actor keeps the original actor on re-runs, so
+    # the job then executes normally. Scoped to pull_request events only: on
+    # `schedule` events the actor is the workflow file's last modifier, which
+    # may be igel-devin-ai itself and would wrongly skip those runs.
+    if: github.event_name != 'pull_request' || github.triggering_actor != 'igel-devin-ai'
 
     runs-on: ubuntu-latest
     timeout-minutes: 20
