@@ -217,6 +217,92 @@ class RoasterCodeGeneratorTest {
   }
 
   @Test
+  void qualifiesCollidingAnnotationAndInterfaceSimpleNames() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "AmbiguousBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    // Two distinct NonNull annotations on different declaration sites: the one that wins the
+    // import renders simple, the other stays qualified.
+    AnnotationDto classAnnotation = new AnnotationDto();
+    classAnnotation.setAnnotationType(new TypeName("org.a", "NonNull"));
+    classDef.addClassAnnotation(classAnnotation);
+
+    MethodDto method = new MethodDto("x", TypeName.of(String.class));
+    method.setModifier(AccessModifier.PUBLIC);
+    method.setCode("return null;");
+    AnnotationDto methodAnnotation = new AnnotationDto();
+    methodAnnotation.setAnnotationType(new TypeName("org.b", "NonNull"));
+    method.addAnnotation(methodAnnotation);
+    MethodParameterDto param = new MethodParameterDto();
+    param.setParameterName("in");
+    param.setParameterTypeName(TypeName.of(String.class));
+    AnnotationDto paramAnnotation = new AnnotationDto();
+    paramAnnotation.setAnnotationType(new TypeName("org.a", "NonNull"));
+    param.addAnnotation(paramAnnotation);
+    method.addParameter(param);
+    classDef.addMethod(method);
+
+    // Two distinct interfaces sharing a simple name.
+    classDef.addInterface(new InterfaceName("org.a", "Cloneable"));
+    classDef.addInterface(new InterfaceName("org.b", "Cloneable"));
+
+    assertGeneratedSource(
+        """
+        package test;
+        import org.a.Cloneable;
+        import org.a.NonNull;
+        @NonNull
+        public class AmbiguousBuilder implements Cloneable, org.b.Cloneable {
+          @org.b.NonNull
+          public String x(@NonNull String in) {
+            return null;
+          }
+        }""",
+        classDef);
+  }
+
+  @Test
+  void qualifiesCollidingTypeUseAnnotationSimpleNames() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "AmbiguousBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    // A field type carrying a type-use annotation whose simple name collides with a method
+    // annotation type: both usages must render qualified.
+    AnnotationDto methodAnnotation = new AnnotationDto();
+    methodAnnotation.setAnnotationType(new TypeName("org.a", "Nullable"));
+    MethodDto method = new MethodDto("x", TypeName.of(String.class));
+    method.setModifier(AccessModifier.PUBLIC);
+    method.setCode("return null;");
+    method.addAnnotation(methodAnnotation);
+    classDef.addMethod(method);
+
+    AnnotationDto typeUseAnnotation = new AnnotationDto();
+    typeUseAnnotation.setAnnotationType(new TypeName("org.b", "Nullable"));
+    TypeName fieldType = TypeName.of(String.class);
+    fieldType.addAnnotation(typeUseAnnotation);
+    ClassFieldDto field = new ClassFieldDto();
+    field.setFieldName("value");
+    field.setFieldType(fieldType);
+    classDef.addClassField(field);
+
+    assertGeneratedSource(
+        """
+        package test;
+        public class AmbiguousBuilder {
+          private @org.b.Nullable String value;
+          @org.a.Nullable
+          public String x() {
+            return null;
+          }
+        }""",
+        classDef);
+  }
+
+  @Test
   void generatesClassMetadataJavadocAndAnnotations() throws Exception {
     GenerationTargetClassDto classDef = new GenerationTargetClassDto();
     classDef.setTypeName(new TypeName("test", "AnnotatedBuilder"));
