@@ -85,6 +85,11 @@ public class OptionalHelperGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    if (field.getFieldType() instanceof TypeNameGeneric genericType
+        && genericType.hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateUnboxedOptional()) {
       return false;
     }

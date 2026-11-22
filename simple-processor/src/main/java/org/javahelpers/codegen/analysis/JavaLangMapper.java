@@ -38,6 +38,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor14;
 import org.apache.commons.lang3.Strings;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
@@ -52,6 +53,7 @@ import org.javahelpers.codegen.model.type.TypeNameNested;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
+import org.javahelpers.codegen.model.type.TypeNameWildcard;
 
 /** Helper functions to create codegen {@link TypeName}s from java.lang types. */
 public final class JavaLangMapper {
@@ -573,6 +575,17 @@ public final class JavaLangMapper {
               @Override
               protected TypeName defaultAction(TypeMirror e, Void p) {
                 throw new IllegalArgumentException("Unexpected type mirror: " + e);
+              }
+
+              @Override
+              public TypeName visitWildcard(WildcardType t, Void p) {
+                if (t.getExtendsBound() != null) {
+                  return TypeNameWildcard.extendsBound(extractType(t.getExtendsBound(), context));
+                }
+                if (t.getSuperBound() != null) {
+                  return TypeNameWildcard.superBound(extractType(t.getSuperBound(), context));
+                }
+                return new TypeNameWildcard();
               }
             },
             null);

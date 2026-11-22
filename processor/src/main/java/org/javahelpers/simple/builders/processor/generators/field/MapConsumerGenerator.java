@@ -106,6 +106,11 @@ public class MapConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       final BuilderFieldDto field, final TypeName dtoType, final BuilderProcessingContext context) {
+    if (field.getFieldType() instanceof TypeNameGeneric genericType
+        && genericType.hasWildcardArguments()) {
+      return false;
+    }
+
     BuilderConfiguration configuration = context.getConfiguration();
     TypeName fieldType = field.getFieldType();
     return
