@@ -27,13 +27,17 @@ concurrency:
 
 jobs:
   analyze:
-    name: Analyze (${{ matrix.language }})
+    # Static name: when the gate below skips the job, the matrix is never
+    # expanded, so a ${{ matrix.* }} name would be shown unevaluated. GitHub
+    # appends the matrix values itself, e.g. "Analyze (java-kotlin, autobuild)".
+    name: Analyze
     # Same gate as the Java CI build job: PR runs sent by igel-devin-ai (Devin)
     # are skipped; pushes by devin-ai-integration[bot] wait for maintainer
-    # approval, and a maintainer re-run passes the check. Scoped to pull_request
+    # approval, and a maintainer re-run passes the check (github.triggering_actor
+    # is the re-runner; github.actor would stay igel-devin-ai). Scoped to pull_request
     # so scheduled runs (whose actor is the workflow's last modifier) are not
     # skipped.
-    if: github.event_name != 'pull_request' || github.actor != 'igel-devin-ai'
+    if: github.event_name != 'pull_request' || github.triggering_actor != 'igel-devin-ai'
     # Runner size impacts CodeQL analysis time. To learn more, please see:
     #   - https://gh.io/recommended-hardware-resources-for-running-codeql
     #   - https://gh.io/supported-runners-and-hardware-resources
@@ -58,10 +62,8 @@ jobs:
         include:
         - language: actions
           build-mode: none
-          queries: security-extended,security-and-quality
         - language: java-kotlin
           build-mode: autobuild # CodeQL will automatically build the Maven project
-          queries: security-extended,security-and-quality
         # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
         # Use `c-cpp` to analyze code written in C, C++ or both
         # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
@@ -89,10 +91,10 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
-        # Run the extended security and code-quality query packs (see matrix above)
+        # Run the extended security and code-quality query packs for every language
         # in addition to the default suite, for higher-recall security analysis.
         # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-        queries: ${{ matrix.queries }}
+        queries: security-extended,security-and-quality
 
     # If the analyze step fails for one of the languages you are analyzing with
     # "We were unable to automatically build your code", modify the matrix above
