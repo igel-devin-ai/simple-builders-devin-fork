@@ -268,7 +268,7 @@ class BuilderJavadocExampleTest {
             * <h4>Example:</h4>
             *
             * <pre>{@code
-            * builder.values(Map.of("example value", 42));
+            * builder.values(Map.of("example values", 42));
             * }</pre>
             """),
         Arguments.of(

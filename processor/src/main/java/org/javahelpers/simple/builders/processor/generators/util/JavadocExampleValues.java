@@ -27,6 +27,7 @@ package org.javahelpers.simple.builders.processor.generators.util;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameCollection;
@@ -116,25 +117,8 @@ public final class JavadocExampleValues {
    * </ul>
    *
    * @param typeName the type name to get an example value for
-   * @param builderResolver resolves a type's builder for builder-backed examples
-   * @return an Optional containing the example value, or empty if no example is available
-   */
-  public static Optional<String> getExampleValue(
-      TypeName typeName, Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
-    return getExampleValue(typeName, null, builderResolver);
-  }
-
-  /**
-   * Returns an example value for the given type name, if available.
-   *
-   * <p>Behaves like {@link #getExampleValue(TypeName, Function)}, but derives String examples from
-   * the given field name (e.g. field {@code category} → {@code "example category"}). The field name
-   * is passed through to nested String types (List/Set elements, array elements, Optional inner
-   * type, Map value type). All non-String types ignore the field name.
-   *
-   * @param typeName the type name to get an example value for
-   * @param fieldName the original field name used for String examples, or {@code null}/blank to
-   *     fall back to {@value STRING_EXAMPLE}
+   * @param fieldName the original field name used for String examples; blank names use {@value
+   *     STRING_EXAMPLE}
    * @param builderResolver resolves a type's builder for builder-backed examples
    * @return an Optional containing the example value, or empty if no example is available
    */
@@ -180,6 +164,11 @@ public final class JavadocExampleValues {
   /**
    * Resolves an example for a collection element type, falling back to the element's builder type
    * (e.g. {@code SponsorDtoBuilder.create().build()}) when no direct example value exists.
+   *
+   * @param collectionType the collection whose element needs an example
+   * @param fieldName the original field name used for String examples
+   * @param builderResolver resolves a type's builder for builder-backed examples
+   * @return an example for the element, or empty if none is available
    */
   private static Optional<String> getElementExample(
       TypeNameCollection collectionType,
@@ -211,7 +200,7 @@ public final class JavadocExampleValues {
       TypeNameMap mapType,
       String fieldName,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
-    Optional<String> keyExample = getExampleValue(mapType.getKeyType(), builderResolver);
+    Optional<String> keyExample = getExampleValue(mapType.getKeyType(), fieldName, builderResolver);
     Optional<String> valueExample =
         getExampleValue(mapType.getValueType(), fieldName, builderResolver);
     if (keyExample.isPresent() && valueExample.isPresent()) {
@@ -243,7 +232,7 @@ public final class JavadocExampleValues {
 
   private static Optional<String> resolveString(TypeName typeName, String fieldName) {
     if (typeName.is(String.class)) {
-      if (fieldName == null || fieldName.isBlank()) {
+      if (StringUtils.isBlank(fieldName)) {
         return Optional.of(STRING_EXAMPLE);
       }
       return Optional.of(STRING_EXAMPLE_PREFIX + fieldName + STRING_EXAMPLE_SUFFIX);

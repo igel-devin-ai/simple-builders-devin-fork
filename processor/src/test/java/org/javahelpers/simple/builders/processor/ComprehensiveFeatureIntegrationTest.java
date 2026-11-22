@@ -139,8 +139,8 @@ class ComprehensiveFeatureIntegrationTest {
          *     .tags("example tags", "example tags")
          *     .tagsUpdate(TreeSet::new)
          *     .add2Tags("example tags")
-         *     .metadata(Map.of("example value", "example metadata"))
-         *     .metadata(() -> Map.of("example value", "example metadata"))
+         *     .metadata(Map.of("example metadata", "example metadata"))
+         *     .metadata(() -> Map.of("example metadata", "example metadata"))
          *     .metadata(Map.entry("key", "example metadata"))
          *     .metadataUpdate(Map::copyOf)
          *     .address(AddressDtoBuilder.create().build())
@@ -597,7 +597,7 @@ class ComprehensiveFeatureIntegrationTest {
            * <h4>Example:</h4>
            *
            * <pre>{@code
-           * builder.metadata(() -> Map.of("example value", "example metadata"));
+           * builder.metadata(() -> Map.of("example metadata", "example metadata"));
            * }</pre>
            *
            * @param metadataSupplier supplier for metadata
@@ -619,7 +619,7 @@ class ComprehensiveFeatureIntegrationTest {
            * <h4>Example:</h4>
            *
            * <pre>{@code
-           * builder.metadata(Map.of("example value", "example metadata"));
+           * builder.metadata(Map.of("example metadata", "example metadata"));
            * }</pre>
            *
            * @param metadata metadata
@@ -644,7 +644,7 @@ class ComprehensiveFeatureIntegrationTest {
            * <h4>Example:</h4>
            *
            * <pre>{@code
-           * builder.metadata(Map.of("example value", "example metadata")).metadataUpdate(Map::copyOf);
+           * builder.metadata(Map.of("example metadata", "example metadata")).metadataUpdate(Map::copyOf);
            * }</pre>
            *
            * @param metadataUpdater operator applied to the current value; its result becomes the new value
