@@ -128,6 +128,15 @@ class ImportCollectorTest {
   }
 
   @Test
+  void toleratesNullImportStatements() {
+    GenerationTargetClassDto classDef = classDef("com.example", "Dto");
+    classDef.addImport((ImportStatement) null);
+    classDef.addClassField(field("needed", "java.util", "Optional"));
+
+    assertEquals(List.of("java.util.Optional"), fqns(classDef));
+  }
+
+  @Test
   void genericTypeImportsRawTypeAndArguments() {
     GenerationTargetClassDto classDef = classDef("com.example", "Dto");
     classDef.addClassField(field("mapping", "com.example", "StringIntegerMap"));

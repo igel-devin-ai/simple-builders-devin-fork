@@ -36,6 +36,7 @@ import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.InterfaceName;
 import org.javahelpers.codegen.model.core.ClassFieldDto;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
+import org.javahelpers.codegen.model.javadoc.JavadocCodeBlockDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.method.ConstructorDto;
 import org.javahelpers.codegen.model.method.MethodDto;
@@ -43,6 +44,7 @@ import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.GenericParameterDto;
 import org.javahelpers.codegen.model.type.NestedTypeDto;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
@@ -341,6 +343,7 @@ class RoasterCodeGeneratorTest {
     classDef.setFormattingMode(FormattingMode.NONE);
     GenericParameterDto generic = new GenericParameterDto();
     generic.setName("T");
+    generic.addUpperBound(TypeName.of(Number.class));
     classDef.addGeneric(generic);
 
     MethodDto genericMethod = new MethodDto("of", new TypeNameVariable("T"));
@@ -360,9 +363,99 @@ class RoasterCodeGeneratorTest {
     assertGeneratedSource(
         """
         package test;
-        public class GenericBuilder<T> {
+        public class GenericBuilder<T extends Number> {
           public static <R extends Number> T of(R input) {
             return null;
+          }
+        }""",
+        classDef);
+  }
+
+  @Test
+  void generatesVoidVarargsAndPackagePrivateMembers() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "MiscBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    MethodDto voidMethod = new MethodDto("close", null);
+    voidMethod.setModifier(AccessModifier.PACKAGE_PRIVATE);
+    MethodParameterDto varArgs = new MethodParameterDto();
+    varArgs.setParameterName("items");
+    varArgs.setParameterTypeName(new TypeNameArray(TypeName.of(String.class)));
+    voidMethod.addParameter(varArgs);
+    AnnotationDto suppressWarnings = new AnnotationDto();
+    suppressWarnings.setAnnotationType(TypeName.of(SuppressWarnings.class));
+    suppressWarnings.addMember("value", "\"unchecked\"");
+    voidMethod.addAnnotation(suppressWarnings);
+    classDef.addMethod(voidMethod);
+
+    assertGeneratedSource(
+        """
+        package test;
+        public class MiscBuilder {
+          @SuppressWarnings("unchecked")
+          void close(String... items) {
+          }
+        }""",
+        classDef);
+  }
+
+  @Test
+  void generatesJavadocCodeBlockAndValuelessTag() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "DocBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    MethodDto method = new MethodDto("apply", TypeNamePrimitive.VOID);
+    method.setModifier(AccessModifier.PUBLIC);
+    JavadocDto javadoc = new JavadocDto("Applies the values.");
+    javadoc.addTag("since");
+    JavadocCodeBlockDto codeBlock = new JavadocCodeBlockDto();
+    codeBlock.setCodeFormat("builder.apply();");
+    javadoc.setExampleUsageCodeBlock(codeBlock);
+    method.setJavadoc(javadoc);
+    classDef.addMethod(method);
+
+    assertGeneratedSource(
+        """
+        package test;
+        public class DocBuilder {
+          /**
+           * Applies the values.
+           <h4>Example:</h4><pre>{@code
+           * builder.apply();
+           * }</pre>
+           * @since
+           */
+          public void apply() {
+          }
+        }""",
+        classDef);
+  }
+
+  @Test
+  void generatesNestedInterfaceWithAbstractMethod() throws Exception {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "NestedBuilder"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+
+    NestedTypeDto nested = new NestedTypeDto();
+    nested.setTypeName("Callback");
+    nested.setKind(NestedTypeDto.NestedTypeKind.INTERFACE);
+    MethodDto abstractMethod = new MethodDto("onDone", TypeNamePrimitive.VOID);
+    nested.addMethod(abstractMethod);
+    classDef.addNestedType(nested);
+
+    assertGeneratedSource(
+        """
+        package test;
+        public class NestedBuilder {
+          public interface Callback {
+            public abstract void onDone() {
+            }
           }
         }""",
         classDef);

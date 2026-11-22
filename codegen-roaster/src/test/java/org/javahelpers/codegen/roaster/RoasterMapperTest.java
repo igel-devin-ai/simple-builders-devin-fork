@@ -38,6 +38,7 @@ import org.javahelpers.codegen.model.method.MethodCodeTypePlaceholder;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameNested;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
 import org.javahelpers.codegen.model.type.TypeNameWildcard;
@@ -104,6 +105,21 @@ class RoasterMapperTest {
   void mapType_rendersRawGenericWithoutArguments() {
     TypeNameGeneric generic = new TypeNameGeneric(List.class);
     assertEquals("List", RoasterMapper.mapType(generic, Set.of()));
+  }
+
+  @Test
+  void mapType_rendersNestedTypeQualified() {
+    TypeNameNested nested = new TypeNameNested(new TypeName("com.example", "Outer"), "Inner");
+    assertEquals("com.example.Outer.Inner", RoasterMapper.mapType(nested, Set.of()));
+  }
+
+  @Test
+  void mapType_rendersNestedGenericQualified() {
+    TypeNameGeneric generic =
+        new TypeNameGeneric(
+            new TypeNameNested(new TypeName("com.example", "Outer"), "Pair"),
+            TypeName.of(String.class));
+    assertEquals("com.example.Outer.Pair<String>", RoasterMapper.mapType(generic, Set.of()));
   }
 
   @Test
