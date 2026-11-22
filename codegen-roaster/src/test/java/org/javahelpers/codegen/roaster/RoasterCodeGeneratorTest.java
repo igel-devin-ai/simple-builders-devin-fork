@@ -27,6 +27,8 @@ package org.javahelpers.codegen.roaster;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.assertNormalizedEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.google.testing.compile.Compilation;
+import com.google.testing.compile.JavaFileObjects;
 import java.util.List;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.FormattingMode;
@@ -44,6 +46,7 @@ import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
+import org.javahelpers.codegen.testing.CodegenTestUtils;
 import org.javahelpers.codegen.testing.TestingGenerationEnvironment;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +56,93 @@ import org.junit.jupiter.api.Test;
  * ({@link TestingGenerationEnvironment}) and the emitted source is asserted as a whole text block.
  */
 class RoasterCodeGeneratorTest {
+
+  @Test
+  void preservesLeadingFieldTypeAnnotation() throws Exception {
+    GenerationTargetClassDto classDef = annotatedClassDefinition();
+    ClassFieldDto field = new ClassFieldDto();
+    field.setFieldName("value");
+    field.setFieldType(stringTypeNullableAnnotated());
+    field.setVisibility(AccessModifier.PRIVATE);
+    classDef.addClassField(field);
+
+    assertAnnotatedSource(
+        """
+        package test;
+        import test.anno.Nullable;
+        public class AnnotatedTypes {
+          @Nullable
+          private String value;
+        }
+        """,
+        classDef);
+  }
+
+  @Test
+  void preservesLeadingReturnTypeAnnotation() throws Exception {
+    GenerationTargetClassDto classDef = annotatedClassDefinition();
+    MethodDto method = new MethodDto("value", stringTypeNullableAnnotated());
+    method.setModifier(AccessModifier.PUBLIC);
+    method.setCode("return null;");
+    AnnotationDto deprecated = new AnnotationDto();
+    deprecated.setAnnotationType(TypeName.of(Deprecated.class));
+    method.addAnnotation(deprecated);
+    classDef.addMethod(method);
+
+    assertAnnotatedSource(
+        """
+        package test;
+        import test.anno.Nullable;
+        public class AnnotatedTypes {
+          @Nullable
+          @Deprecated
+          public String value() {
+            return null;
+          }
+        }
+        """,
+        classDef);
+  }
+
+  @Test
+  void preservesAnnotatedGenericReturnType() throws Exception {
+    GenerationTargetClassDto classDef = annotatedClassDefinition();
+    TypeName listOfStringsAnnotated =
+        new TypeNameGeneric(TypeName.of(List.class), stringTypeNullableAnnotated());
+    MethodDto method = new MethodDto("values", listOfStringsAnnotated);
+    method.setModifier(AccessModifier.PUBLIC);
+    method.setCode("return null;");
+    classDef.addMethod(method);
+
+    NestedTypeDto nested = new NestedTypeDto();
+    nested.setTypeName("Nested");
+    nested.setKind(NestedTypeDto.NestedTypeKind.INTERFACE);
+    nested.setVisibility(AccessModifier.PUBLIC);
+    TypeName listOfListsAnnotated =
+        new TypeNameGeneric(TypeName.of(List.class), listOfStringsAnnotated);
+    MethodDto nestedMethod = new MethodDto("values", listOfListsAnnotated);
+    nestedMethod.setCode("return null;");
+    nested.addMethod(nestedMethod);
+    classDef.addNestedType(nested);
+
+    assertAnnotatedSource(
+        """
+        package test;
+        import java.util.List;
+        import test.anno.Nullable;
+        public class AnnotatedTypes {
+          public List<@Nullable String> values() {
+            return null;
+          }
+          public interface Nested {
+            default List<List<@Nullable String>> values() {
+              return null;
+            }
+          }
+        }
+        """,
+        classDef);
+  }
 
   @Test
   void generatesDelegatingBuilderFromDto() throws Exception {
@@ -314,5 +404,43 @@ class RoasterCodeGeneratorTest {
     build.setCode("return target;");
     target.addMethod(build);
     return target;
+  }
+
+  private static GenerationTargetClassDto annotatedClassDefinition() {
+    GenerationTargetClassDto classDef = new GenerationTargetClassDto();
+    classDef.setTypeName(new TypeName("test", "AnnotatedTypes"));
+    classDef.setClassAccessModifier(AccessModifier.PUBLIC);
+    classDef.setFormattingMode(FormattingMode.NONE);
+    return classDef;
+  }
+
+  private static TypeName stringTypeNullableAnnotated() {
+    AnnotationDto nullable = new AnnotationDto();
+    nullable.setAnnotationType(new TypeName("test.anno", "Nullable"));
+    TypeName type = TypeName.of(String.class);
+    type.addAnnotation(nullable);
+    return type;
+  }
+
+  private static void assertAnnotatedSource(String expected, GenerationTargetClassDto classDef)
+      throws Exception {
+    String source = generate(classDef).generatedSource();
+    assertNormalizedEquals(expected, source, "annotated declarations must be preserved");
+    Compilation compilation =
+        CodegenTestUtils.createCompiler()
+            .compile(
+                JavaFileObjects.forSourceString("test.AnnotatedTypes", source),
+                JavaFileObjects.forSourceString(
+                    "test.anno.Nullable",
+                    """
+                    package test.anno;
+                    import java.lang.annotation.ElementType;
+                    import java.lang.annotation.Target;
+                    @Target(ElementType.TYPE_USE)
+                    public @interface Nullable {
+                    }
+                    """));
+    assertEquals(
+        Compilation.Status.SUCCESS, compilation.status(), compilation.diagnostics().toString());
   }
 }
