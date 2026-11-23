@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.core.DeprecationInfoDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
@@ -44,6 +43,13 @@ import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 public class BuilderFieldDto {
   /** Name of the field as it appears in the original DTO (used for method names and setters). */
   private String originalFieldName;
+
+  /**
+   * Name of the DTO setter invoked for this field, resolved from the actual setter method on the
+   * DTO. {@code null} when the field has no setter (possible for constructor fields whose values
+   * are passed via constructor arguments instead).
+   */
+  private String setterName;
 
   /** Name of the field as stored in the builder (may be renamed to avoid conflicts). */
   private String fieldNameInBuilder;
@@ -137,14 +143,31 @@ public class BuilderFieldDto {
     this.fieldNameInBuilder = fieldNameInBuilder;
   }
 
+  public static IllegalStateException missingSetterName(BuilderFieldDto field) {
+    return new IllegalStateException(
+        "Missing setter name for field '%s'".formatted(field.getOriginalFieldName()));
+  }
+
   /**
-   * Gets the setter method name for this field. The setter name is derived from the original field
-   * name and follows JavaBean conventions (e.g., "userName" becomes "setUserName").
+   * Gets the setter method name for this field.
    *
-   * @return the setter method name for this field (never null)
+   * <p>Setter-derived fields always retain the discovering setter's name. Constructor-derived
+   * fields may have no setter and are populated through constructor arguments instead.
+   *
+   * @return the setter method name for this field, or empty when no setter exists (possible for
+   *     constructor fields)
    */
-  public String getSetterName() {
-    return "set" + StringUtils.capitalize(originalFieldName);
+  public Optional<String> getSetterName() {
+    return Optional.ofNullable(setterName);
+  }
+
+  /**
+   * Sets the setter method name to invoke for this field.
+   *
+   * @param setterName the setter method name
+   */
+  public void setSetterName(String setterName) {
+    this.setterName = setterName;
   }
 
   /**

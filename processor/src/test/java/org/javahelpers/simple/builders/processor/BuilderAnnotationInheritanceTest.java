@@ -168,9 +168,9 @@ class BuilderAnnotationInheritanceTest {
   }
 
   /**
-   * A subclass annotated with {@code @Ignore4BuilderGeneration} must NOT get a builder even though
-   * it would otherwise inherit {@code @SimpleBuilder} from its parent. The parent's builder is
-   * still generated.
+   * A subclass annotated with {@code @IgnoreForBuilderGeneration} must NOT get a builder even
+   * though it would otherwise inherit {@code @SimpleBuilder} from its parent. The parent's builder
+   * is still generated.
    */
   @Test
   void subclassOptedOutViaIgnoreDoesNotGetInheritedBuilder() {
@@ -195,9 +195,9 @@ class BuilderAnnotationInheritanceTest {
             """
             package test;
 
-            import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
 
-            @Ignore4BuilderGeneration
+            @IgnoreForBuilderGeneration
             public class ChildDto extends ParentDto { }
             """);
 
@@ -211,7 +211,7 @@ class BuilderAnnotationInheritanceTest {
     assertNoBuilderGenerated(
         compilation,
         "ChildDto",
-        "ChildDto builder should not have been generated due to @Ignore4BuilderGeneration");
+        "ChildDto builder should not have been generated due to @IgnoreForBuilderGeneration");
   }
 
   /**

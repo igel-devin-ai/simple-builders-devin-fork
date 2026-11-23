@@ -46,11 +46,39 @@ import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNameNested;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameSet;
+import org.javahelpers.codegen.model.type.TypeNameWildcard;
 import org.javahelpers.codegen.processing.AnnotationProcessingContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Unit tests for {@link JavaLangMapper} against elements captured from a real compilation. */
 class JavaLangMapperTest {
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"?", "? extends java.time.Instant", "? super java.util.List<java.lang.String>"})
+  void mapsWildcardArguments(String argument) {
+    AtomicReference<TypeName> result = new AtomicReference<>();
+    probe(
+        (roundEnv, processingEnv) -> {
+          TypeElement dto = typeElement(processingEnv, "test.Dto");
+          result.set(
+              JavaLangMapper.map2MethodParameter(
+                      parameter(method(dto, "setValues"), 0), context(processingEnv))
+                  .getParameterType());
+        },
+        """
+        package test;
+        public class Dto {
+          public void setValues(java.util.List<%s> values) {}
+        }
+        """
+            .formatted(argument));
+    TypeNameList list = assertInstanceOf(TypeNameList.class, result.get());
+    TypeNameWildcard wildcard = assertInstanceOf(TypeNameWildcard.class, list.getElementType());
+    assertEquals(argument, wildcard.getFullQualifiedName());
+  }
 
   @Test
   void map2TypeName_mapsJavaClass() {

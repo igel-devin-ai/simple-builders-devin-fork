@@ -101,6 +101,12 @@ public class ListConsumerGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    // The generated method instantiates the list builder with the element type, and
+    // `new ArrayListBuilder<? extends X>()` is not legal Java, so no consumer is generated.
+    if (field.getFieldType().hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateBuilderConsumer()) {
       return false;
     }

@@ -92,6 +92,12 @@ public class AddToCollectionGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    // The element type becomes the method's parameter type, and a wildcard is not a legal
+    // parameter type; adding to a ? extends / ? producer would not compile anyway.
+    if (field.getFieldType().hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateAddToCollectionHelpers()) {
       return false;
     }

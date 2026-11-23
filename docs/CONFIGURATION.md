@@ -6,6 +6,7 @@ Simple-builders supports fine-grained configuration through the `@SimpleBuilder.
 
 - [Overview](#overview)
 - [Annotation Configuration](#annotation-configuration)
+- [Property Detection and Ignoring Members](#property-detection-and-ignoring-members)
 - [Template Annotations](#template-annotations)
 - [Excluding Types from Builder Generation](#excluding-types-from-builder-generation)
 - [Generating Builders for External Types](#generating-builders-for-external-types)
@@ -85,6 +86,33 @@ public class PersonDto {
 }
 ```
 
+## Property Detection and Ignoring Members
+
+Builder properties come from the selected constructor's parameters and eligible setters (including inherited setters). A setter must:
+
+- Have a name starting with `set` followed by an uppercase character.
+- Take exactly one parameter and return `void`.
+- Declare no exceptions or method-specific type parameters.
+- Be non-static, non-private, and accessible from the generated builder's package.
+- Not be annotated with `@IgnoreInBuilder`.
+
+Prefix-free methods such as `name(String)` are never setters, even when a matching field or getter exists. Constructor-backed properties are not duplicated by matching setters.
+
+### `@IgnoreInBuilder`
+
+`org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder` can be placed on methods or constructors, not parameters:
+
+- An annotated setter does not create a setter-backed property. Ignored setters are also excluded when looking up setter metadata or deprecation for a constructor-backed property.
+- An annotated getter is not used to derive a legal property name for the reserved-name fallback below.
+- An annotated constructor is excluded from automatic selection; the largest accessible, non-ignored constructor is used. Combining `@IgnoreInBuilder` with `@SimpleBuilderConstructor` on the same constructor skips builder generation with a warning, or an error in strict mode. If no accessible, non-ignored constructor exists, builder generation fails (a warning by default, an error in strict mode).
+- **Known limitation ([#437](https://github.com/java-helpers/simple-builders/issues/437)):** the generated copy constructor still uses ignored getters to read existing property values.
+
+### Reserved-word Property Names
+
+When a setter-derived name is not a legal Java identifier, a matching getter supplies a legal builder property name ([#418](https://github.com/java-helpers/simple-builders/issues/418)). For example, `setStatic(boolean)` together with `isStatic()` produces `isStatic(boolean)` on the builder, or `withIsStatic(boolean)` when `setterPrefix = "with"`; `build()` still calls the DTO's `setStatic`.
+
+Matching getters must be accessible, take no parameters, and return exactly the setter parameter's type. Eligible getters are considered in deterministic order: `is*`, then `get*`, then accessor-style methods. Ignored getters are excluded; getter-derived names that are still illegal are skipped. If no usable getter supplies a legal name, the property is skipped with a warning, or an error in strict mode.
+
 ## Template Annotations
 
 `@SimpleBuilder.Template` is a **meta-annotation**: it is placed on a custom annotation declaration (`@interface`), not directly on a class or record. Use it to create reusable configuration presets that can be applied to many classes with a single custom annotation. `@SimpleBuilder` itself is the built-in template: it is meta-annotated with `@SimpleBuilder.Template` and can be used directly on a class for one-off builder generation, or you can define your own custom template annotations.
@@ -156,19 +184,19 @@ public class ChildDto extends ParentDto { ... }
 
 ## Excluding Types from Builder Generation
 
-You can opt a whole DTO out of builder generation with `@Ignore4BuilderGeneration`. This is useful when a class inherits `@SimpleBuilder` (which is itself `@Inherited`) or an `@SimpleBuilder.Template`-based annotation from a parent and you do not want a builder for that specific subclass.
+You can opt a whole DTO out of builder generation with `@IgnoreForBuilderGeneration`. This is useful when a class inherits `@SimpleBuilder` (which is itself `@Inherited`) or an `@SimpleBuilder.Template`-based annotation from a parent and you do not want a builder for that specific subclass.
 
 ```java
-import org.javahelpers.simple.builders.core.annotations.Ignore4BuilderGeneration;
+import org.javahelpers.simple.builders.core.annotations.IgnoreForBuilderGeneration;
 
-@Ignore4BuilderGeneration
+@IgnoreForBuilderGeneration
 public class IgnoredDto extends ParentDto {
     // No builder will be generated for IgnoredDto, even if ParentDto carries
     // @SimpleBuilder or an @Inherited template annotation.
 }
 ```
 
-A type marked with `@Ignore4BuilderGeneration` is treated as having **no builder available**. Other builders that reference it will fall back to plain setters instead of emitting nested-builder consumers. The annotation is intentionally **not** `@Inherited`, so it only suppresses the exact type it is placed on and does not cascade to further subclasses.
+A type marked with `@IgnoreForBuilderGeneration` is treated as having **no builder available**. Other builders that reference it will fall back to plain setters instead of emitting nested-builder consumers. The annotation is intentionally **not** `@Inherited`, so it only suppresses the exact type it is placed on and does not cascade to further subclasses.
 
 ## Generating Builders for External Types
 
@@ -200,7 +228,7 @@ public class ExternalBuildersProvider {
 
 Interfaces, abstract classes, enums and annotation types are skipped (a debug log lists each skip), and package scanning only sees *top-level* types - nested types keep requiring an explicit `value` entry. Only packages visible to the compilation can be resolved: an unresolvable package name produces a warning and is skipped. Types a package contributes are ordered by qualified name, so the generated set is deterministic.
 
-The target type must be constructible through accessible Java APIs from the builder's package: it needs a visible type and an accessible constructor, otherwise generation fails with a compile-time diagnostic. The target type's own annotations are not consulted - the explicit declaration wins, so `@Ignore4BuilderGeneration` on the target does not suppress generation either. `@SimpleBuilderFor` is not `@Inherited`, and the provider class or package itself never gets a builder.
+The target type must be constructible through accessible Java APIs from the builder's package: it needs a visible type and an accessible constructor, otherwise generation fails with a compile-time diagnostic. The target type's own annotations are not consulted - the explicit declaration wins, so `@IgnoreForBuilderGeneration` on the target does not suppress generation either. `@SimpleBuilderFor` is not `@Inherited`, and the provider class or package itself never gets a builder.
 
 `@SimpleBuilderFor` is `@Repeatable`: several declarations may be placed on the same holder or `package-info.java` when the listed types need different options - for example a different `packageName` per declaration:
 
@@ -757,7 +785,7 @@ current compilation, so references to their builders do not require a type searc
 This option is an allowlist for whole packages: once set, builders are generated only inside
 the listed packages and every other package is excluded implicitly. Excluding a single
 package while generating everywhere else is not expressible; to exclude a single class,
-use `@Ignore4BuilderGeneration` instead. The scope also applies to types that carry
+use `@IgnoreForBuilderGeneration` instead. The scope also applies to types that carry
 `@SimpleBuilder` only through inheritance or a template annotation.
 
 #### `builderUsagePackages`

@@ -35,9 +35,65 @@ import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.BuilderAsserts;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Test that annotations from target class fields are copied to builder fields. */
 class AnnotationCopyTest {
+
+  /** Ineligible setters cannot deprecate constructor-backed properties. */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "@IgnoreInBuilder @Deprecated public void setIsStatic(boolean value) {}",
+        "@IgnoreInBuilder @Deprecated public void setStatic(boolean value) {}",
+        "@Deprecated public IgnoredSetterDto setStatic(boolean value) { return this; }",
+        "@Deprecated public static void setStatic(boolean value) {}",
+        "@Deprecated public void setStatic(boolean value) throws Exception {}",
+        "@Deprecated private void setStatic(boolean value) {}"
+      })
+  void ineligibleSetterDoesNotDeprecateConstructorProperty(String setter) {
+    JavaFileObject dto =
+        JavaFileObjects.forSourceString(
+            "test.IgnoredSetterDto",
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
+            @SimpleBuilder
+            public class IgnoredSetterDto {
+              public IgnoredSetterDto(boolean isStatic) {}
+              public boolean isStatic() { return false; }
+            """
+                + setter
+                + "\n}");
+    Compilation compilation = compile(dto);
+    String generated = loadGeneratedSource(compilation, "IgnoredSetterDtoBuilder");
+    BuilderAsserts.assertGenerationSucceeded(compilation, "IgnoredSetterDtoBuilder", generated);
+    ProcessorAsserts.assertContaining(
+        generated,
+        """
+         */
+        public IgnoredSetterDtoBuilder isStatic(boolean isStatic) {
+          this.isStatic = changedValue(isStatic);
+          return this;
+        }
+        """);
+    ProcessorAsserts.assertContaining(
+        generated,
+        """
+        public IgnoredSetterDto build() {
+          if (!this.isStatic.isSet()) {
+            throw new IllegalStateException("Required field 'isStatic' must be set before calling build()");
+          }
+          if (this.isStatic.value() == null) {
+            throw new IllegalStateException("Field 'isStatic' is marked as non-null but null value was provided");
+          }
+          IgnoredSetterDto result = new IgnoredSetterDto(this.isStatic.value());
+          return result;
+        }
+        """);
+  }
 
   @Test
   void annotations_copiedToBuilderFields() {

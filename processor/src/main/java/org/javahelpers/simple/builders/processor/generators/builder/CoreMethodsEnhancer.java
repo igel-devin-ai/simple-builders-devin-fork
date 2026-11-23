@@ -188,7 +188,7 @@ public class CoreMethodsEnhancer implements BuilderEnhancer {
       code.append("this.")
           .append(field.getFieldNameInBuilder())
           .append(".ifSet(result::")
-          .append(field.getSetterName())
+          .append(field.getSetterName().orElseThrow(() -> BuilderFieldDto.missingSetterName(field)))
           .append(")");
       field
           .getDefaultValue()

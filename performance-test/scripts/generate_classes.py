@@ -449,7 +449,7 @@ def resolve_imports(
                 needed.add(f"{ENUM_PACKAGE}.{simple}")
         if "default" in prop:
             uses_default = True
-        if prop.get("ignore"):
+        if prop.get("ignore") and class_entry.get("kind", "class") != "record":
             uses_ignore = True
 
     # Builder annotation is always used (parameterized via CLI)
@@ -509,7 +509,7 @@ def generate_class_source(
         if "default" in prop and preset["default_import"]:
             escaped = escape_java_string_literal(str(prop["default"]))
             annotations.append(f'@Default("{escaped}")')
-        # NOTE: @IgnoreInBuilder targets METHOD/PARAMETER, not FIELD, so it is
+        # NOTE: @IgnoreInBuilder targets METHOD/CONSTRUCTOR, not FIELD, so it is
         # placed on the setter below, not here.
         indent = "  "
         for ann in annotations:
@@ -576,8 +576,6 @@ def generate_record_source(
         if "default" in prop and preset["default_import"]:
             escaped = escape_java_string_literal(str(prop["default"]))
             annotations.append(f'@Default("{escaped}")')
-        if prop.get("ignore") and preset["ignore_import"]:
-            annotations.append("@IgnoreInBuilder")
         prefix = "    "
         if annotations:
             ann_str = "\n".join(f"{prefix}{a}" for a in annotations) + "\n" + prefix

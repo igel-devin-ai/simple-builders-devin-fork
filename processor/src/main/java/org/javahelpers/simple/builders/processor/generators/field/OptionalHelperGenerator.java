@@ -85,6 +85,12 @@ public class OptionalHelperGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
+    // The Optional's inner type becomes the method's parameter type, and a wildcard is not
+    // a legal parameter type.
+    if (field.getFieldType().hasWildcardArguments()) {
+      return false;
+    }
+
     if (!context.getConfiguration().shouldGenerateUnboxedOptional()) {
       return false;
     }
