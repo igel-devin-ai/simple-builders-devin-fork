@@ -933,7 +933,7 @@ public final class JavaLangAnalyser {
     }
     return ElementFilter.methodsIn(context.getAllMembers(dtoType)).stream()
         .filter(JavaLangAnalyser::isSetterForField)
-        .filter(m -> context.isAccessibleFromGeneratedPackage(m))
+        .filter(context::isAccessibleFromGeneratedPackage)
         .filter(m -> context.isSameType(m.getParameters().get(0).asType(), fieldTypeMirror))
         .filter(m -> resolveSetterPropertyName(m, dtoType, context).equals(fieldName))
         .findFirst();
