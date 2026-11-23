@@ -51,6 +51,85 @@ class ReservedPropertyNameTest {
 
   private static final String PACKAGE = "pkg.reserved";
 
+  /** An ignored getter cannot rescue an illegal property name. */
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void ignoredGetterCannotNameReservedProperty(boolean strict) {
+    JavaFileObject dto =
+        forSource(
+            """
+            package pkg.reserved;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
+            @SimpleBuilder
+            public class IgnoredGetterDto {
+              @IgnoreInBuilder
+              public boolean isStatic() { return false; }
+              public void setStatic(boolean value) {}
+            }
+            """);
+    Compilation compilation =
+        createCompiler().withOptions("-Asimplebuilder.strict=" + strict).compile(dto);
+    String message =
+        "Setter 'setStatic' derives property name 'static', which is not a legal Java identifier. "
+            + "No getter yielding a legal name was found";
+    if (strict) {
+      assertThat(compilation).failed();
+      assertThat(compilation).hadErrorContaining(message).inFile(dto).onLine(8);
+    } else {
+      assertThat(compilation).succeeded();
+      assertThat(compilation).hadWarningContaining(message).inFile(dto).onLine(8);
+      String generated = loadGeneratedSource(compilation, "IgnoredGetterDtoBuilder");
+      assertContaining(
+          generated,
+          """
+          public IgnoredGetterDto build() {
+            IgnoredGetterDto result = new IgnoredGetterDto();
+            return result;
+          }
+          """);
+      assertFalse(generated.contains("private TrackedValue<Boolean> isStatic = unsetValue();"));
+    }
+  }
+
+  /** Getter preference skips ignored candidates before choosing a legal property name. */
+  @Test
+  void reservedPropertyUsesNextEligibleGetter() {
+    JavaFileObject dto =
+        simpleBuilderClass(
+            PACKAGE,
+            "AlternateGetterDto",
+            """
+            @org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder
+            public boolean isStatic() { return false; }
+            public boolean getSTATIC() { return false; }
+            public void setStatic(boolean value) {}
+            """);
+    Compilation compilation = createCompiler().compile(dto);
+    String generated = loadGeneratedSource(compilation, "AlternateGetterDtoBuilder");
+    assertGenerationSucceeded(compilation, "AlternateGetterDtoBuilder", generated);
+    assertContaining(
+        generated,
+        """
+        public AlternateGetterDtoBuilder sTATIC(boolean sTATIC) {
+          this.sTATIC = changedValue(sTATIC);
+          return this;
+        }
+        """);
+    assertContaining(
+        generated,
+        """
+        public AlternateGetterDto build() {
+          if (this.sTATIC.isSet() && this.sTATIC.value() == null) {
+            throw new IllegalStateException("Field 'sTATIC' is marked as non-null but null value was provided");
+          }
+          AlternateGetterDto result = new AlternateGetterDto();
+          this.sTATIC.ifSet(result::setStatic);
+          return result;
+        }
+        """);
+  }
+
   /** Only setter-shaped void methods become properties, including getter-rescued setStatic. */
   @ParameterizedTest
   @ValueSource(

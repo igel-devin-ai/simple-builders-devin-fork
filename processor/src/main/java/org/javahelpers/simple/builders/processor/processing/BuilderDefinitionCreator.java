@@ -647,7 +647,7 @@ public class BuilderDefinitionCreator {
       context.debug("Skipping: has return value");
       return false;
     }
-    if (!hasNotAnnotation(IgnoreInBuilder.class, mth)) {
+    if (!isMethodIncludedInBuilder(mth)) {
       context.debug("Skipping: has @IgnoreInBuilder annotation");
       return false;
     }
@@ -664,6 +664,54 @@ public class BuilderDefinitionCreator {
       return false;
     }
     return true;
+  }
+
+  private static boolean isMethodIncludedInBuilder(ExecutableElement method) {
+    return hasNotAnnotation(IgnoreInBuilder.class, method);
+  }
+
+  private static Optional<String> resolveBuilderPropertyName(
+      ExecutableElement setter, TypeElement dtoType, BuilderProcessingContext context) {
+    String propertyName =
+        StringUtils.uncapitalize(Strings.CI.removeStart(setter.getSimpleName().toString(), "set"));
+    if (SourceVersion.isName(propertyName)) {
+      return Optional.of(propertyName);
+    }
+    return JavaLangAnalyser.findGettersForField(
+            dtoType, propertyName, setter.getParameters().get(0).asType(), context)
+        .stream()
+        .filter(BuilderDefinitionCreator::isMethodIncludedInBuilder)
+        .map(getter -> getter.getSimpleName().toString())
+        .map(name -> StringUtils.uncapitalize(Strings.CI.removeStart(name, "get")))
+        .filter(SourceVersion::isName)
+        .findFirst();
+  }
+
+  private static Optional<ExecutableElement> findBuilderSetterForProperty(
+      TypeElement dtoType,
+      String fieldName,
+      TypeMirror fieldType,
+      BuilderProcessingContext context) {
+    if (dtoType == null) {
+      return Optional.empty();
+    }
+    Optional<ExecutableElement> conventional =
+        JavaLangAnalyser.findSetterForField(dtoType, fieldName, context)
+            .filter(method -> isMethodRelevantForBuilder(method, context))
+            .filter(
+                method -> context.isSameType(method.getParameters().get(0).asType(), fieldType));
+    if (conventional.isPresent()) {
+      return conventional;
+    }
+    return JavaLangAnalyser.findSetterMethods(dtoType, context).stream()
+        .filter(method -> isMethodRelevantForBuilder(method, context))
+        .filter(method -> context.isSameType(method.getParameters().get(0).asType(), fieldType))
+        .filter(
+            method ->
+                resolveBuilderPropertyName(method, dtoType, context)
+                    .map(fieldName::equals)
+                    .orElse(false))
+        .findFirst();
   }
 
   private static Optional<BuilderFieldDto> createFieldFromSetter(
@@ -703,8 +751,7 @@ public class BuilderDefinitionCreator {
     String javaDocDescription = JavaLangAnalyser.extractParamJavaDoc(fullJavaDoc, fieldParameter);
 
     if (!SourceVersion.isName(fieldName)) {
-      Optional<String> resolvedFieldName =
-          JavaLangAnalyser.resolveSetterPropertyName(mth, dtoTypeElement, context);
+      Optional<String> resolvedFieldName = resolveBuilderPropertyName(mth, dtoTypeElement, context);
       if (resolvedFieldName.isEmpty()) {
         context.reportBasedOnStrictMode(
             mth,
@@ -913,8 +960,7 @@ public class BuilderDefinitionCreator {
         param.getEnclosingElement() instanceof ExecutableElement enclosing
                 && JavaLangAnalyser.isSetterForField(enclosing)
             ? Optional.of(enclosing)
-            : JavaLangAnalyser.findSetterForProperty(
-                dtoTypeElement, fieldName, fieldTypeMirror, context);
+            : findBuilderSetterForProperty(dtoTypeElement, fieldName, fieldTypeMirror, context);
     propertySetter
         .map(ExecutableElement::getSimpleName)
         .map(Object::toString)
@@ -1020,7 +1066,7 @@ public class BuilderDefinitionCreator {
     // convention (e.g. "setStatic" for property "isStatic"). For setter-based fields it always
     // finds the discovering setter itself, so no enclosing-element fallback is needed.
     Optional<ExecutableElement> setter =
-        JavaLangAnalyser.findSetterForProperty(dtoTypeElement, fieldName, param.asType(), context);
+        findBuilderSetterForProperty(dtoTypeElement, fieldName, param.asType(), context);
 
     // Search the relevant elements in priority order for the @Deprecated annotation to propagate.
     // Note: the backing field is intentionally NOT checked — it is uncommon to deprecate a
