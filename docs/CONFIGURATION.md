@@ -6,6 +6,7 @@ Simple-builders supports fine-grained configuration through the `@SimpleBuilder.
 
 - [Overview](#overview)
 - [Annotation Configuration](#annotation-configuration)
+- [Property Detection and Ignoring Members](#property-detection-and-ignoring-members)
 - [Template Annotations](#template-annotations)
 - [Excluding Types from Builder Generation](#excluding-types-from-builder-generation)
 - [Generating Builders for External Types](#generating-builders-for-external-types)
@@ -84,6 +85,25 @@ public class PersonDto {
     public void setAge(int age) { this.age = age; }
 }
 ```
+
+## Property Detection and Ignoring Members
+
+Builder properties come from the selected constructor's parameters and eligible setters (including inherited setters). A setter must have a name starting with `set` followed by an uppercase character, exactly one parameter, a `void` return type, no declared exceptions, and no method-specific type parameters. It must be non-static, non-private, and accessible from the generated builder's package. Prefix-free methods such as `name(String)` are never setters, even when a matching field or getter exists. Constructor-backed properties are not duplicated by matching setters.
+
+### `@IgnoreInBuilder`
+
+`org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder` can be placed on methods or parameters:
+
+- An annotated setter does not create a setter-backed property. Ignored setters are also excluded when looking up setter metadata or deprecation for a constructor-backed property.
+- An annotated getter is not used to derive a legal property name for the reserved-name fallback below.
+- On a parameter of the selected constructor, the annotation currently has **no effect**: the constructor still needs a value for every parameter, so the property is generated.
+- **Known limitation ([#437](https://github.com/java-helpers/simple-builders/issues/437)):** the generated copy constructor still uses ignored getters to read existing property values.
+
+### Reserved-word Property Names
+
+When a setter-derived name is not a legal Java identifier, a matching getter supplies a legal builder property name ([#418](https://github.com/java-helpers/simple-builders/issues/418)). For example, `setStatic(boolean)` together with `isStatic()` produces `isStatic(boolean)` on the builder, or `withIsStatic(boolean)` when `setterPrefix = "with"`; `build()` still calls the DTO's `setStatic`.
+
+Matching getters must be accessible, take no parameters, and return exactly the setter parameter's type. Eligible getters are considered in deterministic order: `is*`, then `get*`, then accessor-style methods. Ignored getters are excluded; getter-derived names that are still illegal are skipped. If no usable getter supplies a legal name, the property is skipped with a warning, or an error in strict mode.
 
 ## Template Annotations
 
