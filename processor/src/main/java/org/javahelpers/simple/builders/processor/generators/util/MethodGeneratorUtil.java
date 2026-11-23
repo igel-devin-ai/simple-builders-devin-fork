@@ -537,16 +537,6 @@ public final class MethodGeneratorUtil {
   }
 
   /**
-   * Maps a resolved builder to its builder-backed example snippet.
-   *
-   * @param resolvedBuilder the resolved builder for the type
-   * @return an expression like {@code SponsorDtoBuilder.create().build()}
-   */
-  public static String builderBackedExample(ResolvedBuilder resolvedBuilder) {
-    return resolvedBuilder.typeName().getClassName() + ".create().build()";
-  }
-
-  /**
    * Returns an example resolver that yields a builder-backed snippet ({@code
    * <Builder>.create().build()}) for types with a resolved builder.
    *
@@ -555,7 +545,11 @@ public final class MethodGeneratorUtil {
    */
   public static Function<TypeName, Optional<String>> builderBackedExampleResolver(
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
-    return t -> builderResolver.apply(t).map(MethodGeneratorUtil::builderBackedExample);
+    return t ->
+        builderResolver
+            .apply(t)
+            .map(
+                resolvedBuilder -> resolvedBuilder.typeName().getClassName() + ".create().build()");
   }
 
   /**

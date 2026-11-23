@@ -50,18 +50,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class JavadocExampleValuesTest {
 
-  private static TypeName stringType() {
-    return TypeName.of(String.class);
-  }
-
-  private static TypeName listOf(TypeName elementType) {
-    return new TypeNameList(TypeName.of(List.class), List.of(elementType), elementType);
-  }
-
-  private static TypeName setOf(TypeName elementType) {
-    return new TypeNameSet(TypeName.of(java.util.Set.class), List.of(elementType), elementType);
-  }
-
   private static TypeName typeWithEmptyConstructor() {
     TypeName type = new TypeName("test", "AddressDto");
     type.setHasEmptyConstructor(true);
@@ -100,17 +88,20 @@ class JavadocExampleValuesTest {
         Arguments.of(TypeName.of(LocalTime.class), "time", "LocalTime.now()"),
         Arguments.of(TypeName.of(LocalDateTime.class), "stamp", "LocalDateTime.now()"),
         // String uses the field name to derive the example
-        Arguments.of(stringType(), "category", "\"example category\""),
+        Arguments.of(TypeName.of(String.class), "category", "\"example category\""),
         // Collection and composite types
-        Arguments.of(listOf(stringType()), "tags", "List.of(\"example tags\")"),
-        Arguments.of(setOf(TypeName.of(Integer.class)), "ids", "Set.of(42)"),
+        Arguments.of(TypeNameList.of(String.class), "tags", "List.of(\"example tags\")"),
+        Arguments.of(TypeNameSet.of(Integer.class), "ids", "Set.of(42)"),
         Arguments.of(
             TypeNameMap.of(String.class, Integer.class),
             "values",
             "Map.of(\"example values\", 42)"),
-        Arguments.of(new TypeNameArray(stringType()), "tags", "new String[] {\"example tags\"}"),
         Arguments.of(
-            new TypeNameGeneric(Optional.class, String.class),
+            new TypeNameArray(TypeName.of(String.class)),
+            "tags",
+            "new String[] {\"example tags\"}"),
+        Arguments.of(
+            TypeNameGeneric.of(Optional.class, String.class),
             "subtitle",
             "Optional.of(\"example subtitle\")"),
         // Types with an empty constructor or a builder
@@ -134,9 +125,10 @@ class JavadocExampleValuesTest {
         Arguments.of(new TypeNameList(TypeName.of(List.class), List.of(), null)),
         Arguments.of(new TypeNameMap(TypeName.of(Map.class), List.of(), null, null)),
         // Unresolvable element types yield no example
-        Arguments.of(listOf(new TypeName("test", "Unsupported"))),
-        Arguments.of(TypeNameMap.of(stringType(), new TypeName("test", "Unsupported"))),
-        Arguments.of(new TypeNameGeneric(Optional.class, java.io.File.class)),
+        Arguments.of(TypeNameList.of(new TypeName("test", "Unsupported"))),
+        Arguments.of(
+            TypeNameMap.of(TypeName.of(String.class), new TypeName("test", "Unsupported"))),
+        Arguments.of(TypeNameGeneric.of(Optional.class, java.io.File.class)),
         Arguments.of(new TypeName("test", "Unsupported")));
   }
 
@@ -155,7 +147,7 @@ class JavadocExampleValuesTest {
     assertEquals(
         Optional.of("List.of(SponsorDtoBuilder.create().build())"),
         JavadocExampleValues.getExampleValue(
-            listOf(sponsorType),
+            TypeNameList.of(sponsorType),
             "sponsors",
             t -> Optional.of("SponsorDtoBuilder.create().build()")));
   }
@@ -164,7 +156,8 @@ class JavadocExampleValuesTest {
   void shouldDeriveStringExampleFromFieldName() {
     assertEquals(
         Optional.of("\"example category\""),
-        JavadocExampleValues.getExampleValue(stringType(), "category", t -> Optional.empty()));
+        JavadocExampleValues.getExampleValue(
+            TypeName.of(String.class), "category", t -> Optional.empty()));
   }
 
   @Test
@@ -172,7 +165,8 @@ class JavadocExampleValuesTest {
     for (String fieldName : new String[] {null, "", " \t\n"}) {
       assertEquals(
           Optional.of("\"example value\""),
-          JavadocExampleValues.getExampleValue(stringType(), fieldName, t -> Optional.empty()));
+          JavadocExampleValues.getExampleValue(
+              TypeName.of(String.class), fieldName, t -> Optional.empty()));
     }
   }
 

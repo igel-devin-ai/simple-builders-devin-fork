@@ -24,6 +24,7 @@
 package org.javahelpers.codegen.model.type;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Represents a type that implements the {@code java.util.Set} interface.
@@ -55,5 +56,27 @@ public class TypeNameSet extends TypeNameCollection {
    */
   public TypeNameSet(TypeName outerType, List<TypeName> innerTypeArguments, TypeName elementType) {
     super(outerType, innerTypeArguments, elementType, "Set");
+  }
+
+  /**
+   * Creates a {@code TypeNameSet} for the {@code java.util.Set} interface parameterized with the
+   * given element type.
+   *
+   * @param elementType the set element type
+   * @return a {@code TypeNameSet} representing {@code Set<elementType>}
+   */
+  public static TypeNameSet of(TypeName elementType) {
+    return new TypeNameSet(TypeName.of(Set.class), List.of(elementType), elementType);
+  }
+
+  /**
+   * Creates a {@code TypeNameSet} for the {@code java.util.Set} interface parameterized with the
+   * given element class.
+   *
+   * @param elementClass the set element class
+   * @return a {@code TypeNameSet} representing {@code Set<elementClass>}
+   */
+  public static TypeNameSet of(Class<?> elementClass) {
+    return of(TypeName.of(elementClass));
   }
 }

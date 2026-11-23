@@ -119,6 +119,28 @@ public class TypeNameGeneric extends TypeName {
    * @param outerType the outer type
    * @param innerTypeArguments variable number of generic type arguments
    */
+  /**
+   * Creates a {@code TypeNameGeneric} for the given outer class and inner type classes.
+   *
+   * @param outerType the outer class (the raw generic type)
+   * @param innerTypeArguments the generic type argument classes
+   * @return a {@code TypeNameGeneric} representing {@code outerType<innerTypeArguments...>}
+   */
+  public static TypeNameGeneric of(Class<?> outerType, Class<?>... innerTypeArguments) {
+    return new TypeNameGeneric(outerType, innerTypeArguments);
+  }
+
+  /**
+   * Creates a {@code TypeNameGeneric} for the given outer type and inner type arguments.
+   *
+   * @param outerType the outer type (the raw generic type)
+   * @param innerTypeArguments the generic type arguments
+   * @return a {@code TypeNameGeneric} representing {@code outerType<innerTypeArguments...>}
+   */
+  public static TypeNameGeneric of(TypeName outerType, TypeName... innerTypeArguments) {
+    return new TypeNameGeneric(outerType, innerTypeArguments);
+  }
+
   public TypeNameGeneric(Class<?> outerType, Class<?>... innerTypeArguments) {
     this(
         TypeName.of(outerType),
