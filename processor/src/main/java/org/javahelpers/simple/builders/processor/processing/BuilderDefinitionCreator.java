@@ -703,9 +703,9 @@ public class BuilderDefinitionCreator {
     String javaDocDescription = JavaLangAnalyser.extractParamJavaDoc(fullJavaDoc, fieldParameter);
 
     if (!SourceVersion.isName(fieldName)) {
-      String resolvedFieldName =
+      Optional<String> resolvedFieldName =
           JavaLangAnalyser.resolveSetterPropertyName(mth, dtoTypeElement, context);
-      if (!SourceVersion.isName(resolvedFieldName)) {
+      if (resolvedFieldName.isEmpty()) {
         context.reportBasedOnStrictMode(
             mth,
             "Setter '%s' derives property name '%s', which is not a legal Java identifier. "
@@ -719,8 +719,8 @@ public class BuilderDefinitionCreator {
       context.debug(
           "Setter '%s' derives property name '%s', which is not a legal Java identifier - "
               + "using getter-derived name '%s' for builder members",
-          methodName, fieldName, resolvedFieldName);
-      fieldName = resolvedFieldName;
+          methodName, fieldName, resolvedFieldName.get());
+      fieldName = resolvedFieldName.get();
 
       // The getter-derived name may resolve to a property already handled by a constructor
       // parameter (e.g. ctor arg "isStatic" matched by setter "setStatic") — skip the duplicate.

@@ -137,6 +137,18 @@ class JavaLangAnalyserTest {
       }
       """;
 
+  private static final String GETTER_STYLE_SOURCE =
+      """
+      package test;
+      public class MultiGetterDto {
+        private boolean active;
+        public boolean active() { return active; }
+        public boolean getActive() { return active; }
+        public boolean isActive() { return active; }
+        public void setActive(boolean v) { this.active = v; }
+      }
+      """;
+
   @Test
   void isNoMethodOfObjectClass_filtersObjectMethods() {
     AtomicReference<Boolean> onObject = new AtomicReference<>();
@@ -542,21 +554,37 @@ class JavaLangAnalyserTest {
   }
 
   @Test
-  void resolveSetterPropertyName_usesGetterDerivedNameOrRawFallback() {
-    AtomicReference<String> fromGetter = new AtomicReference<>();
-    AtomicReference<String> rawFallback = new AtomicReference<>();
+  void resolveSetterPropertyName_usesGetterDerivedNameOrEmpty() {
+    AtomicReference<Optional<String>> fromGetter = new AtomicReference<>();
+    AtomicReference<Optional<String>> withoutGetter = new AtomicReference<>();
     probe(
         (roundEnv, env) -> {
           AnnotationProcessingContext ctx = context(env);
           TypeElement dto = typeElement(env, "test.KeywordDto");
           fromGetter.set(
               JavaLangAnalyser.resolveSetterPropertyName(method(dto, "setStatic"), dto, ctx));
-          rawFallback.set(
+          withoutGetter.set(
               JavaLangAnalyser.resolveSetterPropertyName(method(dto, "setTransient"), dto, ctx));
         },
         KEYWORD_DTO_SOURCE);
-    assertEquals("isStatic", fromGetter.get());
-    assertEquals("transient", rawFallback.get());
+    assertEquals(Optional.of("isStatic"), fromGetter.get());
+    assertEquals(Optional.empty(), withoutGetter.get());
+  }
+
+  @Test
+  void findGetterForField_prefersIsGetThenAccessorStyle() {
+    AtomicReference<Optional<ExecutableElement>> winner = new AtomicReference<>();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.MultiGetterDto");
+          winner.set(
+              JavaLangAnalyser.findGetterForField(
+                  dto, "active", field(dto, "active").asType(), ctx));
+        },
+        GETTER_STYLE_SOURCE);
+    assertTrue(winner.get().isPresent());
+    assertEquals("isActive", winner.get().get().getSimpleName().toString());
   }
 
   @Test

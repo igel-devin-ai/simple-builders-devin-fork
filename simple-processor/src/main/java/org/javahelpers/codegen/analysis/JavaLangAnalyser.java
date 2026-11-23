@@ -955,7 +955,9 @@ public final class JavaLangAnalyser {
         .filter(JavaLangAnalyser::isSetterForField)
         .filter(context::isAccessibleFromGeneratedPackage)
         .filter(m -> context.isSameType(m.getParameters().get(0).asType(), fieldTypeMirror))
-        .filter(m -> fieldName.equals(resolveSetterPropertyName(m, dtoType, context)))
+        .filter(
+            m ->
+                resolveSetterPropertyName(m, dtoType, context).map(fieldName::equals).orElse(false))
         .sorted(Comparator.comparing(m -> m.getSimpleName().toString()))
         .findFirst();
   }
@@ -967,14 +969,16 @@ public final class JavaLangAnalyser {
    * @param setter the setter method element
    * @param dtoType the enclosing DTO type element
    * @param context processing context
-   * @return the resolved property name; the raw setter-derived name when no legal name exists
+   * @return the resolved property name, or empty when the setter-derived name is not a legal Java
+   *     identifier and no getter-derived legal name exists — callers must not use the raw
+   *     setter-derived name then, as it names no real property
    */
-  public static String resolveSetterPropertyName(
+  public static Optional<String> resolveSetterPropertyName(
       ExecutableElement setter, TypeElement dtoType, AnnotationProcessingContext context) {
     String propertyName =
         StringUtils.uncapitalize(Strings.CI.removeStart(setter.getSimpleName().toString(), "set"));
     if (SourceVersion.isName(propertyName)) {
-      return propertyName;
+      return Optional.of(propertyName);
     }
     return findGettersForField(
             dtoType, propertyName, setter.getParameters().get(0).asType(), context)
@@ -982,8 +986,7 @@ public final class JavaLangAnalyser {
         .map(getter -> getter.getSimpleName().toString())
         .map(name -> StringUtils.uncapitalize(Strings.CI.removeStart(name, "get")))
         .filter(SourceVersion::isName)
-        .findFirst()
-        .orElse(propertyName);
+        .findFirst();
   }
 
   /**
