@@ -542,7 +542,7 @@ public class BuilderDefinitionCreator {
         context.debugStartOperation("Analyzing parameter: %s", param.getSimpleName());
         Optional<BuilderFieldDto> fieldFromCtor =
             createFieldFromConstructor(
-                annotatedType, constructor, param, builderType, context, fieldNameRegistry);
+                annotatedType, param, builderType, context, fieldNameRegistry);
         if (fieldFromCtor.isPresent()) {
           BuilderFieldDto field = fieldFromCtor.get();
           logFieldAddition(field, context);
@@ -796,7 +796,6 @@ public class BuilderDefinitionCreator {
             finalFieldName,
             javaDocDescription,
             fieldParameter,
-            mth,
             dtoType,
             builderType,
             context);
@@ -806,6 +805,8 @@ public class BuilderDefinitionCreator {
     }
 
     BuilderFieldDto field = result.get();
+    // Setter-based fields retain the discovering setter's name without another lookup.
+    field.setSetterName(mth.getSimpleName().toString());
 
     // If no default was found on the setter parameter, check the field element itself
     // (annotations like @Default may be placed on the field rather than the setter param)
@@ -824,7 +825,6 @@ public class BuilderDefinitionCreator {
    */
   private static Optional<BuilderFieldDto> createFieldFromConstructor(
       TypeElement annotatedType,
-      ExecutableElement constructor,
       VariableElement param,
       TypeName builderType,
       BuilderProcessingContext context,
@@ -843,17 +843,19 @@ public class BuilderDefinitionCreator {
     // Pass both original field name (for methods) and final field name (for builder field)
     Optional<BuilderFieldDto> result =
         createFieldDto(
-            fieldName,
-            finalFieldName,
-            javaDocDescription,
-            param,
-            constructor,
-            dtoType,
-            builderType,
-            context);
+            fieldName, finalFieldName, javaDocDescription, param, dtoType, builderType, context);
 
     if (result.isPresent()) {
-      fieldNameRegistry.put(finalFieldName, result.get());
+      BuilderFieldDto field = result.get();
+      // Constructor parameters need a property-aware lookup: the setter name may deviate
+      // from JavaBeans conventions (e.g. "setStatic" for property "isStatic"). When no setter
+      // exists, no setter name is stored — the field is populated via constructor.
+      findBuilderSetterForProperty(
+              context.getTypeElement(dtoType), fieldName, param.asType(), context)
+          .map(ExecutableElement::getSimpleName)
+          .map(Object::toString)
+          .ifPresent(field::setSetterName);
+      fieldNameRegistry.put(finalFieldName, field);
     }
 
     return result;
@@ -926,7 +928,6 @@ public class BuilderDefinitionCreator {
    * @param fieldNameInBuilder the builder field name (used for storage, may be renamed)
    * @param javaDocDescription the javadoc for the field
    * @param param the parameter element (from constructor or setter)
-   * @param enclosing the constructor or setter declaring the parameter
    * @param dtoType the DTO type containing this field
    * @param builderType the builder type (may include generic type parameters)
    * @param context processing context
@@ -937,7 +938,6 @@ public class BuilderDefinitionCreator {
       String fieldNameInBuilder,
       String javaDocDescription,
       VariableElement param,
-      ExecutableElement enclosing,
       TypeName dtoType,
       TypeName builderType,
       BuilderProcessingContext context) {
@@ -970,19 +970,6 @@ public class BuilderDefinitionCreator {
 
     // Find matching getter on the DTO type using the builder field name
     TypeElement dtoTypeElement = context.getTypeElement(dtoType);
-
-    // For setter-based fields the parameter's enclosing executable IS the setter — no lookup
-    // needed. For constructor parameters the real setter is resolved property-aware, because its
-    // name can deviate from the JavaBeans convention (e.g. "setStatic" for property "isStatic").
-    // When no setter exists, no setter name is stored — the field is populated via constructor.
-    Optional<ExecutableElement> propertySetter =
-        JavaLangAnalyser.isSetterForField(enclosing)
-            ? Optional.of(enclosing)
-            : findBuilderSetterForProperty(dtoTypeElement, fieldName, fieldTypeMirror, context);
-    propertySetter
-        .map(ExecutableElement::getSimpleName)
-        .map(Object::toString)
-        .ifPresent(field::setSetterName);
 
     Optional<ExecutableElement> getter =
         JavaLangAnalyser.findGetterForField(
