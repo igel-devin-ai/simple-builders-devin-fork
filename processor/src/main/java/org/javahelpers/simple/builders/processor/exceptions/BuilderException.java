@@ -29,6 +29,7 @@ import javax.lang.model.element.Element;
 /** Special exception for errors in processing of annotations. */
 public class BuilderException extends Exception {
   private final transient Element element;
+  private final boolean alwaysError;
 
   /**
    * Creating an exception with location element, message and parameters.
@@ -40,6 +41,7 @@ public class BuilderException extends Exception {
   public BuilderException(Element element, Throwable cause) {
     super(cause.getMessage(), cause);
     this.element = element;
+    this.alwaysError = false;
   }
 
   /**
@@ -51,8 +53,28 @@ public class BuilderException extends Exception {
    * @param args Arguments for Stringlformat on message
    */
   public BuilderException(Element element, String message, Object... args) {
+    this(element, false, message, args);
+  }
+
+  /**
+   * Creates a processing failure with an explicit severity policy.
+   *
+   * @param element the diagnostic location
+   * @param alwaysError whether this failure is an error even outside strict mode
+   * @param message the diagnostic format string
+   * @param args the format arguments
+   */
+  public BuilderException(Element element, boolean alwaysError, String message, Object... args) {
     super(String.format(message, args));
     this.element = element;
+    this.alwaysError = alwaysError;
+  }
+
+  /**
+   * @return whether the failure must be reported as an error regardless of strict mode
+   */
+  public boolean isAlwaysError() {
+    return alwaysError;
   }
 
   /**

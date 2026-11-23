@@ -28,6 +28,7 @@ import static org.javahelpers.codegen.testing.ProcessorAsserts.contains;
 import static org.javahelpers.codegen.testing.ProcessorAsserts.notContains;
 import static org.javahelpers.simple.builders.processor.testing.BuilderAsserts.assertGenerationSucceeded;
 import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils.loadGeneratedSource;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
@@ -35,6 +36,8 @@ import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Tests for the {@link BuilderProcessor} class. */
 class BuilderProcessorTest {
@@ -457,8 +460,9 @@ class BuilderProcessorTest {
   }
 
   /** Explicit selection and ignoring the same constructor is always an error. */
-  @Test
-  void shouldRejectExplicitlySelectedIgnoredConstructor() {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void shouldRejectExplicitlySelectedIgnoredConstructor(boolean strict) {
     JavaFileObject source =
         ProcessorTestUtils.forSource(
             """
@@ -473,11 +477,17 @@ class BuilderProcessorTest {
               public ConflictingCtorDto() {}
             }
             """);
-    Compilation compilation = compile(source);
+    Compilation compilation =
+        ProcessorTestUtils.createCompiler()
+            .withOptions("-Asimplebuilder.strict=" + strict)
+            .compile(source);
     assertThat(compilation).failed();
+    assertThat(compilation).hadErrorCount(1);
+    assertThat(compilation).hadWarningCount(0);
     assertThat(compilation)
         .hadErrorContaining(
-            "Constructor on 'test.ConflictingCtorDto' must not be annotated with both "
+            "Failed to generate target - Constructor on 'test.ConflictingCtorDto' "
+                + "must not be annotated with both "
                 + "@SimpleBuilderConstructor and @IgnoreInBuilder.")
         .inFile(source)
         .onLine(9);
@@ -505,10 +515,48 @@ class BuilderProcessorTest {
             .withOptions("-Asimplebuilder.strict=true")
             .compile(source);
     assertThat(compilation).failed();
+    assertThat(compilation).hadErrorCount(1);
+    assertThat(compilation).hadWarningCount(0);
     assertThat(compilation)
-        .hadErrorContaining("No accessible constructor found on 'test.AllIgnoredCtorDto'.")
+        .hadErrorContaining(
+            "Failed to generate target - No accessible constructor found on 'test.AllIgnoredCtorDto'. "
+                + "A builder can only be generated for types that can be constructed through accessible "
+                + "Java APIs (e.g. a public or package-visible constructor reachable from the generated "
+                + "builder). Constructors annotated with @IgnoreInBuilder are not considered.")
         .inFile(source)
         .onLine(5);
+  }
+
+  /** Ordinary mode warns once and skips generation when every constructor is ignored. */
+  @Test
+  void shouldWarnWhenAllConstructorsAreIgnored() {
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
+            @SimpleBuilder
+            public class AllIgnoredCtorDto {
+              @IgnoreInBuilder
+              public AllIgnoredCtorDto() {}
+              @IgnoreInBuilder
+              public AllIgnoredCtorDto(String name) {}
+            }
+            """);
+    Compilation compilation = compile(source);
+    assertThat(compilation).succeeded();
+    assertThat(compilation).hadErrorCount(0);
+    assertThat(compilation).hadWarningCount(1);
+    assertThat(compilation)
+        .hadWarningContaining(
+            "Failed to generate target - No accessible constructor found on 'test.AllIgnoredCtorDto'. "
+                + "A builder can only be generated for types that can be constructed through accessible "
+                + "Java APIs (e.g. a public or package-visible constructor reachable from the generated "
+                + "builder). Constructors annotated with @IgnoreInBuilder are not considered.")
+        .inFile(source)
+        .onLine(5);
+    assertTrue(compilation.generatedSourceFiles().isEmpty());
   }
 
   /** Parameter annotations are rejected by javac rather than silently ignored. */

@@ -285,7 +285,14 @@ public class BuilderDefinitionCreator {
   private static String buildSetterSourceDescription(
       BuilderFieldDto field, String sourceClassName) {
     // Only called for setter-based fields, which always have a resolved setter name.
-    String setterName = field.getSetterName().orElseThrow();
+    String setterName =
+        field
+            .getSetterName()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Missing setter name for field '%s' in DTO '%s'"
+                            .formatted(field.getOriginalFieldName(), sourceClassName)));
     String displaySignature =
         "%s(%s %s)"
             .formatted(
@@ -1337,14 +1344,12 @@ public class BuilderDefinitionCreator {
             annotatedType, SimpleBuilderConstructor.class, context);
     for (ExecutableElement constructor : annotatedConstructors) {
       if (!isMethodIncludedInBuilder(constructor)) {
-        BuilderException conflict =
-            new BuilderException(
-                constructor,
-                "Constructor on '%s' must not be annotated with both @SimpleBuilderConstructor "
-                    + "and @IgnoreInBuilder.",
-                annotatedType.getQualifiedName());
-        context.error(constructor, "%s", conflict.getMessage());
-        throw conflict;
+        throw new BuilderException(
+            constructor,
+            true,
+            "Constructor on '%s' must not be annotated with both @SimpleBuilderConstructor "
+                + "and @IgnoreInBuilder.",
+            annotatedType.getQualifiedName());
       }
     }
     if (!annotatedConstructors.isEmpty()) {
@@ -1383,8 +1388,8 @@ public class BuilderDefinitionCreator {
           annotatedType,
           "No accessible constructor found on '%s'. A builder can only be generated for types "
               + "that can be constructed through accessible Java APIs (e.g. a public or "
-              + "package-visible constructor reachable from the generated builder) and whose "
-              + "constructor is not annotated with @IgnoreInBuilder.",
+              + "package-visible constructor reachable from the generated builder). "
+              + "Constructors annotated with @IgnoreInBuilder are not considered.",
           annotatedType.getQualifiedName());
     }
     return selected;

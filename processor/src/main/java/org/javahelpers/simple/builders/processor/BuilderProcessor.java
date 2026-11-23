@@ -457,7 +457,15 @@ public class BuilderProcessor
   protected List<BuilderDefinitionDto> analyse(
       CodegenTask<BuilderConfiguration> task, BuilderProcessingContext ctx)
       throws BuilderException {
-    return List.of(extractFromElement(task.element(), ctx));
+    try {
+      return List.of(extractFromElement(task.element(), ctx));
+    } catch (BuilderException exception) {
+      if (!exception.isAlwaysError()) {
+        throw exception;
+      }
+      ctx.error(exception.getElement(), "Failed to generate target - %s", exception.getMessage());
+      return List.of();
+    }
   }
 
   @Override

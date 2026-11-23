@@ -57,11 +57,10 @@ class CoreMethodsEnhancerTest {
   void buildMethodRejectsSetterFieldWithoutSetterName() {
     BuilderDefinitionDto builder = builder();
     builder.addAllFields(List.of(field()));
+    CoreMethodsEnhancer enhancer = new CoreMethodsEnhancer();
 
     IllegalStateException exception =
-        assertThrows(
-            IllegalStateException.class,
-            () -> new CoreMethodsEnhancer().createBuildMethod(builder));
+        assertThrows(IllegalStateException.class, () -> enhancer.createBuildMethod(builder));
 
     assertEquals(
         "Missing setter name for field 'isStatic' in DTO 'test.FlagDto'", exception.getMessage());

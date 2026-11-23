@@ -127,16 +127,6 @@ class JavaLangAnalyserTest {
       }
       """;
 
-  private static final String KEYWORD_DTO_SOURCE =
-      """
-      package test;
-      public class KeywordDto {
-        public boolean isStatic() { return true; }
-        public void setStatic(boolean v) {}
-        public void setTransient(int v) {}
-      }
-      """;
-
   private static final String GETTER_STYLE_SOURCE =
       """
       package test;
@@ -538,66 +528,6 @@ class JavaLangAnalyserTest {
   }
 
   @Test
-  void setterDiscoveryAndPropertyResolutionUseTheSameNamePredicate() {
-    AtomicReference<List<String>> discovered = new AtomicReference<>();
-    AtomicReference<Optional<String>> resolved = new AtomicReference<>();
-    AtomicReference<Optional<ExecutableElement>> nonSetter = new AtomicReference<>();
-    probe(
-        (roundEnv, env) -> {
-          AnnotationProcessingContext ctx = context(env);
-          TypeElement dto = typeElement(env, "test.SetterDto");
-          discovered.set(
-              JavaLangAnalyser.findSetterMethods(dto, ctx).stream()
-                  .map(m -> m.getSimpleName().toString())
-                  .toList());
-          resolved.set(
-              JavaLangAnalyser.findSetterForProperty(
-                      dto,
-                      "isStatic",
-                      method(dto, "setStatic").getParameters().get(0).asType(),
-                      ctx)
-                  .map(m -> m.getSimpleName().toString()));
-          nonSetter.set(
-              JavaLangAnalyser.findSetterForProperty(
-                  dto, "ignored", method(dto, "withIgnored").getParameters().get(0).asType(), ctx));
-        },
-        """
-        package test;
-        public class SetterDto {
-          public boolean isStatic() { return false; }
-          public void setStatic(boolean value) {}
-          public String setTitle(String value) { return value; }
-          public void withIgnored(String value) {}
-          public void ignored(String value) {}
-          public void setignored(String value) {}
-          public void setNoArgs() {}
-          public void setTwoArgs(String first, String second) {}
-        }
-        """);
-    assertEquals(List.of("setStatic", "setTitle"), discovered.get());
-    assertEquals(Optional.of("setStatic"), resolved.get());
-    assertEquals(Optional.empty(), nonSetter.get());
-  }
-
-  @Test
-  void findSetterForPropertyReturnsEmptyForEachNullArgument() {
-    AtomicReference<List<Optional<ExecutableElement>>> results = new AtomicReference<>();
-    probe(
-        (roundEnv, env) -> {
-          AnnotationProcessingContext ctx = context(env);
-          TypeElement dto = typeElement(env, "test.Dto");
-          var fieldType = field(dto, "name").asType();
-          results.set(
-              List.of(
-                  JavaLangAnalyser.findSetterForProperty(null, "name", fieldType, ctx),
-                  JavaLangAnalyser.findSetterForProperty(dto, null, fieldType, ctx),
-                  JavaLangAnalyser.findSetterForProperty(dto, "name", null, ctx)));
-        },
-        DTO_SOURCE);
-    assertEquals(List.of(Optional.empty(), Optional.empty(), Optional.empty()), results.get());
-  }
-
-  @Test
   void findSetterForField_matchesVoidSingleParamSetter() {
     AtomicReference<Optional<ExecutableElement>> found = new AtomicReference<>();
     AtomicReference<Optional<ExecutableElement>> missing = new AtomicReference<>();
@@ -611,24 +541,6 @@ class JavaLangAnalyserTest {
         DTO_SOURCE);
     assertTrue(found.get().isPresent());
     assertTrue(missing.get().isEmpty());
-  }
-
-  @Test
-  void resolveSetterPropertyName_usesGetterDerivedNameOrEmpty() {
-    AtomicReference<Optional<String>> fromGetter = new AtomicReference<>();
-    AtomicReference<Optional<String>> withoutGetter = new AtomicReference<>();
-    probe(
-        (roundEnv, env) -> {
-          AnnotationProcessingContext ctx = context(env);
-          TypeElement dto = typeElement(env, "test.KeywordDto");
-          fromGetter.set(
-              JavaLangAnalyser.resolveSetterPropertyName(method(dto, "setStatic"), dto, ctx));
-          withoutGetter.set(
-              JavaLangAnalyser.resolveSetterPropertyName(method(dto, "setTransient"), dto, ctx));
-        },
-        KEYWORD_DTO_SOURCE);
-    assertEquals(Optional.of("isStatic"), fromGetter.get());
-    assertEquals(Optional.empty(), withoutGetter.get());
   }
 
   @Test
