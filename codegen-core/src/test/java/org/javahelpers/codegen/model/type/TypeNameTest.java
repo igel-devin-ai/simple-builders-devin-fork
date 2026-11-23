@@ -128,4 +128,33 @@ class TypeNameTest {
     assertTrue(pairOfString.isNestedType());
     assertEquals("test.Outer.Pair", pairOfString.getRawType().getFullQualifiedName());
   }
+
+  @Test
+  void of_factoriesMatchConstructorResults() {
+    TypeName string = TypeName.of(String.class);
+
+    assertEquals(
+        new TypeNameList(TypeName.of(List.class), List.of(string), string),
+        TypeNameList.of(string));
+    assertEquals(TypeNameList.of(string), TypeNameList.of(String.class));
+
+    TypeNameSet expectedSet =
+        new TypeNameSet(TypeName.of(java.util.Set.class), List.of(string), string);
+    assertEquals(expectedSet, TypeNameSet.of(string));
+    assertEquals(TypeNameSet.of(string), TypeNameSet.of(String.class));
+
+    TypeName integer = TypeName.of(Integer.class);
+    TypeNameMap expectedMap =
+        new TypeNameMap(
+            TypeName.of(java.util.Map.class), List.of(string, integer), string, integer);
+    assertEquals(expectedMap, TypeNameMap.of(string, integer));
+    assertEquals(TypeNameMap.of(string, integer), TypeNameMap.of(String.class, Integer.class));
+
+    assertEquals(new TypeNameArray(string), TypeNameArray.of(string));
+    assertEquals(TypeNameArray.of(string), TypeNameArray.of(String.class));
+
+    assertEquals(new TypeNameGeneric(string, integer), TypeNameGeneric.of(string, integer));
+    assertEquals(
+        TypeNameGeneric.of(string, integer), TypeNameGeneric.of(String.class, Integer.class));
+  }
 }
