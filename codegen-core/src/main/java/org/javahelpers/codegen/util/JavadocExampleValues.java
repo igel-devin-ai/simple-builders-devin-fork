@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package org.javahelpers.simple.builders.processor.generators.util;
+package org.javahelpers.codegen.util;
 
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +36,6 @@ import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive.PrimitiveTypeEnum;
 import org.javahelpers.codegen.model.type.TypeNameSet;
-import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 
 /**
  * Provides default example values for Javadoc code examples.
@@ -119,13 +118,12 @@ public final class JavadocExampleValues {
    * @param typeName the type name to get an example value for
    * @param fieldName the original field name used for String examples; blank names use {@value
    *     STRING_EXAMPLE}
-   * @param builderResolver resolves a type's builder for builder-backed examples
+   * @param builderResolver resolves a type to a builder-backed example snippet (e.g. {@code
+   *     SponsorDtoBuilder.create().build()})
    * @return an Optional containing the example value, or empty if no example is available
    */
   public static Optional<String> getExampleValue(
-      TypeName typeName,
-      String fieldName,
-      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
     return resolvePrimitive(typeName)
         .or(() -> resolveCollection(typeName, fieldName, builderResolver))
         .or(() -> resolveArray(typeName, fieldName, builderResolver))
@@ -144,9 +142,7 @@ public final class JavadocExampleValues {
   }
 
   private static Optional<String> resolveCollection(
-      TypeName typeName,
-      String fieldName,
-      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
     if (typeName instanceof TypeNameList listType && listType.isParameterized()) {
       return getElementExample(listType, fieldName, builderResolver)
           .map(elementExample -> "List.of(" + elementExample + ")");
@@ -162,30 +158,25 @@ public final class JavadocExampleValues {
   }
 
   /**
-   * Resolves an example for a collection element type, falling back to the element's builder type
-   * (e.g. {@code SponsorDtoBuilder.create().build()}) when no direct example value exists.
+   * Resolves an example for a collection element type, falling back to the element's builder-backed
+   * example snippet (e.g. {@code SponsorDtoBuilder.create().build()}) when no direct example value
+   * exists.
    *
    * @param collectionType the collection whose element needs an example
    * @param fieldName the original field name used for String examples
-   * @param builderResolver resolves a type's builder for builder-backed examples
+   * @param builderResolver resolves a type to a builder-backed example snippet
    * @return an example for the element, or empty if none is available
    */
   private static Optional<String> getElementExample(
       TypeNameCollection collectionType,
       String fieldName,
-      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+      Function<TypeName, Optional<String>> builderResolver) {
     return getExampleValue(collectionType.getElementType(), fieldName, builderResolver)
-        .or(
-            () ->
-                builderResolver
-                    .apply(collectionType.getElementType())
-                    .map(resolved -> resolved.typeName().getClassName() + ".create().build()"));
+        .or(() -> builderResolver.apply(collectionType.getElementType()));
   }
 
   private static Optional<String> resolveArray(
-      TypeName typeName,
-      String fieldName,
-      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
     if (typeName instanceof TypeNameArray arrayType) {
       TypeName elementType = arrayType.getTypeOfArray();
       return getExampleValue(elementType, fieldName, builderResolver)
@@ -197,9 +188,7 @@ public final class JavadocExampleValues {
   }
 
   private static Optional<String> resolveMap(
-      TypeNameMap mapType,
-      String fieldName,
-      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+      TypeNameMap mapType, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
     Optional<String> keyExample = getExampleValue(mapType.getKeyType(), fieldName, builderResolver);
     Optional<String> valueExample =
         getExampleValue(mapType.getValueType(), fieldName, builderResolver);
@@ -210,9 +199,7 @@ public final class JavadocExampleValues {
   }
 
   private static Optional<String> resolveOptional(
-      TypeName typeName,
-      String fieldName,
-      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
     if (typeName.is(Optional.class)) {
       return typeName
           .getInnerType()
@@ -248,9 +235,7 @@ public final class JavadocExampleValues {
   }
 
   private static Optional<String> resolveBuilderType(
-      TypeName typeName, Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
-    return builderResolver
-        .apply(typeName)
-        .map(resolved -> resolved.typeName().getClassName() + ".create().build()");
+      TypeName typeName, Function<TypeName, Optional<String>> builderResolver) {
+    return builderResolver.apply(typeName);
   }
 }

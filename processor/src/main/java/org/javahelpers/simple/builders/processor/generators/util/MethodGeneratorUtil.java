@@ -41,6 +41,7 @@ import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
+import org.javahelpers.codegen.util.JavadocExampleValues;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.model.type.PrefillCall;
@@ -536,6 +537,16 @@ public final class MethodGeneratorUtil {
   }
 
   /**
+   * Maps a resolved builder to its builder-backed example snippet.
+   *
+   * @param resolvedBuilder the resolved builder for the type
+   * @return an expression like {@code SponsorDtoBuilder.create().build()}
+   */
+  public static String builderBackedExample(ResolvedBuilder resolvedBuilder) {
+    return resolvedBuilder.typeName().getClassName() + ".create().build()";
+  }
+
+  /**
    * Adds the fluent-chain fragment for Javadoc examples to a method using a template string.
    *
    * <p>This helper method replaces placeholders in the template string with actual values:
@@ -566,7 +577,10 @@ public final class MethodGeneratorUtil {
 
     if (fieldType != null) {
       Optional<String> exampleValue =
-          JavadocExampleValues.getExampleValue(fieldType, fieldName, builderResolver);
+          JavadocExampleValues.getExampleValue(
+              fieldType,
+              fieldName,
+              t -> builderResolver.apply(t).map(MethodGeneratorUtil::builderBackedExample));
       if (exampleValue.isEmpty()) {
         return;
       }

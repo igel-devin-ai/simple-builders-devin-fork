@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package org.javahelpers.simple.builders.processor;
+package org.javahelpers.codegen.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -43,8 +43,6 @@ import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNameSet;
-import org.javahelpers.simple.builders.processor.generators.util.JavadocExampleValues;
-import org.javahelpers.simple.builders.processor.model.type.ResolvedBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -157,9 +155,7 @@ class JavadocExampleValuesTest {
     assertEquals(
         Optional.of("SponsorDtoBuilder.create().build()"),
         JavadocExampleValues.getExampleValue(
-            sponsorType,
-            "sponsor",
-            t -> Optional.of(new ResolvedBuilder(new TypeName("test", "SponsorDtoBuilder")))));
+            sponsorType, "sponsor", t -> Optional.of("SponsorDtoBuilder.create().build()")));
   }
 
   @Test
@@ -170,7 +166,7 @@ class JavadocExampleValuesTest {
         JavadocExampleValues.getExampleValue(
             listOf(sponsorType),
             "sponsors",
-            t -> Optional.of(new ResolvedBuilder(new TypeName("test", "SponsorDtoBuilder")))));
+            t -> Optional.of("SponsorDtoBuilder.create().build()")));
   }
 
   @Test
