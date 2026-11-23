@@ -45,7 +45,6 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.javahelpers.codegen.analysis.FieldAnnotationExtractor;
 import org.javahelpers.codegen.analysis.JavaLangAnalyser;
 import org.javahelpers.codegen.analysis.JavaLangMapper;
@@ -672,10 +671,14 @@ public class BuilderDefinitionCreator {
     return hasNotAnnotation(IgnoreInBuilder.class, method);
   }
 
-  private static String propertyNameFromAccessor(ExecutableElement accessor) {
+  static String propertyNameFromAccessor(ExecutableElement accessor) {
     String name = accessor.getSimpleName().toString();
-    String prefix = Strings.CI.startsWith(name, "set") ? "set" : "get";
-    return StringUtils.uncapitalize(Strings.CI.removeStart(name, prefix));
+    if ((name.startsWith("set") || name.startsWith("get"))
+        && name.length() > 3
+        && Character.isUpperCase(name.charAt(3))) {
+      name = name.substring(3);
+    }
+    return StringUtils.uncapitalize(name);
   }
 
   private static Optional<String> resolveBuilderPropertyName(

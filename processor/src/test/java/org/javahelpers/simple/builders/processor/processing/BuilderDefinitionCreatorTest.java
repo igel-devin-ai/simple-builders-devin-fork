@@ -23,14 +23,82 @@
  */
 package org.javahelpers.simple.builders.processor.processing;
 
+import static org.javahelpers.codegen.testing.ElementTestUtils.method;
+import static org.javahelpers.codegen.testing.ElementTestUtils.typeElement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.testing.CodegenTestUtils;
+import org.javahelpers.codegen.testing.ProbeProcessor;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.junit.jupiter.api.Test;
 
 class BuilderDefinitionCreatorTest {
+
+  @Test
+  void accessorPropertyNamesRequireConventionalPrefixCapitalization() {
+    List<String> names =
+        List.of(
+            "setValue",
+            "getValue",
+            "settings",
+            "getaway",
+            "SetValue",
+            "SETValue",
+            "GetValue",
+            "GETValue",
+            "isStatic",
+            "set",
+            "get",
+            "setURL",
+            "getURL");
+    List<String> properties =
+        ProbeProcessor.probe(
+            (roundEnv, processingEnv) -> {
+              var dto = typeElement(processingEnv, "test.AccessorDto");
+              return names.stream()
+                  .map(name -> BuilderDefinitionCreator.propertyNameFromAccessor(method(dto, name)))
+                  .toList();
+            },
+            CodegenTestUtils.forSource(
+                """
+                package test;
+                public class AccessorDto {
+                  public void setValue(String value) {}
+                  public String getValue() { return ""; }
+                  public String settings() { return ""; }
+                  public String getaway() { return ""; }
+                  public String SetValue() { return ""; }
+                  public String SETValue() { return ""; }
+                  public String GetValue() { return ""; }
+                  public String GETValue() { return ""; }
+                  public boolean isStatic() { return false; }
+                  public String set() { return ""; }
+                  public String get() { return ""; }
+                  public void setURL(String value) {}
+                  public String getURL() { return ""; }
+                }
+                """));
+
+    assertEquals(
+        List.of(
+            "value",
+            "value",
+            "settings",
+            "getaway",
+            "setValue",
+            "sETValue",
+            "getValue",
+            "gETValue",
+            "isStatic",
+            "set",
+            "get",
+            "uRL",
+            "uRL"),
+        properties);
+  }
 
   @Test
   void setterSourceDescriptionRejectsMissingSetterName() {
