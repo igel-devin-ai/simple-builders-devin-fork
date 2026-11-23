@@ -26,6 +26,7 @@ package org.javahelpers.codegen.roaster;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.collections4.CollectionUtils;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.InterfaceName;
@@ -47,44 +48,55 @@ public final class RoasterMapper {
   private RoasterMapper() {}
 
   /**
-   * Maps a type model to Java source code using fully qualified names for robustness.
+   * Maps a type model to Java source code, qualifying types whose simple name is ambiguous within
+   * the generated class.
    *
    * @param typeName type to map
+   * @param collidingSimpleNames simple names used by more than one distinct type in the generated
+   *     class; affected types are emitted fully qualified (e.g. {@code java.sql.Date} next to
+   *     {@code java.util.Date})
    * @return Java source representation of the type
    */
-  public static String mapType(TypeName typeName) {
+  public static String mapType(TypeName typeName, Set<String> collidingSimpleNames) {
     String mappedType;
     if (typeName instanceof TypeNameWildcard wildcard) {
       mappedType =
           switch (wildcard.getBoundKind()) {
             case UNBOUNDED -> "?";
-            case EXTENDS -> "? extends " + mapType(wildcard.getBound().orElseThrow());
-            case SUPER -> "? super " + mapType(wildcard.getBound().orElseThrow());
+            case EXTENDS ->
+                "? extends " + mapType(wildcard.getBound().orElseThrow(), collidingSimpleNames);
+            case SUPER ->
+                "? super " + mapType(wildcard.getBound().orElseThrow(), collidingSimpleNames);
           };
     } else if (typeName instanceof TypeNamePrimitive primitive) {
       mappedType = primitive.getFullQualifiedName();
     } else if (typeName instanceof TypeNameArray arrayType) {
-      mappedType = mapType(arrayType.getTypeOfArray()) + "[]";
+      mappedType = mapType(arrayType.getTypeOfArray(), collidingSimpleNames) + "[]";
     } else if (typeName instanceof TypeNameGeneric genericType) {
-      mappedType = mapGenericType(genericType);
+      mappedType = mapGenericType(genericType, collidingSimpleNames);
     } else if (typeName instanceof TypeNameNested) {
       // Roaster splits a bare "Outer.Inner" into package "Outer" + class "Inner"; passing the
       // full qualified name makes it emit "import pkg.Outer.Inner" and use "Inner" in code.
       mappedType = typeName.getFullQualifiedName();
     } else {
-      mappedType = typeName.getClassName();
+      mappedType =
+          collidingSimpleNames.contains(typeName.getClassName())
+              ? typeName.getFullQualifiedName()
+              : typeName.getClassName();
     }
 
-    return prependTypeUseAnnotations(mappedType, typeName.getAnnotations());
+    return prependTypeUseAnnotations(mappedType, typeName.getAnnotations(), collidingSimpleNames);
   }
 
   /**
-   * Maps a type to a boxed Java source representation.
+   * Maps a type to a boxed Java source representation, qualifying ambiguous simple names.
    *
    * @param typeName type to map
+   * @param collidingSimpleNames simple names used by more than one distinct type in the generated
+   *     class
    * @return boxed Java source representation of the type
    */
-  public static String mapBoxedType(TypeName typeName) {
+  public static String mapBoxedType(TypeName typeName, Set<String> collidingSimpleNames) {
     if (typeName instanceof TypeNamePrimitive primitive) {
       String boxedType =
           switch (primitive.getType()) {
@@ -98,39 +110,45 @@ public final class RoasterMapper {
             case SHORT -> Short.class.getSimpleName();
             case VOID -> Void.class.getSimpleName();
           };
-      return prependTypeUseAnnotations(boxedType, typeName.getAnnotations());
+      return prependTypeUseAnnotations(boxedType, typeName.getAnnotations(), collidingSimpleNames);
     }
-    return mapType(typeName);
+    return mapType(typeName, collidingSimpleNames);
   }
 
-  private static String mapGenericType(TypeNameGeneric genericType) {
+  private static String mapGenericType(
+      TypeNameGeneric genericType, Set<String> collidingSimpleNames) {
     // Nested generic types keep the fully qualified name: Roaster parses "pkg.Outer.Pair<T>" by
     // importing "pkg.Outer.Pair" and using "Pair<T>" in code. The raw type's FQN is used because
     // TypeNameGeneric.getFullQualifiedName() already includes the type arguments.
-    String baseName =
-        genericType.isNestedType()
-            ? genericType.getRawType().getFullQualifiedName()
-            : genericType.getClassName();
+    String baseName;
+    if (genericType.isNestedType() || collidingSimpleNames.contains(genericType.getClassName())) {
+      baseName = genericType.getRawType().getFullQualifiedName();
+    } else {
+      baseName = genericType.getClassName();
+    }
     if (genericType.getInnerTypeArguments().isEmpty()) {
       return baseName;
     }
     String innerTypes =
         genericType.getInnerTypeArguments().stream()
-            .map(RoasterMapper::mapBoxedType)
+            .map(inner -> mapBoxedType(inner, collidingSimpleNames))
             .reduce((a, b) -> a + ", " + b)
             .orElse("");
     return baseName + "<" + innerTypes + ">";
   }
 
   /**
-   * Maps an annotation to source code.
+   * Maps an annotation to source code, qualifying ambiguous simple names.
    *
    * @param annotationDto annotation DTO
+   * @param collidingSimpleNames simple names used by more than one distinct type in the generated
+   *     class
    * @return Java source representation of the annotation
    */
-  public static String mapAnnotation(AnnotationDto annotationDto) {
+  public static String mapAnnotation(
+      AnnotationDto annotationDto, Set<String> collidingSimpleNames) {
     try {
-      String annotationType = mapType(annotationDto.getAnnotationType());
+      String annotationType = mapType(annotationDto.getAnnotationType(), collidingSimpleNames);
       if (annotationDto.getMembers().isEmpty()) {
         return "@" + annotationType;
       }
@@ -157,23 +175,30 @@ public final class RoasterMapper {
   }
 
   /**
-   * Maps an interface name to Java source code.
+   * Maps an interface name to Java source code, qualifying ambiguous simple names.
    *
    * @param interfaceName interface model
+   * @param collidingSimpleNames simple names used by more than one distinct type in the generated
+   *     class
    * @return source representation of the interface type
    */
-  public static String mapInterfaceToTypeName(InterfaceName interfaceName) {
+  public static String mapInterfaceToTypeName(
+      InterfaceName interfaceName, Set<String> collidingSimpleNames) {
     try {
-      String qualifiedName = interfaceName.getSimpleName();
+      String qualifiedName =
+          collidingSimpleNames.contains(interfaceName.getSimpleName())
+              ? interfaceName.getPackageName() + "." + interfaceName.getSimpleName()
+              : interfaceName.getSimpleName();
       if (interfaceName.hasTypeParameters()) {
         String typeParameters =
             interfaceName.getTypeParameters().stream()
-                .map(RoasterMapper::mapType)
+                .map(t -> mapType(t, collidingSimpleNames))
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
         qualifiedName = qualifiedName + "<" + typeParameters + ">";
       }
-      return prependTypeUseAnnotations(qualifiedName, interfaceName.getAnnotations());
+      return prependTypeUseAnnotations(
+          qualifiedName, interfaceName.getAnnotations(), collidingSimpleNames);
     } catch (Exception e) {
       throw new RoasterMapperException(
           e, "Failed to map interface %s: %s", interfaceName.toString(), e.getMessage());
@@ -181,15 +206,16 @@ public final class RoasterMapper {
   }
 
   /**
-   * Resolves the JavaPoet-style named template used in CodeTemplateDto to plain Java source code.
-   *
-   * <p>Type placeholders support {@code $label:T} for the plain type and {@code $label:B} for its
-   * boxed representation.
+   * Resolves the JavaPoet-style named template used in CodeTemplateDto to plain Java source code,
+   * qualifying ambiguous simple names.
    *
    * @param codeDto code template DTO
+   * @param collidingSimpleNames simple names used by more than one distinct type in the generated
+   *     class
    * @return resolved Java source code
    */
-  public static String resolveCodeTemplate(CodeTemplateDto codeDto) {
+  public static String resolveCodeTemplate(
+      CodeTemplateDto codeDto, Set<String> collidingSimpleNames) {
     String code = codeDto.getCodeFormat();
     for (MethodCodePlaceholder<?> placeHolderValue : codeDto.getCodeArguments()) {
       String label = placeHolderValue.getLabel();
@@ -198,8 +224,12 @@ public final class RoasterMapper {
         code = code.replace("$" + label + ":L", stringPlaceholder.getValue());
         code = code.replace("$" + label + ":S", quote(stringPlaceholder.getValue()));
       } else if (placeHolderValue instanceof MethodCodeTypePlaceholder typePlaceholder) {
-        code = code.replace("$" + label + ":T", mapType(typePlaceholder.getValue()));
-        code = code.replace("$" + label + ":B", mapBoxedType(typePlaceholder.getValue()));
+        code =
+            code.replace(
+                "$" + label + ":T", mapType(typePlaceholder.getValue(), collidingSimpleNames));
+        code =
+            code.replace(
+                "$" + label + ":B", mapBoxedType(typePlaceholder.getValue(), collidingSimpleNames));
       } else {
         throw new RoasterMapperException(
             "Unsupported placeholder type: %s", placeHolderValue.getClass().getName());
@@ -240,13 +270,13 @@ public final class RoasterMapper {
   }
 
   private static String prependTypeUseAnnotations(
-      String baseType, List<AnnotationDto> annotations) {
+      String baseType, List<AnnotationDto> annotations, Set<String> collidingSimpleNames) {
     if (CollectionUtils.isEmpty(annotations)) {
       return baseType;
     }
     String prefix =
         annotations.stream()
-            .map(RoasterMapper::mapAnnotation)
+            .map(a -> mapAnnotation(a, collidingSimpleNames))
             .reduce((a, b) -> a + " " + b)
             .orElse("");
     return prefix + " " + baseType;
