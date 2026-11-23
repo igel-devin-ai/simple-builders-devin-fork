@@ -942,8 +942,13 @@ public final class JavaLangAnalyser {
   /**
    * Derives the property name written by a setter: the JavaBeans name, or — when that is not a
    * legal identifier — the name derived from a matching getter.
+   *
+   * @param setter the setter method element
+   * @param dtoType the enclosing DTO type element
+   * @param context processing context
+   * @return the resolved property name; the raw setter-derived name when no legal name exists
    */
-  private static String resolveSetterPropertyName(
+  public static String resolveSetterPropertyName(
       ExecutableElement setter, TypeElement dtoType, AnnotationProcessingContext context) {
     String propertyName =
         StringUtils.uncapitalize(Strings.CI.removeStart(setter.getSimpleName().toString(), "set"));

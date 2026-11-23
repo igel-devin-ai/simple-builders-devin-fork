@@ -702,15 +702,9 @@ public class BuilderDefinitionCreator {
     String javaDocDescription = JavaLangAnalyser.extractParamJavaDoc(fullJavaDoc, fieldParameter);
 
     if (!SourceVersion.isName(fieldName)) {
-      Optional<String> legalFieldName =
-          JavaLangAnalyser.findGettersForField(
-                  dtoTypeElement, fieldName, fieldParameter.asType(), context)
-              .stream()
-              .map(getter -> getter.getSimpleName().toString())
-              .map(name -> StringUtils.uncapitalize(Strings.CI.removeStart(name, "get")))
-              .filter(SourceVersion::isName)
-              .findFirst();
-      if (legalFieldName.isEmpty()) {
+      String resolvedFieldName =
+          JavaLangAnalyser.resolveSetterPropertyName(mth, dtoTypeElement, context);
+      if (!SourceVersion.isName(resolvedFieldName)) {
         context.reportBasedOnStrictMode(
             mth,
             "Setter '%s' derives property name '%s', which is not a legal Java identifier. "
@@ -724,8 +718,8 @@ public class BuilderDefinitionCreator {
       context.debug(
           "Setter '%s' derives property name '%s', which is not a legal Java identifier - "
               + "using getter-derived name '%s' for builder members",
-          methodName, fieldName, legalFieldName.get());
-      fieldName = legalFieldName.get();
+          methodName, fieldName, resolvedFieldName);
+      fieldName = resolvedFieldName;
 
       // The getter-derived name may resolve to a property already handled by a constructor
       // parameter (e.g. ctor arg "isStatic" matched by setter "setStatic") — skip the duplicate.
@@ -910,13 +904,20 @@ public class BuilderDefinitionCreator {
     // Find matching getter on the DTO type using the builder field name
     TypeElement dtoTypeElement = context.getTypeElement(dtoType);
 
-    // Resolve the actual setter on the DTO — its name can deviate from the JavaBeans convention
-    // (e.g. setter "setStatic" for property "isStatic" after the reserved-name fallback). Fall
-    // back to the conventional name when no setter exists.
-    field.setSetterName(
-        JavaLangAnalyser.findSetterForProperty(dtoTypeElement, fieldName, fieldTypeMirror, context)
-            .map(setter -> setter.getSimpleName().toString())
-            .orElse("set" + StringUtils.capitalize(fieldName)));
+    // For setter-based fields the parameter's enclosing executable IS the setter — no lookup
+    // needed. For constructor parameters the real setter is resolved property-aware, because its
+    // name can deviate from the JavaBeans convention (e.g. "setStatic" for property "isStatic").
+    // Falls back to the conventional name when no setter exists.
+    if (param.getEnclosingElement() instanceof ExecutableElement enclosing
+        && JavaLangAnalyser.isSetterForField(enclosing)) {
+      field.setSetterName(enclosing.getSimpleName().toString());
+    } else {
+      field.setSetterName(
+          JavaLangAnalyser.findSetterForProperty(
+                  dtoTypeElement, fieldName, fieldTypeMirror, context)
+              .map(setter -> setter.getSimpleName().toString())
+              .orElse("set" + StringUtils.capitalize(fieldName)));
+    }
 
     Optional<ExecutableElement> getter =
         JavaLangAnalyser.findGetterForField(
