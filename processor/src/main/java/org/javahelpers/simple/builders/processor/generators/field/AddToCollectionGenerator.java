@@ -34,7 +34,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.TypeName;
-import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
@@ -93,8 +92,9 @@ public class AddToCollectionGenerator implements MethodGenerator {
   @Override
   public boolean appliesTo(
       BuilderFieldDto field, TypeName dtoType, BuilderProcessingContext context) {
-    if (field.getFieldType() instanceof TypeNameGeneric genericType
-        && genericType.hasWildcardArguments()) {
+    // The element type becomes the method's parameter type, and a wildcard is not a legal
+    // parameter type; adding to a ? extends / ? producer would not compile anyway.
+    if (field.getFieldType().hasWildcardArguments()) {
       return false;
     }
 

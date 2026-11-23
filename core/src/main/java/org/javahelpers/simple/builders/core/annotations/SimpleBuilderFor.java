@@ -45,7 +45,7 @@ import java.lang.annotation.Target;
  * constructors and setters, or package-visible members when the holder shares the target's package)
  * are used for builder generation. If no suitable construction mechanism is available, generation
  * fails with a compile-time error. The target type's own annotations are not consulted - the
- * explicit declaration wins, so even an {@link Ignore4BuilderGeneration} on the target does not
+ * explicit declaration wins, so even an {@link IgnoreForBuilderGeneration} on the target does not
  * suppress generation. This annotation is intentionally not {@code @Inherited}: it declares
  * generation for exactly the types listed on the annotated element.
  *
@@ -115,7 +115,7 @@ import java.lang.annotation.Target;
  *
  * @see SimpleBuilder
  * @see SimpleBuilder.Options
- * @see Ignore4BuilderGeneration
+ * @see IgnoreForBuilderGeneration
  */
 @Target({ElementType.TYPE, ElementType.PACKAGE})
 @Retention(RetentionPolicy.CLASS)

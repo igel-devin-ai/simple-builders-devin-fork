@@ -83,6 +83,15 @@ public class TypeName {
   }
 
   /**
+   * Checks whether any immediate type argument is a wildcard.
+   *
+   * @return false for types without generic arguments
+   */
+  public boolean hasWildcardArguments() {
+    return false;
+  }
+
+  /**
    * Returns the simple name with generic type arguments (if any), without package prefixes.
    *
    * <p>For a plain {@code TypeName} this is equivalent to {@link #getClassName()}. Subclasses like
