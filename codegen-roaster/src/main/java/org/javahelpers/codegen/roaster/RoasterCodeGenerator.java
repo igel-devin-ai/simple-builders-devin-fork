@@ -615,15 +615,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     String typeSource = mapType(parameterType, collidingSimpleNames);
     ParameterSource<?> parameter;
     if (typeSource.contains(">.")) {
-      // Roaster's addParameter cannot split generics on both an owner and its member.
-      String existing =
-          method.getParameters().stream().map(Object::toString).collect(Collectors.joining(", "));
-      method.setParameters(
-          (existing.isEmpty() ? "" : existing + ", ")
-              + typeSource
-              + " "
-              + paramDto.getParameterName());
-      parameter = method.getParameters().get(method.getParameters().size() - 1);
+      parameter = addParameterWithNestedGenerics(method, typeSource, paramDto);
     } else {
       parameter = method.addParameter(typeSource, paramDto.getParameterName());
     }
@@ -631,6 +623,19 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       parameter.setVarArgs(true);
     }
     applyAnnotations(parameter, paramDto.getAnnotations());
+  }
+
+  // Roaster's addParameter cannot split generics on both an owner and its member.
+  private ParameterSource<?> addParameterWithNestedGenerics(
+      MethodSource<?> method, String typeSource, MethodParameterDto paramDto) {
+    String existing =
+        method.getParameters().stream().map(Object::toString).collect(Collectors.joining(", "));
+    method.setParameters(
+        (existing.isEmpty() ? "" : existing + ", ")
+            + typeSource
+            + " "
+            + paramDto.getParameterName());
+    return method.getParameters().get(method.getParameters().size() - 1);
   }
 
   private String mapType(TypeName typeName, Set<String> collidingSimpleNames) {

@@ -177,8 +177,7 @@ public final class JavaLangMapper {
       TypeName typeName, TypeElement typeElement, TypeMappingContext context) {
     if (!typeName.hasEmptyConstructor()
         && isConcreteClass(typeElement)
-        && !(typeElement.getNestingKind() == NestingKind.MEMBER
-            && !typeElement.getModifiers().contains(Modifier.STATIC))
+        && !(isMember(typeElement) && isNotStatic(typeElement))
         && !TypeNameAnalyser.isJavaClass(typeName)
         && JavaLangAnalyser.hasEmptyConstructor(typeElement, context)) {
       typeName.setHasEmptyConstructor(true);
@@ -235,10 +234,17 @@ public final class JavaLangMapper {
     return new TypeName(packageName, simpleName);
   }
 
+  private static boolean isMember(TypeElement element) {
+    return element.getNestingKind() == NestingKind.MEMBER;
+  }
+
+  private static boolean isNotStatic(TypeElement element) {
+    return !element.getModifiers().contains(Modifier.STATIC);
+  }
+
   private static TypeName toTypeName(DeclaredType type, TypeMappingContext context) {
     TypeElement element = (TypeElement) type.asElement();
-    if (element.getNestingKind() == NestingKind.MEMBER
-        && !element.getModifiers().contains(Modifier.STATIC)) {
+    if (isMember(element) && isNotStatic(element)) {
       return new TypeNameNested(
           extractType(type.getEnclosingType(), context), element.getSimpleName().toString());
     }
