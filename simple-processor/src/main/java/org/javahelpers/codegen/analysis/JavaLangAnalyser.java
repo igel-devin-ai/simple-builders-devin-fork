@@ -30,6 +30,7 @@ import static javax.lang.model.type.TypeKind.VOID;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -817,7 +818,8 @@ public final class JavaLangAnalyser {
    * @param fieldName the property name
    * @param fieldTypeMirror the expected return type
    * @param context processing context
-   * @return matching getters in member order
+   * @return matching getters in deterministic preference order: boolean-style {@code isX}, standard
+   *     {@code getX}, then accessor-style (record) {@code x}
    */
   public static List<ExecutableElement> findGettersForField(
       TypeElement dtoType,
@@ -840,7 +842,25 @@ public final class JavaLangAnalyser {
                   && context.isSameType(candidate.getReturnType(), fieldTypeMirror)
                   && context.isAccessibleFromGeneratedPackage(candidate);
             })
+        .sorted(
+            Comparator.comparingInt((ExecutableElement m) -> getterPreference(m, fieldName))
+                .thenComparing(m -> m.getSimpleName().toString()))
         .toList();
+  }
+
+  /**
+   * Ranks a getter candidate for deterministic ordering: {@code isX} before {@code getX} before
+   * accessor-style {@code x}.
+   */
+  private static int getterPreference(ExecutableElement method, String fieldName) {
+    String name = method.getSimpleName().toString();
+    if (name.equalsIgnoreCase("is" + fieldName)) {
+      return 0;
+    }
+    if (name.equalsIgnoreCase("get" + fieldName)) {
+      return 1;
+    }
+    return 2;
   }
 
   /**
@@ -935,7 +955,8 @@ public final class JavaLangAnalyser {
         .filter(JavaLangAnalyser::isSetterForField)
         .filter(context::isAccessibleFromGeneratedPackage)
         .filter(m -> context.isSameType(m.getParameters().get(0).asType(), fieldTypeMirror))
-        .filter(m -> resolveSetterPropertyName(m, dtoType, context).equals(fieldName))
+        .filter(m -> fieldName.equals(resolveSetterPropertyName(m, dtoType, context)))
+        .sorted(Comparator.comparing(m -> m.getSimpleName().toString()))
         .findFirst();
   }
 

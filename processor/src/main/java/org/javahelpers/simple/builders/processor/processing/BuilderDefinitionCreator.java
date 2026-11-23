@@ -908,16 +908,17 @@ public class BuilderDefinitionCreator {
     // needed. For constructor parameters the real setter is resolved property-aware, because its
     // name can deviate from the JavaBeans convention (e.g. "setStatic" for property "isStatic").
     // Falls back to the conventional name when no setter exists.
-    if (param.getEnclosingElement() instanceof ExecutableElement enclosing
-        && JavaLangAnalyser.isSetterForField(enclosing)) {
-      field.setSetterName(enclosing.getSimpleName().toString());
-    } else {
-      field.setSetterName(
-          JavaLangAnalyser.findSetterForProperty(
-                  dtoTypeElement, fieldName, fieldTypeMirror, context)
-              .map(setter -> setter.getSimpleName().toString())
-              .orElse("set" + StringUtils.capitalize(fieldName)));
-    }
+    Optional<ExecutableElement> propertySetter =
+        param.getEnclosingElement() instanceof ExecutableElement enclosing
+                && JavaLangAnalyser.isSetterForField(enclosing)
+            ? Optional.of(enclosing)
+            : JavaLangAnalyser.findSetterForProperty(
+                dtoTypeElement, fieldName, fieldTypeMirror, context);
+    field.setSetterName(
+        propertySetter
+            .map(ExecutableElement::getSimpleName)
+            .map(Object::toString)
+            .orElse("set" + StringUtils.capitalize(fieldName)));
 
     Optional<ExecutableElement> getter =
         JavaLangAnalyser.findGetterForField(
@@ -1016,15 +1017,10 @@ public class BuilderDefinitionCreator {
     Optional<? extends Element> recordComponent =
         JavaLangAnalyser.findRecordComponent(dtoTypeElement, fieldName);
     // Property-aware lookup also covers setters whose name deviates from the JavaBeans
-    // convention (e.g. "setStatic" for property "isStatic"). For setter-based fields the
-    // enclosing executable of the parameter IS the setter and serves as an additional candidate.
+    // convention (e.g. "setStatic" for property "isStatic"). For setter-based fields it always
+    // finds the discovering setter itself, so no enclosing-element fallback is needed.
     Optional<ExecutableElement> setter =
         JavaLangAnalyser.findSetterForProperty(dtoTypeElement, fieldName, param.asType(), context);
-    if (setter.isEmpty()
-        && param.getEnclosingElement() instanceof ExecutableElement enclosing
-        && enclosing.getKind() == ElementKind.METHOD) {
-      setter = Optional.of(enclosing);
-    }
 
     // Search the relevant elements in priority order for the @Deprecated annotation to propagate.
     // Note: the backing field is intentionally NOT checked — it is uncommon to deprecate a
