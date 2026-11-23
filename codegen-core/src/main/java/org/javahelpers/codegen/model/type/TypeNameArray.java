@@ -44,6 +44,26 @@ public class TypeNameArray extends TypeName {
   }
 
   /**
+   * Creates an array type with the given element type.
+   *
+   * @param innerType the array element type
+   * @return array of {@code innerType}
+   */
+  public static TypeNameArray of(TypeName innerType) {
+    return new TypeNameArray(innerType);
+  }
+
+  /**
+   * Creates an array type with the given element class.
+   *
+   * @param innerClass the array element class
+   * @return array of {@code innerClass}
+   */
+  public static TypeNameArray of(Class<?> innerClass) {
+    return new TypeNameArray(TypeName.of(innerClass));
+  }
+
+  /**
    * Constructor with innerType.
    *
    * @param innerType name of package

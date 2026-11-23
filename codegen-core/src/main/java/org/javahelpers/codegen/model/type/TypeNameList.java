@@ -56,4 +56,26 @@ public class TypeNameList extends TypeNameCollection {
   public TypeNameList(TypeName outerType, List<TypeName> innerTypeArguments, TypeName elementType) {
     super(outerType, innerTypeArguments, elementType, "List");
   }
+
+  /**
+   * Creates a {@code TypeNameList} for the {@code java.util.List} interface parameterized with the
+   * given element type.
+   *
+   * @param elementType the list element type
+   * @return a {@code TypeNameList} representing {@code List<elementType>}
+   */
+  public static TypeNameList of(TypeName elementType) {
+    return new TypeNameList(TypeName.of(List.class), List.of(elementType), elementType);
+  }
+
+  /**
+   * Creates a {@code TypeNameList} for the {@code java.util.List} interface parameterized with the
+   * given element class.
+   *
+   * @param elementClass the list element class
+   * @return a {@code TypeNameList} representing {@code List<elementClass>}
+   */
+  public static TypeNameList of(Class<?> elementClass) {
+    return of(TypeName.of(elementClass));
+  }
 }
