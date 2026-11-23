@@ -188,18 +188,7 @@ public class CoreMethodsEnhancer implements BuilderEnhancer {
       code.append("this.")
           .append(field.getFieldNameInBuilder())
           .append(".ifSet(result::")
-          .append(
-              field
-                  .getSetterName()
-                  .orElseThrow(
-                      () ->
-                          new IllegalStateException(
-                              "Missing setter name for field '%s' in DTO '%s'"
-                                  .formatted(
-                                      field.getOriginalFieldName(),
-                                      builderDto
-                                          .getBuildingTargetTypeName()
-                                          .getFullQualifiedName()))))
+          .append(field.getSetterName().orElseThrow(() -> BuilderFieldDto.missingSetterName(field)))
           .append(")");
       field
           .getDefaultValue()

@@ -109,8 +109,7 @@ class BuilderDefinitionCreatorTest {
             IllegalStateException.class,
             () -> BuilderDefinitionCreator.buildSetterSourceDescription(field, "FlagDto"));
 
-    assertEquals(
-        "Missing setter name for field 'isStatic' in DTO 'FlagDto'", exception.getMessage());
+    assertEquals("Missing setter name for field 'isStatic'", exception.getMessage());
   }
 
   @Test

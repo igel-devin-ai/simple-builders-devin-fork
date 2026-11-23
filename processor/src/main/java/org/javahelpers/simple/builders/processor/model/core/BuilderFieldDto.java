@@ -143,6 +143,11 @@ public class BuilderFieldDto {
     this.fieldNameInBuilder = fieldNameInBuilder;
   }
 
+  public static IllegalStateException missingSetterName(BuilderFieldDto field) {
+    return new IllegalStateException(
+        "Missing setter name for field '%s'".formatted(field.getOriginalFieldName()));
+  }
+
   /**
    * Gets the setter method name for this field.
    *

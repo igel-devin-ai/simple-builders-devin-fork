@@ -62,8 +62,7 @@ class CoreMethodsEnhancerTest {
     IllegalStateException exception =
         assertThrows(IllegalStateException.class, () -> enhancer.createBuildMethod(builder));
 
-    assertEquals(
-        "Missing setter name for field 'isStatic' in DTO 'test.FlagDto'", exception.getMessage());
+    assertEquals("Missing setter name for field 'isStatic'", exception.getMessage());
   }
 
   @Test

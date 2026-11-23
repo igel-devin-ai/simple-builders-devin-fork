@@ -34,9 +34,7 @@ import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUti
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.google.testing.compile.Compilation;
-import java.util.List;
 import java.util.stream.Stream;
-import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -269,16 +267,59 @@ class ReservedPropertyNameTest {
 
   private static Stream<String> reservedWords() {
     return Stream.of(
-            ("abstract assert boolean break byte case catch char class const continue default do "
-                    + "double else enum extends final finally float for goto if implements import "
-                    + "instanceof int interface long native new package private protected public "
-                    + "return short static strictfp super switch synchronized this throw throws "
-                    + "transient try void volatile while _ true false null")
-                .split(" "))
-        .filter(word -> !word.equals("_"))
-        .filter(
-            word ->
-                SourceVersion.isKeyword(word) || List.of("true", "false", "null").contains(word));
+        "abstract",
+        "assert",
+        "boolean",
+        "break",
+        "byte",
+        "case",
+        "catch",
+        "char",
+        "class",
+        "const",
+        "continue",
+        "default",
+        "do",
+        "double",
+        "else",
+        "enum",
+        "extends",
+        "final",
+        "finally",
+        "float",
+        "for",
+        "goto",
+        "if",
+        "implements",
+        "import",
+        "instanceof",
+        "int",
+        "interface",
+        "long",
+        "native",
+        "new",
+        "package",
+        "private",
+        "protected",
+        "public",
+        "return",
+        "short",
+        "static",
+        "strictfp",
+        "super",
+        "switch",
+        "synchronized",
+        "this",
+        "throw",
+        "throws",
+        "transient",
+        "try",
+        "void",
+        "volatile",
+        "while",
+        "true",
+        "false",
+        "null");
   }
 
   /** A matching backing field cannot rescue a property without a usable getter. */
