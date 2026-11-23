@@ -32,10 +32,14 @@ import static org.javahelpers.simple.builders.processor.testing.ProcessorTestUti
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
+import java.util.stream.Stream;
 import javax.tools.JavaFileObject;
 import org.javahelpers.codegen.testing.ProcessorAsserts;
 import org.javahelpers.simple.builders.processor.testing.ProcessorTestUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** Tests for the {@link BuilderProcessor} class. */
 class BuilderProcessorTest {
@@ -238,11 +242,28 @@ class BuilderProcessorTest {
         .hadWarningContaining("The target class for generating a builder should not be abstract");
   }
 
-  /** A DTO created through a hand-written builder has only a private constructor. */
-  @Test
-  void shouldSkipDtoWithOnlyPrivateConstructor() {
-    JavaFileObject source =
-        ProcessorTestUtils.forSource(
+  /** A DTO without a constructor reachable from the generated package gets no builder. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("unreachableConstructorCases")
+  void shouldSkipDtoWithoutAccessibleConstructor(String caseName, String dtoName, String source) {
+    JavaFileObject dto = ProcessorTestUtils.forSource(source);
+
+    // When
+    Compilation compilation = compile(dto);
+
+    // Then: compilation succeeds, but no builder is generated
+    assertThat(compilation).succeeded();
+    assertThat(compilation).hadWarningContaining("No accessible constructor").inFile(dto).onLine(4);
+    assertNoBuilderGenerated(
+        compilation, dtoName, "A type without accessible constructor must not get a builder");
+  }
+
+  private static Stream<Arguments> unreachableConstructorCases() {
+    return Stream.of(
+        // A DTO created through a hand-written builder has only a private constructor.
+        Arguments.of(
+            "only private constructor",
+            "PersonDto",
             """
             package test;
             import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
@@ -253,26 +274,11 @@ class BuilderProcessorTest {
               public String getName() { return name; }
               public void setName(String name) { this.name = name; }
             }
-            """);
-
-    // When
-    Compilation compilation = compile(source);
-
-    // Then: compilation succeeds, but no builder is generated
-    assertThat(compilation).succeeded();
-    assertThat(compilation)
-        .hadWarningContaining("No accessible constructor")
-        .inFile(source)
-        .onLine(4);
-    assertNoBuilderGenerated(
-        compilation, "PersonDto", "A type without accessible constructor must not get a builder");
-  }
-
-  /** A singleton-style DTO has only a private no-arg constructor. */
-  @Test
-  void shouldSkipDtoWithPrivateNoArgConstructor() {
-    JavaFileObject source =
-        ProcessorTestUtils.forSource(
+            """),
+        // A singleton-style DTO has only a private no-arg constructor.
+        Arguments.of(
+            "private no-arg constructor",
+            "SingletonDto",
             """
             package test;
             import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
@@ -284,21 +290,22 @@ class BuilderProcessorTest {
               public String getName() { return name; }
               public void setName(String name) { this.name = name; }
             }
-            """);
-
-    // When
-    Compilation compilation = compile(source);
-
-    // Then: compilation succeeds, but no builder is generated
-    assertThat(compilation).succeeded();
-    assertThat(compilation)
-        .hadWarningContaining("No accessible constructor")
-        .inFile(source)
-        .onLine(4);
-    assertNoBuilderGenerated(
-        compilation,
-        "SingletonDto",
-        "A type without accessible constructor must not get a builder");
+            """),
+        // A package-private constructor is unreachable from a builder in another package.
+        Arguments.of(
+            "package-private constructor in different package",
+            "WidgetDto",
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            @SimpleBuilder(options = @SimpleBuilder.Options(packageName = "com.example.generated"))
+            public class WidgetDto {
+              private String name;
+              WidgetDto() {}
+              public String getName() { return name; }
+              public void setName(String name) { this.name = name; }
+            }
+            """));
   }
 
   /** A public constructor remains usable alongside a private constructor. */
@@ -330,36 +337,6 @@ class BuilderProcessorTest {
         """
         PersonDto result = new PersonDto();
         """);
-  }
-
-  /** A package-private constructor is unreachable from a builder in another package. */
-  @Test
-  void shouldSkipUnreachablePackagePrivateConstructor() {
-    JavaFileObject source =
-        ProcessorTestUtils.forSource(
-            """
-            package test;
-            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
-            @SimpleBuilder(options = @SimpleBuilder.Options(packageName = "com.example.generated"))
-            public class WidgetDto {
-              private String name;
-              WidgetDto() {}
-              public String getName() { return name; }
-              public void setName(String name) { this.name = name; }
-            }
-            """);
-
-    // When
-    Compilation compilation = compile(source);
-
-    // Then: compilation succeeds, but no builder is generated
-    assertThat(compilation).succeeded();
-    assertThat(compilation)
-        .hadWarningContaining("No accessible constructor")
-        .inFile(source)
-        .onLine(4);
-    assertNoBuilderGenerated(
-        compilation, "WidgetDto", "A type without accessible constructor must not get a builder");
   }
 
   /** Strict mode rejects a DTO without an accessible constructor. */
