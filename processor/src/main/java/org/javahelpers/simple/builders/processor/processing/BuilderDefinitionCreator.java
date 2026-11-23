@@ -135,7 +135,11 @@ public class BuilderDefinitionCreator {
     applyDeprecationSuppressions(result, annotatedType, constructor, context);
 
     // Finalize the definition - convert to generic class representation
-    finalizeDefinition(result, context);
+    try {
+      finalizeDefinition(result, context);
+    } catch (IllegalStateException e) {
+      throw new BuilderException(annotatedType, e);
+    }
 
     context.debugEndOperation(
         "Builder definition extracted: %s", result.getBuilderTypeName().getClassName());
