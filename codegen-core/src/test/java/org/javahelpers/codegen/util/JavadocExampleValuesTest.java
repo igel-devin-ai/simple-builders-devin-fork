@@ -96,10 +96,7 @@ class JavadocExampleValuesTest {
             TypeNameMap.of(String.class, Integer.class),
             "values",
             "Map.of(\"example values\", 42)"),
-        Arguments.of(
-            new TypeNameArray(TypeName.of(String.class)),
-            "tags",
-            "new String[] {\"example tags\"}"),
+        Arguments.of(TypeNameArray.of(String.class), "tags", "new String[] {\"example tags\"}"),
         Arguments.of(
             TypeNameGeneric.of(Optional.class, String.class),
             "subtitle",

@@ -112,9 +112,9 @@ public class VarArgsHelperGenerator implements MethodGenerator {
     TypeName parameterType = null;
 
     if (fieldType instanceof TypeNameList listType) {
-      parameterType = new TypeNameArray(listType.getElementType());
+      parameterType = TypeNameArray.of(listType.getElementType());
     } else if (fieldType instanceof TypeNameSet setType) {
-      parameterType = new TypeNameArray(setType.getElementType());
+      parameterType = TypeNameArray.of(setType.getElementType());
     } else if (fieldType instanceof TypeNameMap mapType) {
       parameterType =
           new TypeNameArray(
