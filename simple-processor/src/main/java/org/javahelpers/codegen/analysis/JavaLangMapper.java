@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -539,26 +538,15 @@ public final class JavaLangMapper {
                 if (elementOfParameter.getKind() == ElementKind.ENUM) {
                   rawType.setEnumType(true);
                 }
-                TypeMirror enclosingType = t.getEnclosingType();
-                TypeName enclosing =
-                    (enclosingType.getKind() != NONE)
-                            && !t.asElement().getModifiers().contains(Modifier.STATIC)
-                        ? enclosingType.accept(this, null)
-                        : null;
-                if (t.getTypeArguments().isEmpty() && !(enclosing instanceof TypeNameGeneric)) {
+                List<? extends TypeMirror> typeArguments = t.getTypeArguments();
+                if (typeArguments.isEmpty()) {
                   return wrapInCollectionTypeIfApplicable(
                       rawType, List.of(), typeOfParameter, context);
                 }
-
-                List<TypeMirror> typesExtracted = new ArrayList<>(t.getTypeArguments());
-                if (typesExtracted.isEmpty()) {
-                  return wrapInCollectionTypeIfApplicable(
-                      rawType, List.of(), typeOfParameter, context);
-                } else {
-                  List<TypeName> argTypes = extractTypeForList(typesExtracted, context);
-                  return wrapInCollectionTypeIfApplicable(
-                      rawType, argTypes, typeOfParameter, context);
-                }
+                List<TypeName> argTypes =
+                    extractTypeForList(new ArrayList<>(typeArguments), context);
+                return wrapInCollectionTypeIfApplicable(
+                    rawType, argTypes, typeOfParameter, context);
               }
 
               @Override
