@@ -30,6 +30,7 @@ import static javax.lang.model.type.TypeKind.VOID;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -806,23 +807,59 @@ public final class JavaLangAnalyser {
       String fieldName,
       TypeMirror fieldTypeMirror,
       AnnotationProcessingContext context) {
+    return findGettersForField(dtoType, fieldName, fieldTypeMirror, context).stream().findFirst();
+  }
+
+  /**
+   * Finds accessible, parameterless getters whose names and return types match a property.
+   *
+   * @param dtoType the enclosing type
+   * @param fieldName the property name
+   * @param fieldTypeMirror the expected return type
+   * @param context processing context
+   * @return matching getters in deterministic preference order: boolean-style {@code isX}, standard
+   *     {@code getX}, then accessor-style (record) {@code x}
+   */
+  public static List<ExecutableElement> findGettersForField(
+      TypeElement dtoType,
+      String fieldName,
+      TypeMirror fieldTypeMirror,
+      AnnotationProcessingContext context) {
     if (dtoType == null || fieldName == null || fieldTypeMirror == null) {
-      return Optional.empty();
+      return List.of();
     }
     List<ExecutableElement> methods = ElementFilter.methodsIn(context.getAllMembers(dtoType));
 
     // Check for accessor methods:
     // Record-style (fieldName), boolean-style (isXxx), or standard (getXxx)
-    for (ExecutableElement candidate : methods) {
-      String name = candidate.getSimpleName().toString();
-      if (Strings.CI.equalsAny(name, fieldName, "is" + fieldName, "get" + fieldName)
-          && candidate.getParameters().isEmpty()
-          && context.isSameType(candidate.getReturnType(), fieldTypeMirror)
-          && context.isAccessibleFromGeneratedPackage(candidate)) {
-        return Optional.of(candidate);
-      }
+    return methods.stream()
+        .filter(
+            candidate -> {
+              String name = candidate.getSimpleName().toString();
+              return Strings.CI.equalsAny(name, fieldName, "is" + fieldName, "get" + fieldName)
+                  && candidate.getParameters().isEmpty()
+                  && context.isSameType(candidate.getReturnType(), fieldTypeMirror)
+                  && context.isAccessibleFromGeneratedPackage(candidate);
+            })
+        .sorted(
+            Comparator.comparingInt((ExecutableElement m) -> getterPreference(m, fieldName))
+                .thenComparing(m -> m.getSimpleName().toString()))
+        .toList();
+  }
+
+  /**
+   * Ranks a getter candidate for deterministic ordering: {@code isX} before {@code getX} before
+   * accessor-style {@code x}.
+   */
+  private static int getterPreference(ExecutableElement method, String fieldName) {
+    String name = method.getSimpleName().toString();
+    if (Strings.CI.equals(name, "is" + fieldName)) {
+      return 0;
     }
-    return Optional.empty();
+    if (Strings.CI.equals(name, "get" + fieldName)) {
+      return 1;
+    }
+    return 2;
   }
 
   /**

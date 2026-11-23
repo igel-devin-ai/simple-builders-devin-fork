@@ -75,6 +75,7 @@ Value semantics (`equals`, `hashCode`, `toString`) and generating brand-new immu
 - **Fluent API**: Clean, chainable API for object construction
 - **Collections Support**: Built-in support for collections and maps
 - **Annotation Preservation**: Validation annotations are automatically copied to builder methods
+- **Property Selection**: Constructor parameters and eligible `set*` methods define properties; see [property detection and `@IgnoreInBuilder`](docs/CONFIGURATION.md#property-detection-and-ignoring-members)
 - **With Interface Pattern**: Type-safe object modifications using generated With interfaces
 - **Jackson Support**: Supporting Jackson deserialization via `@JsonPOJOBuilder` and optional generation of `SimpleModule`s (one per package) (both need to be enabled)
 - **MapStruct Support**: Generated builders are automatically detected by [MapStruct](https://mapstruct.org/) via a `BuilderProvider` SPI when simple-builders-processor and mapstruct-processor share the annotation processor path

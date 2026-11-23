@@ -35,6 +35,32 @@ import org.junit.jupiter.api.Test;
 class TypeNameTest {
 
   @Test
+  void hasWildcardArgumentsDefaultsToFalse() {
+    assertFalse(TypeName.of(String.class).hasWildcardArguments());
+  }
+
+  @Test
+  void hasWildcardArgumentsChecksImmediateGenericArguments() {
+    TypeName unbounded = new TypeNameGeneric(TypeName.of(List.class), new TypeNameWildcard());
+    TypeName upperBounded =
+        new TypeNameGeneric(
+            TypeName.of(List.class), TypeNameWildcard.extendsBound(TypeName.of(Number.class)));
+    TypeName lowerBounded =
+        new TypeNameGeneric(
+            TypeName.of(List.class), TypeNameWildcard.superBound(TypeName.of(Integer.class)));
+    TypeName concrete = new TypeNameGeneric(List.class, String.class);
+    TypeName empty = new TypeNameGeneric(TypeName.of(List.class), List.of());
+    TypeName nested = new TypeNameGeneric(TypeName.of(List.class), unbounded);
+
+    assertTrue(unbounded.hasWildcardArguments());
+    assertTrue(upperBounded.hasWildcardArguments());
+    assertTrue(lowerBounded.hasWildcardArguments());
+    assertFalse(concrete.hasWildcardArguments());
+    assertFalse(empty.hasWildcardArguments());
+    assertFalse(nested.hasWildcardArguments());
+  }
+
+  @Test
   void is_qualifiedName_matchesExactClass() {
     assertTrue(new TypeName("java.lang", "String").is(String.class));
     assertTrue(new TypeName("java.util", "Optional").is(java.util.Optional.class));

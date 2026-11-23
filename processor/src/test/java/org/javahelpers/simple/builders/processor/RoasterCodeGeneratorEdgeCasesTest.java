@@ -362,4 +362,153 @@ class RoasterCodeGeneratorEdgeCasesTest {
         "public GenericDto<T> build()",
         "public static <T> GenericDtoBuilder<T> create()");
   }
+
+  /**
+   * Tests that fields whose types share a simple name but live in different packages generate a
+   * compilable builder.
+   *
+   * <p>Regression test for the {@code java.util.Date} / {@code java.sql.Date} collision: the
+   * generated builder must fully qualify both types in its tracked-value fields and setter
+   * parameters instead of emitting an ambiguous simple name.
+   */
+  @Test
+  void shouldQualifyCollidingSimpleTypeNames() {
+    JavaFileObject sourceFile =
+        JavaFileObjects.forSourceString(
+            "test.DateDto",
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+
+            @SimpleBuilder
+            public class DateDto {
+              private java.util.Date utilDateTestField;
+              private java.sql.Date sqlDateTestField;
+              public java.util.Date getUtilDateTestField() { return utilDateTestField; }
+              public void setUtilDateTestField(java.util.Date d) { this.utilDateTestField = d; }
+              public java.sql.Date getSqlDateTestField() { return sqlDateTestField; }
+              public void setSqlDateTestField(java.sql.Date d) { this.sqlDateTestField = d; }
+            }
+            """);
+
+    Compilation compilation = ProcessorTestUtils.createCompiler().compile(sourceFile);
+
+    String generatedCode = loadGeneratedSource(compilation, "DateDtoBuilder");
+    assertGenerationSucceeded(compilation, "DateDtoBuilder", generatedCode);
+    assertContaining(
+        generatedCode,
+        """
+          /**
+           * Tracked value for <code>sqlDateTestField</code>: sqlDateTestField.
+           */
+          private TrackedValue<java.sql.Date> sqlDateTestField = unsetValue();
+          /**
+           * Tracked value for <code>utilDateTestField</code>: utilDateTestField.
+           */
+          private TrackedValue<java.util.Date> utilDateTestField = unsetValue();
+
+          /**
+           * Empty constructor of builder for {@code test.DateDto}.
+           */
+          public DateDtoBuilder() {
+          }
+
+          /**
+           * Initialisation of builder for {@code test.DateDto} by a instance.
+           *
+           * @param instance object instance for initialisiation
+           */
+          public DateDtoBuilder(DateDto instance) {
+            this.sqlDateTestField = initialValue(instance.getSqlDateTestField());
+            this.utilDateTestField = initialValue(instance.getUtilDateTestField());
+          }
+
+          /**
+           * Creating a new builder for {@code test.DateDto}.
+           *
+           * <h4>Example:</h4>
+           *
+           * <pre>{@code
+           * DateDtoBuilder builder = DateDtoBuilder.create();
+           * }</pre>
+           *
+           * @return builder for {@code test.DateDto}
+           */
+          public static DateDtoBuilder create() {
+            return new DateDtoBuilder();
+          }
+
+          /**
+           * Sets the value for <code>sqlDateTestField</code> by invoking the provided supplier.
+           * <p>
+           * Generated from setter {@link DateDto#setSqlDateTestField(Date) setSqlDateTestField(Date sqlDateTestField)}
+           *
+           * @param sqlDateTestFieldSupplier supplier for sqlDateTestField
+           * @return current instance of builder
+           */
+          public DateDtoBuilder sqlDateTestField(Supplier<java.sql.Date> sqlDateTestFieldSupplier) {
+            this.sqlDateTestField = changedValue(sqlDateTestFieldSupplier.get());
+            return this;
+          }
+
+          /**
+           * Sets the value for <code>sqlDateTestField</code>.
+           * <p>
+           * Generated from setter {@link DateDto#setSqlDateTestField(Date) setSqlDateTestField(Date sqlDateTestField)}
+           *
+           * @param sqlDateTestField sqlDateTestField
+           * @return current instance of builder
+           */
+          public DateDtoBuilder sqlDateTestField(java.sql.Date sqlDateTestField) {
+            this.sqlDateTestField = changedValue(sqlDateTestField);
+            return this;
+          }
+
+          /**
+           * Updates the current value of <code>sqlDateTestField</code> in place by applying the given operator, instead of
+           * reading it out, changing it and setting it again. Useful for adjustments relative to the current value, e.g.
+           * trimming, upper-casing, clamping or incrementing, and in combination with the <code>With</code> copy-and-modify
+           * flow. The value must have been set before (directly or via an existing instance).
+           * <p>
+           * Generated from setter {@link DateDto#setSqlDateTestField(Date) setSqlDateTestField(Date sqlDateTestField)}
+           *
+           * @param sqlDateTestFieldUpdater operator applied to the current value; its result becomes the new value
+           * @return current instance of builder
+           * @throws IllegalStateException if <code>sqlDateTestField</code> has not been set yet
+           */
+          public DateDtoBuilder sqlDateTestFieldUpdate(UnaryOperator<java.sql.Date> sqlDateTestFieldUpdater) {
+            if (!this.sqlDateTestField.isSet()) {
+              throw new IllegalStateException("Cannot update 'sqlDateTestField' before it is set");
+            }
+            this.sqlDateTestField = changedValue(sqlDateTestFieldUpdater.apply(this.sqlDateTestField.value()));
+            return this;
+          }
+
+          /**
+           * Sets the value for <code>utilDateTestField</code> by invoking the provided supplier.
+           * <p>
+           * Generated from setter {@link DateDto#setUtilDateTestField(Date) setUtilDateTestField(Date utilDateTestField)}
+           *
+           * @param utilDateTestFieldSupplier supplier for utilDateTestField
+           * @return current instance of builder
+           */
+          public DateDtoBuilder utilDateTestField(Supplier<java.util.Date> utilDateTestFieldSupplier) {
+            this.utilDateTestField = changedValue(utilDateTestFieldSupplier.get());
+            return this;
+          }
+
+          /**
+           * Sets the value for <code>utilDateTestField</code>.
+           * <p>
+           * Generated from setter {@link DateDto#setUtilDateTestField(Date) setUtilDateTestField(Date utilDateTestField)}
+           *
+           * @param utilDateTestField utilDateTestField
+           * @return current instance of builder
+           */
+          public DateDtoBuilder utilDateTestField(java.util.Date utilDateTestField) {
+            this.utilDateTestField = changedValue(utilDateTestField);
+            return this;
+          }
+        """);
+  }
 }

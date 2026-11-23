@@ -29,7 +29,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Annotation to be placed on setters/constructors to ignore it in Builder-Generation. */
-@Target({ElementType.PARAMETER, ElementType.METHOD})
+/**
+ * Excludes a setter from builder properties, a getter from reserved-name resolution, or a
+ * constructor from automatic selection.
+ *
+ * <p>A constructor must not also carry {@link SimpleBuilderConstructor}; this skips builder
+ * generation with a warning, or an error in strict mode. Ignored getters may still be used by the
+ * generated copy constructor.
+ */
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.CLASS)
 public @interface IgnoreInBuilder {}
