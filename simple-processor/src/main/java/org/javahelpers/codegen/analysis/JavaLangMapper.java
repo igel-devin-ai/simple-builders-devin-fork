@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -177,6 +179,8 @@ public final class JavaLangMapper {
       TypeName typeName, TypeElement typeElement, TypeMappingContext context) {
     if (!typeName.hasEmptyConstructor()
         && isConcreteClass(typeElement)
+        && !(typeElement.getNestingKind() == NestingKind.MEMBER
+            && !typeElement.getModifiers().contains(Modifier.STATIC))
         && !TypeNameAnalyser.isJavaClass(typeName)
         && JavaLangAnalyser.hasEmptyConstructor(typeElement, context)) {
       typeName.setHasEmptyConstructor(true);
@@ -231,6 +235,16 @@ public final class JavaLangMapper {
       return new TypeNameNested(toTypeName(enclosingType, packageName), simpleName);
     }
     return new TypeName(packageName, simpleName);
+  }
+
+  private static TypeName toTypeName(DeclaredType type, TypeMappingContext context) {
+    TypeElement element = (TypeElement) type.asElement();
+    if (element.getNestingKind() == NestingKind.MEMBER
+        && !element.getModifiers().contains(Modifier.STATIC)) {
+      return new TypeNameNested(
+          extractType(type.getEnclosingType(), context), element.getSimpleName().toString());
+    }
+    return toTypeName(element, context.getPackageName(element));
   }
 
   /**
@@ -533,8 +547,7 @@ public final class JavaLangMapper {
               @Override
               public TypeName visitDeclared(DeclaredType t, Void p) {
                 TypeElement elementOfParameter = (TypeElement) context.asElement(typeOfParameter);
-                String packageName = context.getPackageName(elementOfParameter);
-                TypeName rawType = toTypeName(elementOfParameter, packageName);
+                TypeName rawType = toTypeName(t, context);
                 if (elementOfParameter.getKind() == ElementKind.ENUM) {
                   rawType.setEnumType(true);
                 }

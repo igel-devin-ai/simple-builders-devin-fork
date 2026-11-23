@@ -612,9 +612,21 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
         varArgs
             ? ((TypeNameArray) paramDto.getParameterType()).getTypeOfArray()
             : paramDto.getParameterType();
-    ParameterSource<?> parameter =
-        method.addParameter(
-            mapType(parameterType, collidingSimpleNames), paramDto.getParameterName());
+    String typeSource = mapType(parameterType, collidingSimpleNames);
+    ParameterSource<?> parameter;
+    if (typeSource.contains(">.")) {
+      // Roaster's addParameter cannot split generics on both an owner and its member.
+      String existing =
+          method.getParameters().stream().map(Object::toString).collect(Collectors.joining(", "));
+      method.setParameters(
+          (existing.isEmpty() ? "" : existing + ", ")
+              + typeSource
+              + " "
+              + paramDto.getParameterName());
+      parameter = method.getParameters().get(method.getParameters().size() - 1);
+    } else {
+      parameter = method.addParameter(typeSource, paramDto.getParameterName());
+    }
     if (varArgs) {
       parameter.setVarArgs(true);
     }
