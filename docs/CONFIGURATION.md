@@ -92,11 +92,11 @@ Builder properties come from the selected constructor's parameters and eligible 
 
 ### `@IgnoreInBuilder`
 
-`org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder` can be placed on methods or parameters:
+`org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder` can be placed on methods or constructors, not parameters:
 
 - An annotated setter does not create a setter-backed property. Ignored setters are also excluded when looking up setter metadata or deprecation for a constructor-backed property.
 - An annotated getter is not used to derive a legal property name for the reserved-name fallback below.
-- On a parameter of the selected constructor, the annotation currently has **no effect**: the constructor still needs a value for every parameter, so the property is generated.
+- An annotated constructor is excluded from automatic selection; the largest accessible, non-ignored constructor is used. Combining `@IgnoreInBuilder` with `@SimpleBuilderConstructor` on the same constructor is a compilation error. If no accessible, non-ignored constructor exists, builder generation fails (a warning by default, an error in strict mode).
 - **Known limitation ([#437](https://github.com/java-helpers/simple-builders/issues/437)):** the generated copy constructor still uses ignored getters to read existing property values.
 
 ### Reserved-word Property Names

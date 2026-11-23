@@ -427,6 +427,112 @@ class BuilderProcessorTest {
         .hadWarningContaining("is not accessible from the generated builder's package");
   }
 
+  /** Automatic selection skips ignored constructors even when they have more parameters. */
+  @Test
+  void shouldSelectSmallerNonIgnoredConstructor() {
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
+            @SimpleBuilder
+            public class IgnoredCtorDto {
+              public IgnoredCtorDto(String name) {}
+              @IgnoreInBuilder
+              public IgnoredCtorDto(String name, int age) {}
+            }
+            """);
+    Compilation compilation = compile(source);
+    String generated = loadGeneratedSource(compilation, "IgnoredCtorDtoBuilder");
+    assertGenerationSucceeded(compilation, "IgnoredCtorDtoBuilder", generated);
+    ProcessorAsserts.assertContaining(
+        generated,
+        """
+        public IgnoredCtorDto build() {
+          IgnoredCtorDto result = new IgnoredCtorDto(this.name.value());
+          return result;
+        }
+        """);
+  }
+
+  /** Explicit selection and ignoring the same constructor is always an error. */
+  @Test
+  void shouldRejectExplicitlySelectedIgnoredConstructor() {
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilderConstructor;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
+            @SimpleBuilder
+            public class ConflictingCtorDto {
+              @SimpleBuilderConstructor
+              @IgnoreInBuilder
+              public ConflictingCtorDto() {}
+            }
+            """);
+    Compilation compilation = compile(source);
+    assertThat(compilation).failed();
+    assertThat(compilation)
+        .hadErrorContaining(
+            "Constructor on 'test.ConflictingCtorDto' must not be annotated with both "
+                + "@SimpleBuilderConstructor and @IgnoreInBuilder.")
+        .inFile(source)
+        .onLine(9);
+  }
+
+  /** Ignoring every accessible constructor leaves no generation target. */
+  @Test
+  void shouldRejectTypeWithAllConstructorsIgnoredInStrictMode() {
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
+            @SimpleBuilder
+            public class AllIgnoredCtorDto {
+              @IgnoreInBuilder
+              public AllIgnoredCtorDto() {}
+              @IgnoreInBuilder
+              public AllIgnoredCtorDto(String name) {}
+            }
+            """);
+    Compilation compilation =
+        ProcessorTestUtils.createCompiler()
+            .withOptions("-Asimplebuilder.strict=true")
+            .compile(source);
+    assertThat(compilation).failed();
+    assertThat(compilation)
+        .hadErrorContaining("No accessible constructor found on 'test.AllIgnoredCtorDto'.")
+        .inFile(source)
+        .onLine(5);
+  }
+
+  /** Parameter annotations are rejected by javac rather than silently ignored. */
+  @Test
+  void shouldRejectIgnoreInBuilderOnConstructorParameter() {
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
+            @SimpleBuilder
+            public class IgnoredParameterDto {
+              public IgnoredParameterDto(@IgnoreInBuilder String name) {}
+            }
+            """);
+    Compilation compilation = compile(source);
+    assertThat(compilation).failed();
+    assertThat(compilation)
+        .hadErrorContaining("annotation type not applicable to this kind of declaration")
+        .inFile(source)
+        .onLine(6);
+  }
+
   /**
    * {@code @SimpleBuilderConstructor} is meant to select a single constructor. When a type marks
    * several constructors, the ambiguity is reported and the first declared is used instead of an
@@ -2112,7 +2218,7 @@ class BuilderProcessorTest {
     // Then
     String generatedCode = loadGeneratedSource(compilation, builderClassName);
     assertGenerationSucceeded(compilation, builderClassName, generatedCode);
-    // Ensure no builder methods were generated for ignored setters (method- and parameter-level)
+    // Ensure no builder methods were generated for ignored setters.
     ProcessorAsserts.assertNotContaining(
         generatedCode,
         "public IgnoredByAnnotationBuilder name(String name)",

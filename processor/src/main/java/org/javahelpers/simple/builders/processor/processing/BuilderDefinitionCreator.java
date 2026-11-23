@@ -1335,6 +1335,18 @@ public class BuilderDefinitionCreator {
     List<ExecutableElement> annotatedConstructors =
         JavaLangAnalyser.findConstructorsAnnotatedWith(
             annotatedType, SimpleBuilderConstructor.class, context);
+    for (ExecutableElement constructor : annotatedConstructors) {
+      if (!isMethodIncludedInBuilder(constructor)) {
+        BuilderException conflict =
+            new BuilderException(
+                constructor,
+                "Constructor on '%s' must not be annotated with both @SimpleBuilderConstructor "
+                    + "and @IgnoreInBuilder.",
+                annotatedType.getQualifiedName());
+        context.error(constructor, "%s", conflict.getMessage());
+        throw conflict;
+      }
+    }
     if (!annotatedConstructors.isEmpty()) {
       ExecutableElement annotatedCtor = annotatedConstructors.get(0);
       if (annotatedConstructors.size() > 1) {
@@ -1359,6 +1371,9 @@ public class BuilderDefinitionCreator {
     ExecutableElement selected = null;
     for (ExecutableElement ctor :
         JavaLangAnalyser.findAccessibleConstructors(annotatedType, context)) {
+      if (!isMethodIncludedInBuilder(ctor)) {
+        continue;
+      }
       if (selected == null || ctor.getParameters().size() > selected.getParameters().size()) {
         selected = ctor;
       }
@@ -1368,7 +1383,8 @@ public class BuilderDefinitionCreator {
           annotatedType,
           "No accessible constructor found on '%s'. A builder can only be generated for types "
               + "that can be constructed through accessible Java APIs (e.g. a public or "
-              + "package-visible constructor reachable from the generated builder).",
+              + "package-visible constructor reachable from the generated builder) and whose "
+              + "constructor is not annotated with @IgnoreInBuilder.",
           annotatedType.getQualifiedName());
     }
     return selected;
