@@ -854,10 +854,10 @@ public final class JavaLangAnalyser {
    */
   private static int getterPreference(ExecutableElement method, String fieldName) {
     String name = method.getSimpleName().toString();
-    if (name.equalsIgnoreCase("is" + fieldName)) {
+    if (Strings.CI.equals(name, "is" + fieldName)) {
       return 0;
     }
-    if (name.equalsIgnoreCase("get" + fieldName)) {
+    if (Strings.CI.equals(name, "get" + fieldName)) {
       return 1;
     }
     return 2;

@@ -127,6 +127,16 @@ class JavaLangAnalyserTest {
       }
       """;
 
+  private static final String KEYWORD_DTO_SOURCE =
+      """
+      package test;
+      public class KeywordDto {
+        public boolean isStatic() { return true; }
+        public void setStatic(boolean v) {}
+        public void setTransient(int v) {}
+      }
+      """;
+
   @Test
   void isNoMethodOfObjectClass_filtersObjectMethods() {
     AtomicReference<Boolean> onObject = new AtomicReference<>();
@@ -529,6 +539,24 @@ class JavaLangAnalyserTest {
         DTO_SOURCE);
     assertTrue(found.get().isPresent());
     assertTrue(missing.get().isEmpty());
+  }
+
+  @Test
+  void resolveSetterPropertyName_usesGetterDerivedNameOrRawFallback() {
+    AtomicReference<String> fromGetter = new AtomicReference<>();
+    AtomicReference<String> rawFallback = new AtomicReference<>();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.KeywordDto");
+          fromGetter.set(
+              JavaLangAnalyser.resolveSetterPropertyName(method(dto, "setStatic"), dto, ctx));
+          rawFallback.set(
+              JavaLangAnalyser.resolveSetterPropertyName(method(dto, "setTransient"), dto, ctx));
+        },
+        KEYWORD_DTO_SOURCE);
+    assertEquals("isStatic", fromGetter.get());
+    assertEquals("transient", rawFallback.get());
   }
 
   @Test

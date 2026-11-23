@@ -284,14 +284,15 @@ public class BuilderDefinitionCreator {
    */
   private static String buildSetterSourceDescription(
       BuilderFieldDto field, String sourceClassName) {
+    // Only called for setter-based fields, which always have a resolved setter name.
+    String setterName = field.getSetterName().orElseThrow();
     String displaySignature =
         "%s(%s %s)"
             .formatted(
-                field.getSetterName(),
+                setterName,
                 field.getFieldType().getSimpleNameWithGenerics(),
                 field.getOriginalFieldName());
-    String linkSignature =
-        "%s(%s)".formatted(field.getSetterName(), field.getFieldType().getClassName());
+    String linkSignature = "%s(%s)".formatted(setterName, field.getFieldType().getClassName());
     if (sourceClassName != null) {
       return "<p>Generated from setter {@link %s#%s %s}"
           .formatted(sourceClassName, linkSignature, displaySignature);
@@ -907,18 +908,17 @@ public class BuilderDefinitionCreator {
     // For setter-based fields the parameter's enclosing executable IS the setter — no lookup
     // needed. For constructor parameters the real setter is resolved property-aware, because its
     // name can deviate from the JavaBeans convention (e.g. "setStatic" for property "isStatic").
-    // Falls back to the conventional name when no setter exists.
+    // When no setter exists, no setter name is stored — the field is populated via constructor.
     Optional<ExecutableElement> propertySetter =
         param.getEnclosingElement() instanceof ExecutableElement enclosing
                 && JavaLangAnalyser.isSetterForField(enclosing)
             ? Optional.of(enclosing)
             : JavaLangAnalyser.findSetterForProperty(
                 dtoTypeElement, fieldName, fieldTypeMirror, context);
-    field.setSetterName(
-        propertySetter
-            .map(ExecutableElement::getSimpleName)
-            .map(Object::toString)
-            .orElse("set" + StringUtils.capitalize(fieldName)));
+    propertySetter
+        .map(ExecutableElement::getSimpleName)
+        .map(Object::toString)
+        .ifPresent(field::setSetterName);
 
     Optional<ExecutableElement> getter =
         JavaLangAnalyser.findGetterForField(
