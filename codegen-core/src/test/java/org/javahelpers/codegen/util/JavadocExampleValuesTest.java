@@ -121,9 +121,9 @@ class JavadocExampleValuesTest {
         Arguments.of(typeWithEmptyConstructor(), "address", "new AddressDto()"));
   }
 
-  @ParameterizedTest(name = "{1}")
+  @ParameterizedTest(name = "{0}")
   @MethodSource("unsupportedTypeExamples")
-  void shouldReturnEmptyForUnsupportedType(TypeName type, String description) {
+  void shouldReturnEmptyForUnsupportedType(TypeName type) {
     assertEquals(
         Optional.empty(),
         JavadocExampleValues.getExampleValue(type, "value", t -> Optional.empty()));
@@ -132,21 +132,16 @@ class JavadocExampleValuesTest {
   private static Stream<Arguments> unsupportedTypeExamples() {
     return Stream.of(
         // Primitives without a mapped example
-        Arguments.of(TypeNamePrimitive.BYTE, "byte primitive"),
-        Arguments.of(TypeNamePrimitive.SHORT, "short primitive"),
+        Arguments.of(TypeNamePrimitive.BYTE),
+        Arguments.of(TypeNamePrimitive.SHORT),
         // Raw collections and maps are not parameterized
-        Arguments.of(new TypeNameList(TypeName.of(List.class), List.of(), null), "raw List"),
-        Arguments.of(new TypeNameMap(TypeName.of(Map.class), List.of(), null, null), "raw Map"),
+        Arguments.of(new TypeNameList(TypeName.of(List.class), List.of(), null)),
+        Arguments.of(new TypeNameMap(TypeName.of(Map.class), List.of(), null, null)),
         // Unresolvable element types yield no example
-        Arguments.of(
-            listOf(new TypeName("test", "Unsupported")), "List of unsupported element type"),
-        Arguments.of(
-            mapOf(stringType(), new TypeName("test", "Unsupported")),
-            "Map with unsupported value type"),
-        Arguments.of(
-            new TypeNameGeneric(Optional.class, java.io.File.class),
-            "Optional of unsupported type"),
-        Arguments.of(new TypeName("test", "Unsupported"), "unsupported type"));
+        Arguments.of(listOf(new TypeName("test", "Unsupported"))),
+        Arguments.of(mapOf(stringType(), new TypeName("test", "Unsupported"))),
+        Arguments.of(new TypeNameGeneric(Optional.class, java.io.File.class)),
+        Arguments.of(new TypeName("test", "Unsupported")));
   }
 
   @Test
