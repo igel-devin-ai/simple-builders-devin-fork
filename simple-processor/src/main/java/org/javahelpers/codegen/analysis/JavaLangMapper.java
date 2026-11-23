@@ -175,6 +175,7 @@ public final class JavaLangMapper {
    */
   private static void setEmptyConstructorInfo(
       TypeName typeName, TypeElement typeElement, TypeMappingContext context) {
+    // Non-static inner classes need an enclosing instance, so they are never directly instantiable.
     if (!typeName.hasEmptyConstructor()
         && isConcreteClass(typeElement)
         && !(isMember(typeElement) && isNotStatic(typeElement))
