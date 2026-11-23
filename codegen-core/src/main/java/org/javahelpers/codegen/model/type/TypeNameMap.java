@@ -24,6 +24,7 @@
 package org.javahelpers.codegen.model.type;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -78,6 +79,30 @@ public class TypeNameMap extends TypeNameGeneric {
     this.isConcreteImplementation = !isMapInterface(getPackageName(), getClassName());
     this.keyType = keyType;
     this.valueType = valueType;
+  }
+
+  /**
+   * Creates a {@code TypeNameMap} for the {@code java.util.Map} interface parameterized with the
+   * given key and value types.
+   *
+   * @param keyType the map key type
+   * @param valueType the map value type
+   * @return a {@code TypeNameMap} representing {@code Map<keyType, valueType>}
+   */
+  public static TypeNameMap of(TypeName keyType, TypeName valueType) {
+    return new TypeNameMap(TypeName.of(Map.class), List.of(keyType, valueType), keyType, valueType);
+  }
+
+  /**
+   * Creates a {@code TypeNameMap} for the {@code java.util.Map} interface parameterized with the
+   * given key and value classes.
+   *
+   * @param keyClass the map key class
+   * @param valueClass the map value class
+   * @return a {@code TypeNameMap} representing {@code Map<keyClass, valueClass>}
+   */
+  public static TypeNameMap of(Class<?> keyClass, Class<?> valueClass) {
+    return of(TypeName.of(keyClass), TypeName.of(valueClass));
   }
 
   /**

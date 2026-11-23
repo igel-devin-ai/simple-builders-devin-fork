@@ -41,6 +41,7 @@ import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNameSet;
 import org.javahelpers.codegen.model.type.TypeNameVariable;
+import org.javahelpers.codegen.util.JavadocExampleValues;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.model.type.PrefillCall;
@@ -464,13 +465,16 @@ public final class MethodGeneratorUtil {
    *
    * @param methodDto the method DTO to add the fragment to
    * @param fieldType the field type to get an example value for
+   * @param fieldName the original field name used for String examples; blank names use a default
+   * @param builderResolver resolves a type's builder for builder-backed examples
    */
   public static void addExampleChainFragment(
       BuilderMethodDto methodDto,
       TypeName fieldType,
+      String fieldName,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     addExampleChainFragmentTemplate(
-        methodDto, "#{methodName}(#{exampleValue})", fieldType, builderResolver);
+        methodDto, "#{methodName}(#{exampleValue})", fieldType, fieldName, builderResolver);
   }
 
   /**
@@ -486,13 +490,20 @@ public final class MethodGeneratorUtil {
    *
    * @param methodDto the method DTO to add the fragment to
    * @param elementType the element type to get an example value for
+   * @param fieldName the original field name used for String examples; blank names use a default
+   * @param builderResolver resolves a type's builder for builder-backed examples
    */
   public static void addExampleChainFragmentVarArgs(
       BuilderMethodDto methodDto,
       TypeName elementType,
+      String fieldName,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     addExampleChainFragmentTemplate(
-        methodDto, "#{methodName}(#{exampleValue}, #{exampleValue})", elementType, builderResolver);
+        methodDto,
+        "#{methodName}(#{exampleValue}, #{exampleValue})",
+        elementType,
+        fieldName,
+        builderResolver);
   }
 
   /**
@@ -508,18 +519,37 @@ public final class MethodGeneratorUtil {
    *
    * @param methodDto the method DTO to add the fragment to
    * @param fieldType the field type to get an example value for
+   * @param fieldName the original field name used for String examples; blank names use a default
+   * @param builderResolver resolves a type's builder for builder-backed examples
    */
   public static void addExampleChainFragmentWithSupplier(
       BuilderMethodDto methodDto,
       TypeName fieldType,
+      String fieldName,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     if (fieldType.hasEmptyConstructor()) {
       addExampleChainFragmentTemplate(
           methodDto, "#{methodName}(" + fieldType.getClassName() + "::new)");
     } else {
       addExampleChainFragmentTemplate(
-          methodDto, "#{methodName}(() -> #{exampleValue})", fieldType, builderResolver);
+          methodDto, "#{methodName}(() -> #{exampleValue})", fieldType, fieldName, builderResolver);
     }
+  }
+
+  /**
+   * Returns an example resolver that yields a builder-backed snippet ({@code
+   * <Builder>.create().build()}) for types with a resolved builder.
+   *
+   * @param builderResolver resolves a type to its builder, e.g. {@code context::resolveBuilderType}
+   * @return a resolver yielding the builder-backed example snippet, or empty when no builder exists
+   */
+  public static Function<TypeName, Optional<String>> builderBackedExampleResolver(
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+    return t ->
+        builderResolver
+            .apply(t)
+            .map(
+                resolvedBuilder -> resolvedBuilder.typeName().getClassName() + ".create().build()");
   }
 
   /**
@@ -540,17 +570,21 @@ public final class MethodGeneratorUtil {
    * @param template the template string with placeholders (e.g., {@code
    *     #{methodName}(#{exampleValue})})
    * @param fieldType the field type to get an example value for (can be {@code null})
+   * @param fieldName the original field name used for String examples; blank names use a default
+   * @param builderResolver resolves a type's builder for builder-backed examples
    */
   public static void addExampleChainFragmentTemplate(
       BuilderMethodDto methodDto,
       String template,
       TypeName fieldType,
+      String fieldName,
       Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
     String fragment = template.replace("#{methodName}", methodDto.getMethodName());
 
     if (fieldType != null) {
       Optional<String> exampleValue =
-          JavadocExampleValues.getExampleValue(fieldType, builderResolver);
+          JavadocExampleValues.getExampleValue(
+              fieldType, fieldName, builderBackedExampleResolver(builderResolver));
       if (exampleValue.isEmpty()) {
         return;
       }
