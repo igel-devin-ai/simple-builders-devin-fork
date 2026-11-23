@@ -27,7 +27,7 @@ package org.javahelpers.simple.builders.processor.generators.field;
 import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.TRACKED_VALUE_TYPE;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.addExampleChainFragmentTemplate;
-import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.builderBackedExample;
+import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.builderBackedExampleResolver;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.generateBuilderMethodName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.getMethodAccessModifier;
 
@@ -242,7 +242,7 @@ public class UpdateHelperGenerator implements MethodGenerator {
         JavadocExampleValues.getExampleValue(
             field.getFieldType(),
             field.getOriginalFieldName(),
-            t -> context.resolveBuilderType(t).map(r -> builderBackedExample(r)));
+            builderBackedExampleResolver(context::resolveBuilderType));
     if (initialValue.isEmpty()) {
       return;
     }

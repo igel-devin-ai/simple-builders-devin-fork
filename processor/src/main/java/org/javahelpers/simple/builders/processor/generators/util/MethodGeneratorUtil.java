@@ -547,6 +547,18 @@ public final class MethodGeneratorUtil {
   }
 
   /**
+   * Returns an example resolver that yields a builder-backed snippet ({@code
+   * <Builder>.create().build()}) for types with a resolved builder.
+   *
+   * @param builderResolver resolves a type to its builder, e.g. {@code context::resolveBuilderType}
+   * @return a resolver yielding the builder-backed example snippet, or empty when no builder exists
+   */
+  public static Function<TypeName, Optional<String>> builderBackedExampleResolver(
+      Function<TypeName, Optional<ResolvedBuilder>> builderResolver) {
+    return t -> builderResolver.apply(t).map(MethodGeneratorUtil::builderBackedExample);
+  }
+
+  /**
    * Adds the fluent-chain fragment for Javadoc examples to a method using a template string.
    *
    * <p>This helper method replaces placeholders in the template string with actual values:
@@ -578,9 +590,7 @@ public final class MethodGeneratorUtil {
     if (fieldType != null) {
       Optional<String> exampleValue =
           JavadocExampleValues.getExampleValue(
-              fieldType,
-              fieldName,
-              t -> builderResolver.apply(t).map(MethodGeneratorUtil::builderBackedExample));
+              fieldType, fieldName, builderBackedExampleResolver(builderResolver));
       if (exampleValue.isEmpty()) {
         return;
       }
