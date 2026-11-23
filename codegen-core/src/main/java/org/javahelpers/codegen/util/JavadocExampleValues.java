@@ -111,27 +111,27 @@ public final class JavadocExampleValues {
    *       "example value")})
    *   <li>Optional types with a supported inner type (e.g., {@code Optional.of("example value")})
    *   <li>Types with an empty constructor (e.g., {@code new AddressDto()})
-   *   <li>Types with a {@code @SimpleBuilder} annotation but no empty constructor (e.g., {@code
-   *       AddressDtoBuilder.create().build()})
+   *   <li>Types for which the provided resolver returns a custom example snippet (e.g., a builder
+   *       call like {@code AddressDtoBuilder.create().build()})
    * </ul>
    *
    * @param typeName the type name to get an example value for
    * @param fieldName the original field name used for String examples; blank names use {@value
    *     STRING_EXAMPLE}
-   * @param builderResolver resolves a type to a builder-backed example snippet (e.g. {@code
-   *     SponsorDtoBuilder.create().build()})
+   * @param exampleResolver resolves a type to a custom example snippet, used when no built-in
+   *     example value applies (e.g. {@code SponsorDtoBuilder.create().build()})
    * @return an Optional containing the example value, or empty if no example is available
    */
   public static Optional<String> getExampleValue(
-      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
+      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> exampleResolver) {
     return resolvePrimitive(typeName)
-        .or(() -> resolveCollection(typeName, fieldName, builderResolver))
-        .or(() -> resolveArray(typeName, fieldName, builderResolver))
-        .or(() -> resolveOptional(typeName, fieldName, builderResolver))
+        .or(() -> resolveCollection(typeName, fieldName, exampleResolver))
+        .or(() -> resolveArray(typeName, fieldName, exampleResolver))
+        .or(() -> resolveOptional(typeName, fieldName, exampleResolver))
         .or(() -> resolveCommonType(typeName))
         .or(() -> resolveString(typeName, fieldName))
         .or(() -> resolveEmptyConstructor(typeName))
-        .or(() -> resolveBuilderType(typeName, builderResolver));
+        .or(() -> resolveCustomExample(typeName, exampleResolver));
   }
 
   private static Optional<String> resolvePrimitive(TypeName typeName) {
@@ -142,44 +142,43 @@ public final class JavadocExampleValues {
   }
 
   private static Optional<String> resolveCollection(
-      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
+      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> exampleResolver) {
     if (typeName instanceof TypeNameList listType && listType.isParameterized()) {
-      return getElementExample(listType, fieldName, builderResolver)
+      return getElementExample(listType, fieldName, exampleResolver)
           .map(elementExample -> "List.of(" + elementExample + ")");
     }
     if (typeName instanceof TypeNameSet setType && setType.isParameterized()) {
-      return getElementExample(setType, fieldName, builderResolver)
+      return getElementExample(setType, fieldName, exampleResolver)
           .map(elementExample -> "Set.of(" + elementExample + ")");
     }
     if (typeName instanceof TypeNameMap mapType && mapType.isParameterized()) {
-      return resolveMap(mapType, fieldName, builderResolver);
+      return resolveMap(mapType, fieldName, exampleResolver);
     }
     return Optional.empty();
   }
 
   /**
-   * Resolves an example for a collection element type, falling back to the element's builder-backed
-   * example snippet (e.g. {@code SponsorDtoBuilder.create().build()}) when no direct example value
-   * exists.
+   * Resolves an example for a collection element type, falling back to the element's custom example
+   * snippet (e.g. {@code SponsorDtoBuilder.create().build()}) when no direct example value exists.
    *
    * @param collectionType the collection whose element needs an example
    * @param fieldName the original field name used for String examples
-   * @param builderResolver resolves a type to a builder-backed example snippet
+   * @param exampleResolver resolves a type to a custom example snippet
    * @return an example for the element, or empty if none is available
    */
   private static Optional<String> getElementExample(
       TypeNameCollection collectionType,
       String fieldName,
-      Function<TypeName, Optional<String>> builderResolver) {
-    return getExampleValue(collectionType.getElementType(), fieldName, builderResolver)
-        .or(() -> builderResolver.apply(collectionType.getElementType()));
+      Function<TypeName, Optional<String>> exampleResolver) {
+    return getExampleValue(collectionType.getElementType(), fieldName, exampleResolver)
+        .or(() -> exampleResolver.apply(collectionType.getElementType()));
   }
 
   private static Optional<String> resolveArray(
-      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
+      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> exampleResolver) {
     if (typeName instanceof TypeNameArray arrayType) {
       TypeName elementType = arrayType.getTypeOfArray();
-      return getExampleValue(elementType, fieldName, builderResolver)
+      return getExampleValue(elementType, fieldName, exampleResolver)
           .map(
               elementExample ->
                   "new " + elementType.getClassName() + "[] {" + elementExample + "}");
@@ -188,10 +187,10 @@ public final class JavadocExampleValues {
   }
 
   private static Optional<String> resolveMap(
-      TypeNameMap mapType, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
-    Optional<String> keyExample = getExampleValue(mapType.getKeyType(), fieldName, builderResolver);
+      TypeNameMap mapType, String fieldName, Function<TypeName, Optional<String>> exampleResolver) {
+    Optional<String> keyExample = getExampleValue(mapType.getKeyType(), fieldName, exampleResolver);
     Optional<String> valueExample =
-        getExampleValue(mapType.getValueType(), fieldName, builderResolver);
+        getExampleValue(mapType.getValueType(), fieldName, exampleResolver);
     if (keyExample.isPresent() && valueExample.isPresent()) {
       return Optional.of("Map.of(" + keyExample.get() + ", " + valueExample.get() + ")");
     }
@@ -199,11 +198,11 @@ public final class JavadocExampleValues {
   }
 
   private static Optional<String> resolveOptional(
-      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> builderResolver) {
+      TypeName typeName, String fieldName, Function<TypeName, Optional<String>> exampleResolver) {
     if (typeName.is(Optional.class)) {
       return typeName
           .getInnerType()
-          .flatMap(innerType -> getExampleValue(innerType, fieldName, builderResolver))
+          .flatMap(innerType -> getExampleValue(innerType, fieldName, exampleResolver))
           .map(inner -> "Optional.of(" + inner + ")");
     }
     return Optional.empty();
@@ -234,8 +233,8 @@ public final class JavadocExampleValues {
     return Optional.empty();
   }
 
-  private static Optional<String> resolveBuilderType(
-      TypeName typeName, Function<TypeName, Optional<String>> builderResolver) {
-    return builderResolver.apply(typeName);
+  private static Optional<String> resolveCustomExample(
+      TypeName typeName, Function<TypeName, Optional<String>> exampleResolver) {
+    return exampleResolver.apply(typeName);
   }
 }
