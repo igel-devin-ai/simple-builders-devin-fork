@@ -457,7 +457,11 @@ public class BuilderProcessor
   protected List<BuilderDefinitionDto> analyse(
       CodegenTask<BuilderConfiguration> task, BuilderProcessingContext ctx)
       throws BuilderException {
-    return List.of(extractFromElement(task.element(), ctx));
+    try {
+      return List.of(extractFromElement(task.element(), ctx));
+    } catch (IllegalStateException e) {
+      throw new BuilderException(task.element(), e);
+    }
   }
 
   @Override
