@@ -62,10 +62,6 @@ class JavadocExampleValuesTest {
     return new TypeNameSet(TypeName.of(java.util.Set.class), List.of(elementType), elementType);
   }
 
-  private static TypeName mapOf(TypeName keyType, TypeName valueType) {
-    return new TypeNameMap(TypeName.of(Map.class), List.of(keyType, valueType), keyType, valueType);
-  }
-
   private static TypeName typeWithEmptyConstructor() {
     TypeName type = new TypeName("test", "AddressDto");
     type.setHasEmptyConstructor(true);
@@ -109,7 +105,7 @@ class JavadocExampleValuesTest {
         Arguments.of(listOf(stringType()), "tags", "List.of(\"example tags\")"),
         Arguments.of(setOf(TypeName.of(Integer.class)), "ids", "Set.of(42)"),
         Arguments.of(
-            mapOf(stringType(), TypeName.of(Integer.class)),
+            TypeNameMap.of(String.class, Integer.class),
             "values",
             "Map.of(\"example values\", 42)"),
         Arguments.of(new TypeNameArray(stringType()), "tags", "new String[] {\"example tags\"}"),
@@ -139,7 +135,7 @@ class JavadocExampleValuesTest {
         Arguments.of(new TypeNameMap(TypeName.of(Map.class), List.of(), null, null)),
         // Unresolvable element types yield no example
         Arguments.of(listOf(new TypeName("test", "Unsupported"))),
-        Arguments.of(mapOf(stringType(), new TypeName("test", "Unsupported"))),
+        Arguments.of(TypeNameMap.of(stringType(), new TypeName("test", "Unsupported"))),
         Arguments.of(new TypeNameGeneric(Optional.class, java.io.File.class)),
         Arguments.of(new TypeName("test", "Unsupported")));
   }
