@@ -23,8 +23,6 @@
  */
 package org.javahelpers.codegen.analysis;
 
-import static javax.lang.model.type.TypeKind.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import javax.lang.model.element.Element;
