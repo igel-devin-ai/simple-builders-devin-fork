@@ -146,6 +146,9 @@ public class BuilderFieldDto {
   /**
    * Gets the setter method name for this field.
    *
+   * <p>Setter-derived fields always retain the discovering setter's name. Constructor-derived
+   * fields may have no setter and are populated through constructor arguments instead.
+   *
    * @return the setter method name for this field, or empty when no setter exists (possible for
    *     constructor fields)
    */

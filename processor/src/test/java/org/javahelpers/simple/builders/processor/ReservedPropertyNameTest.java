@@ -51,6 +51,43 @@ class ReservedPropertyNameTest {
 
   private static final String PACKAGE = "pkg.reserved";
 
+  /** Only setter-shaped void methods become properties, including getter-rescued setStatic. */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "public void withIgnored(String value) {}",
+        "public void ignored(String value) {}",
+        "public void setignored(String value) {}",
+        "public String setIgnored(String value) { return value; }"
+      })
+  void nonSetterMethodsDoNotCreateProperties(String otherMethod) {
+    JavaFileObject dto =
+        simpleBuilderClass(
+            PACKAGE,
+            "SetterShapeDto",
+            """
+        public boolean isStatic() { return false; }
+        public void setStatic(boolean value) {}
+        """
+                + otherMethod);
+    Compilation compilation = createCompiler().compile(dto);
+    String generated = loadGeneratedSource(compilation, "SetterShapeDtoBuilder");
+    assertGenerationSucceeded(compilation, "SetterShapeDtoBuilder", generated);
+    assertContaining(
+        generated,
+        """
+        public SetterShapeDto build() {
+          if (this.isStatic.isSet() && this.isStatic.value() == null) {
+            throw new IllegalStateException("Field 'isStatic' is marked as non-null but null value was provided");
+          }
+          SetterShapeDto result = new SetterShapeDto();
+          this.isStatic.ifSet(result::setStatic);
+          return result;
+        }
+        """);
+    assertFalse(generated.contains("private TrackedValue<String> ignored = unsetValue();"));
+  }
+
   /**
    * The getter determines the property name independently of the backing field and setter prefix.
    */

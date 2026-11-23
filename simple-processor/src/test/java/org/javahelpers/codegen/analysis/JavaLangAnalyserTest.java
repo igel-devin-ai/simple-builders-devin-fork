@@ -538,6 +538,48 @@ class JavaLangAnalyserTest {
   }
 
   @Test
+  void setterDiscoveryAndPropertyResolutionUseTheSameNamePredicate() {
+    AtomicReference<List<String>> discovered = new AtomicReference<>();
+    AtomicReference<Optional<String>> resolved = new AtomicReference<>();
+    AtomicReference<Optional<ExecutableElement>> nonSetter = new AtomicReference<>();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.SetterDto");
+          discovered.set(
+              JavaLangAnalyser.findSetterMethods(dto, ctx).stream()
+                  .map(m -> m.getSimpleName().toString())
+                  .toList());
+          resolved.set(
+              JavaLangAnalyser.findSetterForProperty(
+                      dto,
+                      "isStatic",
+                      method(dto, "setStatic").getParameters().get(0).asType(),
+                      ctx)
+                  .map(m -> m.getSimpleName().toString()));
+          nonSetter.set(
+              JavaLangAnalyser.findSetterForProperty(
+                  dto, "ignored", method(dto, "withIgnored").getParameters().get(0).asType(), ctx));
+        },
+        """
+        package test;
+        public class SetterDto {
+          public boolean isStatic() { return false; }
+          public void setStatic(boolean value) {}
+          public String setTitle(String value) { return value; }
+          public void withIgnored(String value) {}
+          public void ignored(String value) {}
+          public void setignored(String value) {}
+          public void setNoArgs() {}
+          public void setTwoArgs(String first, String second) {}
+        }
+        """);
+    assertEquals(List.of("setStatic", "setTitle"), discovered.get());
+    assertEquals(Optional.of("setStatic"), resolved.get());
+    assertEquals(Optional.empty(), nonSetter.get());
+  }
+
+  @Test
   void findSetterForField_matchesVoidSingleParamSetter() {
     AtomicReference<Optional<ExecutableElement>> found = new AtomicReference<>();
     AtomicReference<Optional<ExecutableElement>> missing = new AtomicReference<>();
