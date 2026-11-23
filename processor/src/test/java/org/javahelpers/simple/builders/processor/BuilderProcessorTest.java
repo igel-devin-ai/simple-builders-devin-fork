@@ -459,7 +459,7 @@ class BuilderProcessorTest {
         """);
   }
 
-  /** Explicit selection and ignoring the same constructor is always an error. */
+  /** Explicit selection and ignoring the same constructor follows the normal severity policy. */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void shouldRejectExplicitlySelectedIgnoredConstructor(boolean strict) {
@@ -481,16 +481,19 @@ class BuilderProcessorTest {
         ProcessorTestUtils.createCompiler()
             .withOptions("-Asimplebuilder.strict=" + strict)
             .compile(source);
-    assertThat(compilation).failed();
-    assertThat(compilation).hadErrorCount(1);
-    assertThat(compilation).hadWarningCount(0);
-    assertThat(compilation)
-        .hadErrorContaining(
-            "Failed to generate target - Constructor on 'test.ConflictingCtorDto' "
-                + "must not be annotated with both "
-                + "@SimpleBuilderConstructor and @IgnoreInBuilder.")
-        .inFile(source)
-        .onLine(9);
+    String message =
+        "Failed to generate target - Constructor on 'test.ConflictingCtorDto' "
+            + "must not be annotated with both @SimpleBuilderConstructor and @IgnoreInBuilder.";
+    assertThat(compilation).hadErrorCount(strict ? 1 : 0);
+    assertThat(compilation).hadWarningCount(strict ? 0 : 1);
+    if (strict) {
+      assertThat(compilation).failed();
+      assertThat(compilation).hadErrorContaining(message).inFile(source).onLine(6);
+    } else {
+      assertThat(compilation).succeeded();
+      assertThat(compilation).hadWarningContaining(message).inFile(source).onLine(6);
+      assertTrue(compilation.generatedSourceFiles().isEmpty());
+    }
   }
 
   /** Ignoring every accessible constructor leaves no generation target. */
@@ -551,6 +554,36 @@ class BuilderProcessorTest {
     assertThat(compilation)
         .hadWarningContaining(
             "Failed to generate target - No accessible constructor found on 'test.AllIgnoredCtorDto'. "
+                + "A builder can only be generated for types that can be constructed through accessible "
+                + "Java APIs (e.g. a public or package-visible constructor reachable from the generated "
+                + "builder). Constructors annotated with @IgnoreInBuilder are not considered.")
+        .inFile(source)
+        .onLine(5);
+    assertTrue(compilation.generatedSourceFiles().isEmpty());
+  }
+
+  /** An ignored parameterized constructor does not imply an accessible no-argument constructor. */
+  @Test
+  void shouldWarnWhenOnlyParameterizedConstructorIsIgnored() {
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            import org.javahelpers.simple.builders.core.annotations.IgnoreInBuilder;
+            @SimpleBuilder
+            public class OnlyIgnoredCtorDto {
+              @IgnoreInBuilder
+              public OnlyIgnoredCtorDto(String name) {}
+            }
+            """);
+    Compilation compilation = compile(source);
+    assertThat(compilation).succeeded();
+    assertThat(compilation).hadErrorCount(0);
+    assertThat(compilation).hadWarningCount(1);
+    assertThat(compilation)
+        .hadWarningContaining(
+            "Failed to generate target - No accessible constructor found on 'test.OnlyIgnoredCtorDto'. "
                 + "A builder can only be generated for types that can be constructed through accessible "
                 + "Java APIs (e.g. a public or package-visible constructor reachable from the generated "
                 + "builder). Constructors annotated with @IgnoreInBuilder are not considered.")
@@ -3073,6 +3106,28 @@ class BuilderProcessorTest {
         contains("public GenericDto<T> build()"),
         // create() exposes generic as well
         contains("public static <T> GenericDtoBuilder<T> create()"));
+  }
+
+  @Test
+  void shouldGenerateGenericConstructorPropertyWithoutResolvableSetterType() {
+    JavaFileObject source =
+        ProcessorTestUtils.forSource(
+            """
+            package test;
+            import org.javahelpers.simple.builders.core.annotations.SimpleBuilder;
+            @SimpleBuilder
+            public class GenericCtorDto<T> {
+              public GenericCtorDto(T value) {}
+            }
+            """);
+    Compilation compilation = compile(source);
+    String generated = loadGeneratedSource(compilation, "GenericCtorDtoBuilder");
+    assertThat(compilation).succeededWithoutWarnings();
+    ProcessorAsserts.assertContaining(
+        generated,
+        "public GenericCtorDtoBuilder<T> value(T value)",
+        "public GenericCtorDto<T> build()",
+        "new GenericCtorDto<>(this.value.value())");
   }
 
   @Test

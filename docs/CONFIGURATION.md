@@ -88,7 +88,15 @@ public class PersonDto {
 
 ## Property Detection and Ignoring Members
 
-Builder properties come from the selected constructor's parameters and eligible setters (including inherited setters). A setter must have a name starting with `set` followed by an uppercase character, exactly one parameter, a `void` return type, no declared exceptions, and no method-specific type parameters. It must be non-static, non-private, and accessible from the generated builder's package. Prefix-free methods such as `name(String)` are never setters, even when a matching field or getter exists. Constructor-backed properties are not duplicated by matching setters.
+Builder properties come from the selected constructor's parameters and eligible setters (including inherited setters). A setter must:
+
+- Have a name starting with `set` followed by an uppercase character.
+- Take exactly one parameter and return `void`.
+- Declare no exceptions or method-specific type parameters.
+- Be non-static, non-private, and accessible from the generated builder's package.
+- Not be annotated with `@IgnoreInBuilder`.
+
+Prefix-free methods such as `name(String)` are never setters, even when a matching field or getter exists. Constructor-backed properties are not duplicated by matching setters.
 
 ### `@IgnoreInBuilder`
 
@@ -96,7 +104,7 @@ Builder properties come from the selected constructor's parameters and eligible 
 
 - An annotated setter does not create a setter-backed property. Ignored setters are also excluded when looking up setter metadata or deprecation for a constructor-backed property.
 - An annotated getter is not used to derive a legal property name for the reserved-name fallback below.
-- An annotated constructor is excluded from automatic selection; the largest accessible, non-ignored constructor is used. Combining `@IgnoreInBuilder` with `@SimpleBuilderConstructor` on the same constructor is a compilation error. If no accessible, non-ignored constructor exists, builder generation fails (a warning by default, an error in strict mode).
+- An annotated constructor is excluded from automatic selection; the largest accessible, non-ignored constructor is used. Combining `@IgnoreInBuilder` with `@SimpleBuilderConstructor` on the same constructor skips builder generation with a warning, or an error in strict mode. If no accessible, non-ignored constructor exists, builder generation fails (a warning by default, an error in strict mode).
 - **Known limitation ([#437](https://github.com/java-helpers/simple-builders/issues/437)):** the generated copy constructor still uses ignored getters to read existing property values.
 
 ### Reserved-word Property Names

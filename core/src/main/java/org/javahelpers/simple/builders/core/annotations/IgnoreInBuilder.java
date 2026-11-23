@@ -33,8 +33,9 @@ import java.lang.annotation.Target;
  * Excludes a setter from builder properties, a getter from reserved-name resolution, or a
  * constructor from automatic selection.
  *
- * <p>A constructor must not also carry {@link SimpleBuilderConstructor}. Ignored getters may still
- * be used by the generated copy constructor.
+ * <p>A constructor must not also carry {@link SimpleBuilderConstructor}; this skips builder
+ * generation with a warning, or an error in strict mode. Ignored getters may still be used by the
+ * generated copy constructor.
  */
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.CLASS)

@@ -1,0 +1,74 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Andreas Igel
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+package org.javahelpers.simple.builders.processor.processing;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
+import org.junit.jupiter.api.Test;
+
+class BuilderDefinitionCreatorTest {
+
+  @Test
+  void setterSourceDescriptionRejectsMissingSetterName() {
+    BuilderFieldDto field = field();
+
+    IllegalStateException exception =
+        assertThrows(
+            IllegalStateException.class,
+            () -> BuilderDefinitionCreator.buildSetterSourceDescription(field, "FlagDto"));
+
+    assertEquals(
+        "Missing setter name for field 'isStatic' in DTO 'FlagDto'", exception.getMessage());
+  }
+
+  @Test
+  void setterSourceDescriptionLinksKnownDto() {
+    BuilderFieldDto field = field();
+    field.setSetterName("setStatic");
+
+    assertEquals(
+        "<p>Generated from setter {@link FlagDto#setStatic(Boolean) setStatic(Boolean isStatic)}",
+        BuilderDefinitionCreator.buildSetterSourceDescription(field, "FlagDto"));
+  }
+
+  @Test
+  void setterSourceDescriptionAllowsUnknownDto() {
+    BuilderFieldDto field = field();
+    field.setSetterName("setStatic");
+
+    assertEquals(
+        "<p>Generated from setter <code>setStatic(Boolean isStatic)</code>",
+        BuilderDefinitionCreator.buildSetterSourceDescription(field, null));
+  }
+
+  private static BuilderFieldDto field() {
+    BuilderFieldDto field = new BuilderFieldDto();
+    field.setOriginalFieldName("isStatic");
+    field.setFieldType(TypeName.of(Boolean.class));
+    return field;
+  }
+}

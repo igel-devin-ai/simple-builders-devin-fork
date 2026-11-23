@@ -282,17 +282,14 @@ public class BuilderDefinitionCreator {
    * @param sourceClassName the simple class name of the source DTO, or {@code null} if unknown
    * @return the complete origin line
    */
-  private static String buildSetterSourceDescription(
-      BuilderFieldDto field, String sourceClassName) {
+  static String buildSetterSourceDescription(BuilderFieldDto field, String sourceClassName) {
     // Only called for setter-based fields, which always have a resolved setter name.
-    String setterName =
-        field
-            .getSetterName()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Missing setter name for field '%s' in DTO '%s'"
-                            .formatted(field.getOriginalFieldName(), sourceClassName)));
+    if (field.getSetterName().isEmpty()) {
+      throw new IllegalStateException(
+          "Missing setter name for field '%s' in DTO '%s'"
+              .formatted(field.getOriginalFieldName(), sourceClassName));
+    }
+    String setterName = field.getSetterName().get();
     String displaySignature =
         "%s(%s %s)"
             .formatted(
@@ -594,9 +591,7 @@ public class BuilderDefinitionCreator {
 
       if (isMethodRelevantForBuilder(mth, context)) {
         // Extract the original field name from the setter method (before any renaming)
-        String methodName = mth.getSimpleName().toString();
-        String originalFieldName =
-            StringUtils.uncapitalize(Strings.CI.removeStart(methodName, "set"));
+        String originalFieldName = propertyNameFromAccessor(mth);
 
         // Skip if constructor already handles this field
         if (ctorFieldNames.contains(originalFieldName)) {
@@ -654,7 +649,7 @@ public class BuilderDefinitionCreator {
       context.debug("Skipping: has return value");
       return false;
     }
-    if (!isMethodIncludedInBuilder(mth)) {
+    if (!shouldMethodBeIncludedInBuilder(mth)) {
       context.debug("Skipping: has @IgnoreInBuilder annotation");
       return false;
     }
@@ -673,23 +668,27 @@ public class BuilderDefinitionCreator {
     return true;
   }
 
-  private static boolean isMethodIncludedInBuilder(ExecutableElement method) {
+  private static boolean shouldMethodBeIncludedInBuilder(ExecutableElement method) {
     return hasNotAnnotation(IgnoreInBuilder.class, method);
+  }
+
+  private static String propertyNameFromAccessor(ExecutableElement accessor) {
+    String name = accessor.getSimpleName().toString();
+    String prefix = Strings.CI.startsWith(name, "set") ? "set" : "get";
+    return StringUtils.uncapitalize(Strings.CI.removeStart(name, prefix));
   }
 
   private static Optional<String> resolveBuilderPropertyName(
       ExecutableElement setter, TypeElement dtoType, BuilderProcessingContext context) {
-    String propertyName =
-        StringUtils.uncapitalize(Strings.CI.removeStart(setter.getSimpleName().toString(), "set"));
+    String propertyName = propertyNameFromAccessor(setter);
     if (SourceVersion.isName(propertyName)) {
       return Optional.of(propertyName);
     }
     return JavaLangAnalyser.findGettersForField(
             dtoType, propertyName, setter.getParameters().get(0).asType(), context)
         .stream()
-        .filter(BuilderDefinitionCreator::isMethodIncludedInBuilder)
-        .map(getter -> getter.getSimpleName().toString())
-        .map(name -> StringUtils.uncapitalize(Strings.CI.removeStart(name, "get")))
+        .filter(BuilderDefinitionCreator::shouldMethodBeIncludedInBuilder)
+        .map(BuilderDefinitionCreator::propertyNameFromAccessor)
         .filter(SourceVersion::isName)
         .findFirst();
   }
@@ -728,7 +727,7 @@ public class BuilderDefinitionCreator {
       Map<String, BuilderFieldDto> fieldNameRegistry,
       Set<String> ctorFieldNames) {
     String methodName = mth.getSimpleName().toString();
-    String fieldName = StringUtils.uncapitalize(Strings.CI.removeStart(methodName, "set"));
+    String fieldName = propertyNameFromAccessor(mth);
 
     List<? extends VariableElement> parameters = mth.getParameters();
     if (parameters.size() != 1) {
@@ -958,14 +957,14 @@ public class BuilderDefinitionCreator {
 
     // Find matching getter on the DTO type using the builder field name
     TypeElement dtoTypeElement = context.getTypeElement(dtoType);
+    ExecutableElement enclosing = (ExecutableElement) param.getEnclosingElement();
 
     // For setter-based fields the parameter's enclosing executable IS the setter — no lookup
     // needed. For constructor parameters the real setter is resolved property-aware, because its
     // name can deviate from the JavaBeans convention (e.g. "setStatic" for property "isStatic").
     // When no setter exists, no setter name is stored — the field is populated via constructor.
     Optional<ExecutableElement> propertySetter =
-        param.getEnclosingElement() instanceof ExecutableElement enclosing
-                && JavaLangAnalyser.isSetterForField(enclosing)
+        JavaLangAnalyser.isSetterForField(enclosing)
             ? Optional.of(enclosing)
             : findBuilderSetterForProperty(dtoTypeElement, fieldName, fieldTypeMirror, context);
     propertySetter
@@ -1343,10 +1342,9 @@ public class BuilderDefinitionCreator {
         JavaLangAnalyser.findConstructorsAnnotatedWith(
             annotatedType, SimpleBuilderConstructor.class, context);
     for (ExecutableElement constructor : annotatedConstructors) {
-      if (!isMethodIncludedInBuilder(constructor)) {
+      if (!shouldMethodBeIncludedInBuilder(constructor)) {
         throw new BuilderException(
             constructor,
-            true,
             "Constructor on '%s' must not be annotated with both @SimpleBuilderConstructor "
                 + "and @IgnoreInBuilder.",
             annotatedType.getQualifiedName());
@@ -1376,7 +1374,7 @@ public class BuilderDefinitionCreator {
     ExecutableElement selected = null;
     for (ExecutableElement ctor :
         JavaLangAnalyser.findAccessibleConstructors(annotatedType, context)) {
-      if (!isMethodIncludedInBuilder(ctor)) {
+      if (!shouldMethodBeIncludedInBuilder(ctor)) {
         continue;
       }
       if (selected == null || ctor.getParameters().size() > selected.getParameters().size()) {
