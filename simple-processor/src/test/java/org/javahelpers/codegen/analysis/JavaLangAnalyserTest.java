@@ -580,6 +580,24 @@ class JavaLangAnalyserTest {
   }
 
   @Test
+  void findSetterForPropertyReturnsEmptyForEachNullArgument() {
+    AtomicReference<List<Optional<ExecutableElement>>> results = new AtomicReference<>();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.Dto");
+          var fieldType = field(dto, "name").asType();
+          results.set(
+              List.of(
+                  JavaLangAnalyser.findSetterForProperty(null, "name", fieldType, ctx),
+                  JavaLangAnalyser.findSetterForProperty(dto, null, fieldType, ctx),
+                  JavaLangAnalyser.findSetterForProperty(dto, "name", null, ctx)));
+        },
+        DTO_SOURCE);
+    assertEquals(List.of(Optional.empty(), Optional.empty(), Optional.empty()), results.get());
+  }
+
+  @Test
   void findSetterForField_matchesVoidSingleParamSetter() {
     AtomicReference<Optional<ExecutableElement>> found = new AtomicReference<>();
     AtomicReference<Optional<ExecutableElement>> missing = new AtomicReference<>();
