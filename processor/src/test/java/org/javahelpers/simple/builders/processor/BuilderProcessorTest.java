@@ -245,7 +245,7 @@ class BuilderProcessorTest {
   /** A DTO without a constructor reachable from the generated package gets no builder. */
   @ParameterizedTest(name = "{0}")
   @MethodSource("unreachableConstructorCases")
-  void shouldSkipDtoWithoutAccessibleConstructor(String caseName, String dtoName, String source) {
+  void shouldSkipDtoWithoutAccessibleConstructor(String dtoName, String source) {
     JavaFileObject dto = ProcessorTestUtils.forSource(source);
 
     // When
@@ -262,7 +262,6 @@ class BuilderProcessorTest {
     return Stream.of(
         // A DTO created through a hand-written builder has only a private constructor.
         Arguments.of(
-            "only private constructor",
             "PersonDto",
             """
             package test;
@@ -277,7 +276,6 @@ class BuilderProcessorTest {
             """),
         // A singleton-style DTO has only a private no-arg constructor.
         Arguments.of(
-            "private no-arg constructor",
             "SingletonDto",
             """
             package test;
@@ -293,7 +291,6 @@ class BuilderProcessorTest {
             """),
         // A package-private constructor is unreachable from a builder in another package.
         Arguments.of(
-            "package-private constructor in different package",
             "WidgetDto",
             """
             package test;
