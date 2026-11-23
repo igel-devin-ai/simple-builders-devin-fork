@@ -25,8 +25,6 @@
 package org.javahelpers.codegen.roaster;
 
 import static org.javahelpers.codegen.GenerationPhases.*;
-import static org.javahelpers.codegen.roaster.RoasterMapper.mapType;
-import static org.javahelpers.codegen.roaster.RoasterMapper.resolveCodeTemplate;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -92,13 +90,6 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
   private final GenerationIssueReporter issueReporter;
 
   /**
-   * Simple type names used by more than one distinct type in the class currently being generated
-   * (e.g. {@code java.util.Date} next to {@code java.sql.Date}). Usages of such types are emitted
-   * fully qualified; recomputed per {@link #generateClass} call.
-   */
-  private Set<String> collidingSimpleNames = Set.of();
-
-  /**
    * Creates a code generator using the given generation environment.
    *
    * @param environment the generation environment providing processing environment, logger,
@@ -160,16 +151,16 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
 
   private JavaClassSource buildClassSource(GenerationTargetClassDto classDef) {
     performanceTracker.startPhase();
-    collidingSimpleNames =
-        new ImportCollector(classDef.getTypeName())
-            .collectImports(classDef)
-            .getCollidingSimpleNames();
-    JavaClassSource source = createJavaClassSource(classDef);
-    addClassMetadata(source, classDef);
-    appendFields(source, classDef);
-    appendConstructors(source, classDef);
-    appendMethods(source, classDef);
-    appendNestedTypes(source, classDef);
+    ImportCollector importCollector =
+        new ImportCollector(classDef.getTypeName()).collectImports(classDef);
+    Set<String> collidingSimpleNames = importCollector.getCollidingSimpleNames();
+    JavaClassSource source =
+        createJavaClassSource(classDef, importCollector.getSortedImports(), collidingSimpleNames);
+    addClassMetadata(source, classDef, collidingSimpleNames);
+    appendFields(source, classDef, collidingSimpleNames);
+    appendConstructors(source, classDef, collidingSimpleNames);
+    appendMethods(source, classDef, collidingSimpleNames);
+    appendNestedTypes(source, classDef, collidingSimpleNames);
     applyClassAnnotations(source, classDef);
     performanceTracker.endPhase(PHASE_ELEMENT_BUILDING);
     return source;
@@ -185,7 +176,10 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     performanceTracker.endPhase(PHASE_CLASS_ANNOTATIONS);
   }
 
-  private JavaClassSource createJavaClassSource(GenerationTargetClassDto classDef) {
+  private JavaClassSource createJavaClassSource(
+      GenerationTargetClassDto classDef,
+      Set<ImportStatement> importStmts,
+      Set<String> collidingSimpleNames) {
     performanceTracker.startPhase();
     if (CollectionUtils.isNotEmpty(classDef.getGenerics())) {
       logger.debug("Class has %d generic type parameter(s)", classDef.getGenerics().size());
@@ -199,10 +193,9 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       source.setDefaultPackage();
     }
     source.setName(classDef.getTypeName().getClassName());
-    addGenericDeclarations(source, classDef.getGenerics());
+    addGenericDeclarations(source, classDef.getGenerics(), collidingSimpleNames);
 
     // Collect and add imports early (before elements are added)
-    Set<ImportStatement> importStmts = ImportCollector.collectAndSortImports(classDef);
     for (ImportStatement importStmt : importStmts) {
       if (importStmt.isStatic()) {
         source.addImport(importStmt.getFullyQualifiedName()).setStatic(true);
@@ -216,11 +209,12 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     return source;
   }
 
-  private void addClassMetadata(JavaClassSource source, GenerationTargetClassDto classDef) {
+  private void addClassMetadata(
+      JavaClassSource source, GenerationTargetClassDto classDef, Set<String> collidingSimpleNames) {
     performanceTracker.startPhase();
-    applyJavadoc(source, classDef.getClassJavadoc());
+    applyJavadoc(source, classDef.getClassJavadoc(), collidingSimpleNames);
     applyVisibility(source, classDef.getClassAccessModifier());
-    applySuperType(source, classDef.getSuperType());
+    applySuperType(source, classDef.getSuperType(), collidingSimpleNames);
 
     // Add interfaces
     for (InterfaceName interfaceName : classDef.getInterfaces()) {
@@ -232,7 +226,8 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     performanceTracker.endPhase(PHASE_CLASS_METADATA);
   }
 
-  private void appendFields(JavaClassSource source, GenerationTargetClassDto classDef) {
+  private void appendFields(
+      JavaClassSource source, GenerationTargetClassDto classDef, Set<String> collidingSimpleNames) {
     performanceTracker.startPhase();
     if (CollectionUtils.isEmpty(classDef.getClassFields())) {
       performanceTracker.endPhase(PHASE_FIELDS);
@@ -240,21 +235,34 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     }
     logger.debugStartOperation("Generating %d fields", classDef.getClassFields().size());
     for (ClassFieldDto fieldDto : classDef.getClassFields()) {
-      appendField(source, fieldDto);
+      appendField(source, fieldDto, collidingSimpleNames);
     }
     logger.debugEndOperation("Fields added: %d fields", source.getFields().size());
     performanceTracker.endPhase(PHASE_FIELDS);
   }
 
-  private void appendField(JavaClassSource source, ClassFieldDto fieldDto) {
-    FieldSource<JavaClassSource> field =
-        source.addField(mapType(fieldDto.getFieldType()) + " " + fieldDto.getFieldName() + ";");
+  private void appendField(
+      JavaClassSource source, ClassFieldDto fieldDto, Set<String> collidingSimpleNames) {
+    String typeSource = mapType(fieldDto.getFieldType(), collidingSimpleNames);
+    FieldSource<JavaClassSource> field;
+    if (typeSource.contains("@")) {
+      // Declaration form is needed for type-use annotations, but keeps qualified names literal
+      // (no normalization against imports).
+      field = source.addField(typeSource + " " + fieldDto.getFieldName() + ";");
+    } else {
+      // setType normalizes fully qualified names against imports, so a colliding type that is
+      // imported renders by simple name while only the non-imported one stays qualified.
+      field = source.addField();
+      field.setName(fieldDto.getFieldName());
+      field.setType(typeSource);
+    }
     applyVisibility(field, fieldDto.getVisibility());
     applyLiteralInitializer(field, fieldDto.getLiteralInitializer());
-    applyJavadoc(field, fieldDto.getJavadoc());
+    applyJavadoc(field, fieldDto.getJavadoc(), collidingSimpleNames);
   }
 
-  private void appendConstructors(JavaClassSource source, GenerationTargetClassDto classDef) {
+  private void appendConstructors(
+      JavaClassSource source, GenerationTargetClassDto classDef, Set<String> collidingSimpleNames) {
     performanceTracker.startPhase();
     if (CollectionUtils.isEmpty(classDef.getConstructors())) {
       performanceTracker.endPhase(PHASE_CONSTRUCTORS);
@@ -262,25 +270,28 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     }
     logger.debugStartOperation("Generating %d constructors", classDef.getConstructors().size());
     for (ConstructorDto constructor : classDef.getConstructors()) {
-      appendConstructor(source, constructor);
+      appendConstructor(source, constructor, collidingSimpleNames);
     }
     logger.debugEndOperation("Constructors added: %d", classDef.getConstructors().size());
     performanceTracker.endPhase(PHASE_CONSTRUCTORS);
   }
 
-  private void appendConstructor(JavaClassSource source, ConstructorDto constructor) {
+  private void appendConstructor(
+      JavaClassSource source, ConstructorDto constructor, Set<String> collidingSimpleNames) {
     MethodSource<JavaClassSource> method = source.addMethod();
     method.setConstructor(true);
     applyVisibility(method, constructor.getVisibility());
     for (MethodParameterDto param : constructor.getParameters()) {
-      method.addParameter(mapType(param.getParameterType()), param.getParameterName());
+      method.addParameter(
+          mapType(param.getParameterType(), collidingSimpleNames), param.getParameterName());
     }
-    applyJavadoc(method, constructor.getJavadoc());
+    applyJavadoc(method, constructor.getJavadoc(), collidingSimpleNames);
     applyAnnotations(method, constructor.getAnnotations());
-    applyCodeBlock(method, constructor.getMethodCodeDto());
+    applyCodeBlock(method, constructor.getMethodCodeDto(), collidingSimpleNames);
   }
 
-  private void appendMethods(JavaClassSource source, GenerationTargetClassDto classDef) {
+  private void appendMethods(
+      JavaClassSource source, GenerationTargetClassDto classDef, Set<String> collidingSimpleNames) {
     performanceTracker.startPhase();
     if (CollectionUtils.isEmpty(classDef.getMethods())) {
       performanceTracker.endPhase(PHASE_METHODS);
@@ -293,7 +304,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     logger.debug("Resolved to %d methods after conflict resolution", resolvedMethods.size());
 
     for (MethodDto methodDto : resolvedMethods) {
-      appendMethod(source, methodDto, false, false);
+      appendMethod(source, methodDto, false, false, collidingSimpleNames);
     }
 
     logger.debugEndOperation("Methods added: %d", resolvedMethods.size());
@@ -332,18 +343,20 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       JavaClassSource source,
       MethodDto methodDto,
       boolean nestedTypeMethod,
-      boolean interfaceMethod) {
-    MethodSource<?> method = createMethod(source, methodDto);
-    configureMethod(method, methodDto, nestedTypeMethod, interfaceMethod);
-    applyCodeBlock(method, methodDto.getMethodCodeDto());
+      boolean interfaceMethod,
+      Set<String> collidingSimpleNames) {
+    MethodSource<?> method = createMethod(source, methodDto, collidingSimpleNames);
+    configureMethod(method, methodDto, nestedTypeMethod, interfaceMethod, collidingSimpleNames);
+    applyCodeBlock(method, methodDto.getMethodCodeDto(), collidingSimpleNames);
   }
 
-  private void appendNestedTypes(JavaClassSource source, GenerationTargetClassDto classDef) {
+  private void appendNestedTypes(
+      JavaClassSource source, GenerationTargetClassDto classDef, Set<String> collidingSimpleNames) {
     performanceTracker.startPhase();
     if (CollectionUtils.isNotEmpty(classDef.getNestedTypes())) {
       logger.debugStartOperation("Generating %d nested type(s)", classDef.getNestedTypes().size());
       for (NestedTypeDto nestedType : classDef.getNestedTypes()) {
-        appendNestedType(source, nestedType);
+        appendNestedType(source, nestedType, collidingSimpleNames);
         logger.debug("Generated nested type: %s", nestedType.getTypeName());
       }
       logger.debugEndOperation("Nested types added");
@@ -351,7 +364,8 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     performanceTracker.endPhase(PHASE_NESTED_TYPES);
   }
 
-  private void appendNestedType(JavaClassSource source, NestedTypeDto nestedType) {
+  private void appendNestedType(
+      JavaClassSource source, NestedTypeDto nestedType, Set<String> collidingSimpleNames) {
     JavaSource<?> nestedSource =
         nestedType.getKind() == NestedTypeDto.NestedTypeKind.INTERFACE
             ? source.addNestedType(JavaInterfaceSource.class)
@@ -359,21 +373,25 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     nestedSource.setName(nestedType.getTypeName());
     applyVisibility(nestedSource, nestedType.getVisibility());
     applyAnnotations(nestedSource, nestedType.getAnnotations());
-    applyJavadoc(nestedSource, nestedType.getJavadoc());
+    applyJavadoc(nestedSource, nestedType.getJavadoc(), collidingSimpleNames);
     boolean isInterface = nestedType.getKind() == NestedTypeDto.NestedTypeKind.INTERFACE;
     for (MethodDto methodDto : nestedType.getMethods()) {
-      appendNestedMethod(nestedSource, methodDto, isInterface);
+      appendNestedMethod(nestedSource, methodDto, isInterface, collidingSimpleNames);
     }
   }
 
-  private void appendNestedMethod(JavaSource<?> source, MethodDto methodDto, boolean isInterface) {
+  private void appendNestedMethod(
+      JavaSource<?> source,
+      MethodDto methodDto,
+      boolean isInterface,
+      Set<String> collidingSimpleNames) {
     org.jboss.forge.roaster.model.source.MethodHolderSource<?> methodHolder =
         (org.jboss.forge.roaster.model.source.MethodHolderSource<?>) source;
-    MethodSource<?> method = createMethod(methodHolder, methodDto);
-    configureMethod(method, methodDto, true, isInterface);
+    MethodSource<?> method = createMethod(methodHolder, methodDto, collidingSimpleNames);
+    configureMethod(method, methodDto, true, isInterface, collidingSimpleNames);
     if (methodDto.getMethodCodeDto() != null
         && StringUtils.isNotBlank(methodDto.getMethodCodeDto().getCodeFormat())) {
-      method.setBody(resolveCodeTemplate(methodDto.getMethodCodeDto()));
+      method.setBody(resolveCodeTemplate(methodDto.getMethodCodeDto(), collidingSimpleNames));
     } else {
       method.setAbstract(true);
       method.setBody("");
@@ -396,9 +414,10 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     }
   }
 
-  private void applySuperType(JavaClassSource source, TypeName superType) {
+  private void applySuperType(
+      JavaClassSource source, TypeName superType, Set<String> collidingSimpleNames) {
     if (superType != null) {
-      source.setSuperType(mapType(superType));
+      source.setSuperType(mapType(superType, collidingSimpleNames));
     }
   }
 
@@ -411,7 +430,8 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
 
   private void addGenericDeclarations(
       JavaClassSource source,
-      List<org.javahelpers.codegen.model.type.GenericParameterDto> generics) {
+      List<org.javahelpers.codegen.model.type.GenericParameterDto> generics,
+      Set<String> collidingSimpleNames) {
     if (CollectionUtils.isEmpty(generics)) {
       return;
     }
@@ -419,14 +439,17 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       TypeVariableSource<JavaClassSource> typeVariable = source.addTypeVariable(generic.getName());
       if (CollectionUtils.isNotEmpty(generic.getUpperBounds())) {
         typeVariable.setBounds(
-            generic.getUpperBounds().stream().map(this::mapType).toArray(String[]::new));
+            generic.getUpperBounds().stream()
+                .map(type -> mapType(type, collidingSimpleNames))
+                .toArray(String[]::new));
       }
     }
   }
 
   private void addGenericDeclarations(
       MethodSource<?> source,
-      List<org.javahelpers.codegen.model.type.GenericParameterDto> generics) {
+      List<org.javahelpers.codegen.model.type.GenericParameterDto> generics,
+      Set<String> collidingSimpleNames) {
     if (CollectionUtils.isEmpty(generics)) {
       return;
     }
@@ -434,22 +457,27 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       TypeVariableSource<?> typeVariable = source.addTypeVariable(generic.getName());
       if (CollectionUtils.isNotEmpty(generic.getUpperBounds())) {
         typeVariable.setBounds(
-            generic.getUpperBounds().stream().map(this::mapType).toArray(String[]::new));
+            generic.getUpperBounds().stream()
+                .map(type -> mapType(type, collidingSimpleNames))
+                .toArray(String[]::new));
       }
     }
   }
 
-  private void applyCodeBlock(MethodSource<?> method, MethodCodeDto codeDto) {
+  private void applyCodeBlock(
+      MethodSource<?> method, MethodCodeDto codeDto, Set<String> collidingSimpleNames) {
     if (!codeDto.hasCode()) {
       // If implementation is missing, an empty body needs to be set
       method.setBody("");
       return;
     }
-    method.setBody(resolveCodeTemplate(codeDto));
+    method.setBody(resolveCodeTemplate(codeDto, collidingSimpleNames));
   }
 
   private void applyJavadoc(
-      org.jboss.forge.roaster.model.source.JavaDocCapableSource<?> source, JavadocDto javadoc) {
+      org.jboss.forge.roaster.model.source.JavaDocCapableSource<?> source,
+      JavadocDto javadoc,
+      Set<String> collidingSimpleNames) {
     if (javadoc == null || !javadoc.hasContent()) {
       return;
     }
@@ -477,7 +505,7 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     JavadocCodeBlockDto codeBlock = javadoc.getExampleUsageCodeBlock();
     if (codeBlock != null && codeBlock.hasCode()) {
       // Resolve placeholders in the code block
-      String resolvedCode = resolveCodeTemplate(codeBlock);
+      String resolvedCode = resolveCodeTemplate(codeBlock, collidingSimpleNames);
       // Pre-prefix every line of the code body with " * " so it survives Roaster's
       // preformatted-block handling (Roaster does not auto-add asterisk prefix inside <pre>).
       String prefixedCode =
@@ -520,17 +548,34 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
     }
   }
 
-  private MethodSource<?> createMethod(MethodHolderSource<?> source, MethodDto methodDto) {
-    String returnType =
-        methodDto.getReturnType() == null ? "void" : mapType(methodDto.getReturnType());
-    return source.addMethod(returnType + " " + methodDto.getMethodName() + "();");
+  private MethodSource<?> createMethod(
+      MethodHolderSource<?> source, MethodDto methodDto, Set<String> collidingSimpleNames) {
+    String returnTypeSource =
+        methodDto.getReturnType() == null
+            ? "void"
+            : mapType(methodDto.getReturnType(), collidingSimpleNames);
+    if (returnTypeSource.contains("@")) {
+      // Signature form is needed for type-use annotations, but keeps qualified names literal
+      // (no normalization against imports).
+      return source.addMethod(returnTypeSource + " " + methodDto.getMethodName() + "();");
+    }
+    // setReturnType normalizes qualified names against imports, like the field path.
+    MethodSource<?> method = source.addMethod();
+    if (methodDto.getReturnType() == null) {
+      method.setReturnTypeVoid();
+    } else {
+      method.setReturnType(returnTypeSource);
+    }
+    method.setName(methodDto.getMethodName());
+    return method;
   }
 
   private void configureMethod(
       MethodSource<?> method,
       MethodDto methodDto,
       boolean nestedTypeMethod,
-      boolean interfaceMethod) {
+      boolean interfaceMethod,
+      Set<String> collidingSimpleNames) {
     if (nestedTypeMethod) {
       boolean hasBody =
           interfaceMethod
@@ -546,37 +591,41 @@ public class RoasterCodeGenerator implements ClassCodeGenerator {
       method.setStatic(methodDto.isStatic());
     }
 
-    addGenericDeclarations(method, methodDto.getGenericParameters());
-    applyJavadoc(method, methodDto.getJavadoc());
+    addGenericDeclarations(method, methodDto.getGenericParameters(), collidingSimpleNames);
+    applyJavadoc(method, methodDto.getJavadoc(), collidingSimpleNames);
     applyAnnotations(method, methodDto.getAnnotations());
 
     for (int i = 0; i < methodDto.getParameters().size(); i++) {
       MethodParameterDto paramDto = methodDto.getParameters().get(i);
       boolean lastParameter = i == methodDto.getParameters().size() - 1;
-      addParameter(method, paramDto, lastParameter);
+      addParameter(method, paramDto, lastParameter, collidingSimpleNames);
     }
   }
 
   private void addParameter(
-      MethodSource<?> method, MethodParameterDto paramDto, boolean lastParameter) {
+      MethodSource<?> method,
+      MethodParameterDto paramDto,
+      boolean lastParameter,
+      Set<String> collidingSimpleNames) {
     boolean varArgs = lastParameter && paramDto.getParameterType() instanceof TypeNameArray;
     TypeName parameterType =
         varArgs
             ? ((TypeNameArray) paramDto.getParameterType()).getTypeOfArray()
             : paramDto.getParameterType();
     ParameterSource<?> parameter =
-        method.addParameter(mapType(parameterType), paramDto.getParameterName());
+        method.addParameter(
+            mapType(parameterType, collidingSimpleNames), paramDto.getParameterName());
     if (varArgs) {
       parameter.setVarArgs(true);
     }
     applyAnnotations(parameter, paramDto.getAnnotations());
   }
 
-  private String mapType(TypeName typeName) {
+  private String mapType(TypeName typeName, Set<String> collidingSimpleNames) {
     return RoasterMapper.mapType(typeName, collidingSimpleNames);
   }
 
-  private String resolveCodeTemplate(CodeTemplateDto codeDto) {
+  private String resolveCodeTemplate(CodeTemplateDto codeDto, Set<String> collidingSimpleNames) {
     return RoasterMapper.resolveCodeTemplate(codeDto, collidingSimpleNames);
   }
 

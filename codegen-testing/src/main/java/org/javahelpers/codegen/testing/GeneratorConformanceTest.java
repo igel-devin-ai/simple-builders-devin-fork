@@ -256,11 +256,12 @@ public class GeneratorConformanceTest {
 
     String source = generate(backend, classDef);
     assertCompiles(classDef, source);
+    // The colliding type that wins the import renders by simple name; the loser stays qualified.
     assertContaining(
         source,
         """
         private java.util.Date utilDate;
-        private java.sql.Date sqlDate;
+        private Date sqlDate;
         public void touch(java.sql.Date when) {
           if (when == null) {
             return;

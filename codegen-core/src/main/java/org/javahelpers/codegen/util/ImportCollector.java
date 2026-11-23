@@ -312,6 +312,11 @@ public class ImportCollector {
       return;
     }
 
+    if (type instanceof TypeNameWildcard wildcard) {
+      wildcard.getBound().ifPresent(this::addTypeImports);
+      return;
+    }
+
     if (type instanceof TypeNameArray arrayType) {
       addImport(arrayType.getTypeOfArray());
       return;

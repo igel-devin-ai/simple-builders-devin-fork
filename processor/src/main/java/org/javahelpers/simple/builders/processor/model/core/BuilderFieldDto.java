@@ -45,9 +45,9 @@ public class BuilderFieldDto {
   private String originalFieldName;
 
   /**
-   * Name of the DTO setter invoked for this field. {@code null} when the setter name can be derived
-   * from {@link #originalFieldName} via JavaBeans conventions; set explicitly when the real setter
-   * name deviates (e.g. {@code setStatic} for a field renamed to {@code isStatic}).
+   * Name of the DTO setter invoked for this field, resolved from the actual setter method on the
+   * DTO. {@code null} when the field has no setter (possible for constructor fields whose values
+   * are passed via constructor arguments instead).
    */
   private String setterName;
 
@@ -143,13 +143,22 @@ public class BuilderFieldDto {
     this.fieldNameInBuilder = fieldNameInBuilder;
   }
 
+  public static IllegalStateException missingSetterName(BuilderFieldDto field) {
+    return new IllegalStateException(
+        "Missing setter name for field '%s'".formatted(field.getOriginalFieldName()));
+  }
+
   /**
    * Gets the setter method name for this field.
    *
-   * @return the setter method name for this field (never null)
+   * <p>Setter-derived fields always retain the discovering setter's name. Constructor-derived
+   * fields may have no setter and are populated through constructor arguments instead.
+   *
+   * @return the setter method name for this field, or empty when no setter exists (possible for
+   *     constructor fields)
    */
-  public String getSetterName() {
-    return setterName;
+  public Optional<String> getSetterName() {
+    return Optional.ofNullable(setterName);
   }
 
   /**

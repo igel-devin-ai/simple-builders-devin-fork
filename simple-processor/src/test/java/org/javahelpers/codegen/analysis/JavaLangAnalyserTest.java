@@ -127,6 +127,18 @@ class JavaLangAnalyserTest {
       }
       """;
 
+  private static final String GETTER_STYLE_SOURCE =
+      """
+      package test;
+      public class MultiGetterDto {
+        private boolean active;
+        public boolean active() { return active; }
+        public boolean getActive() { return active; }
+        public boolean isActive() { return active; }
+        public void setActive(boolean v) { this.active = v; }
+      }
+      """;
+
   @Test
   void isNoMethodOfObjectClass_filtersObjectMethods() {
     AtomicReference<Boolean> onObject = new AtomicReference<>();
@@ -529,6 +541,22 @@ class JavaLangAnalyserTest {
         DTO_SOURCE);
     assertTrue(found.get().isPresent());
     assertTrue(missing.get().isEmpty());
+  }
+
+  @Test
+  void findGetterForField_prefersIsGetThenAccessorStyle() {
+    AtomicReference<Optional<ExecutableElement>> winner = new AtomicReference<>();
+    probe(
+        (roundEnv, env) -> {
+          AnnotationProcessingContext ctx = context(env);
+          TypeElement dto = typeElement(env, "test.MultiGetterDto");
+          winner.set(
+              JavaLangAnalyser.findGetterForField(
+                  dto, "active", field(dto, "active").asType(), ctx));
+        },
+        GETTER_STYLE_SOURCE);
+    assertTrue(winner.get().isPresent());
+    assertEquals("isActive", winner.get().get().getSimpleName().toString());
   }
 
   @Test
