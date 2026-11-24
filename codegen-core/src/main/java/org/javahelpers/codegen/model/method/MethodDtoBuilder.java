@@ -1165,6 +1165,17 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
   }
 
   /**
+   * Sets the value for <code>returnType</code> from package and class name.
+   *
+   * @param packageName the package of the type
+   * @param className the simple name of the type
+   * @return current instance of builder
+   */
+  public MethodDtoBuilder returnType(String packageName, String className) {
+    return returnType(new TypeName(packageName, className));
+  }
+
+  /**
    * Updates the current value of <code>returnType</code> in place by applying the given operator,
    * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
    * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination

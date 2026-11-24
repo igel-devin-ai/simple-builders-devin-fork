@@ -1560,6 +1560,17 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
+   * Sets the value for <code>superType</code> from package and class name.
+   *
+   * @param packageName the package of the type
+   * @param className the simple name of the type
+   * @return current instance of builder
+   */
+  public GenerationTargetClassDtoBuilder superType(String packageName, String className) {
+    return superType(new TypeName(packageName, className));
+  }
+
+  /**
    * Updates the current value of <code>superType</code> in place by applying the given operator,
    * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
    * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
@@ -1607,6 +1618,17 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   public GenerationTargetClassDtoBuilder typeName(TypeName typeName) {
     this.typeName = changedValue(typeName);
     return this;
+  }
+
+  /**
+   * Sets the value for <code>typeName</code> from package and class name.
+   *
+   * @param packageName the package of the type
+   * @param className the simple name of the type
+   * @return current instance of builder
+   */
+  public GenerationTargetClassDtoBuilder typeName(String packageName, String className) {
+    return typeName(new TypeName(packageName, className));
   }
 
   /**

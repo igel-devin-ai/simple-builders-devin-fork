@@ -28,8 +28,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.FormattingMode;
+import org.javahelpers.codegen.model.annotation.InterfaceName;
+import org.javahelpers.codegen.model.imports.RegularImport;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.method.MethodDtoBuilder;
@@ -98,6 +103,94 @@ class GenerationTargetClassDtoBuilderTest {
     assertEquals(original.getTypeName(), modified.getTypeName());
     assertEquals(AccessModifier.PRIVATE, modified.getClassAccessModifier());
     assertEquals(AccessModifier.PUBLIC, original.getClassAccessModifier());
+  }
+
+  @Test
+  void buildsWholeDtoInOneFluentStream() {
+    // One continuous stream: every nested DTO is configured through the
+    // Consumer-based collection helpers, no intermediate variables.
+    GenerationTargetClassDto dto =
+        GenerationTargetClassDtoBuilder.create()
+            .typeName("example", "Target")
+            .classFields(
+                fields ->
+                    fields.add(field -> field.fieldName("value").fieldType("java.lang", "String")))
+            .constructors(
+                constructors ->
+                    constructors.add(
+                        constructor ->
+                            constructor.parameters(
+                                parameters ->
+                                    parameters.add(
+                                        parameter ->
+                                            parameter
+                                                .parameterName("arg")
+                                                .parameterTypeName("java.lang", "String")))))
+            .methods(
+                methods ->
+                    methods.add(
+                        method ->
+                            method
+                                .methodName("apply")
+                                .returnType("java.lang", "String")
+                                .parameters(
+                                    parameters ->
+                                        parameters.add(
+                                            parameter ->
+                                                parameter
+                                                    .parameterName("v")
+                                                    .parameterTypeName("java.lang", "Integer")))
+                                .genericParameters(
+                                    generics ->
+                                        generics.add(
+                                            generic ->
+                                                generic
+                                                    .name("T")
+                                                    .upperBounds(TypeName.of(Number.class))))
+                                .annotations(
+                                    annotations ->
+                                        annotations.add(
+                                            annotation ->
+                                                annotation.annotationType(
+                                                    "java.lang", "Deprecated")))))
+            .generics(generics -> generics.add(generic -> generic.name("E")))
+            .interfaces(interfaces -> interfaces.add(new InterfaceName("java.lang", "Runnable")))
+            .nestedTypes(
+                nestedTypes ->
+                    nestedTypes.add(
+                        nested ->
+                            nested
+                                .typeName("Factory")
+                                .methods(
+                                    methods -> methods.add(method -> method.methodName("create")))))
+            .classAnnotations(
+                annotations ->
+                    annotations.add(
+                        annotation ->
+                            annotation
+                                .annotationType("java.lang", "Deprecated")
+                                .members(Map.of("since", "\"1\""))))
+            .imports(imports -> imports.add(new RegularImport(TypeName.of(List.class))))
+            .build();
+
+    assertEquals(new TypeName("example", "Target"), dto.getTypeName());
+    assertEquals("value", dto.getClassFields().get(0).getFieldName());
+    assertEquals(TypeName.of(String.class), dto.getClassFields().get(0).getFieldType());
+    assertEquals("arg", dto.getConstructors().get(0).getParameters().get(0).getParameterName());
+    assertEquals(
+        TypeName.of(String.class),
+        dto.getConstructors().get(0).getParameters().get(0).getParameterType());
+    assertEquals("apply", dto.getMethods().get(0).getMethodName());
+    assertEquals(TypeName.of(String.class), dto.getMethods().get(0).getReturnType());
+    assertEquals("v", dto.getMethods().get(0).getParameters().get(0).getParameterName());
+    assertEquals("T", dto.getMethods().get(0).getGenericParameters().get(0).getName());
+    assertEquals("E", dto.getGenerics().get(0).getName());
+    assertEquals(Set.of(new InterfaceName("java.lang", "Runnable")), dto.getInterfaces());
+    assertEquals("Factory", dto.getNestedTypes().get(0).getTypeName());
+    assertEquals("create", dto.getNestedTypes().get(0).getMethods().get(0).getMethodName());
+    assertEquals(
+        Map.of("since", "\"1\""), dto.getClassAnnotations().iterator().next().getMembers());
+    assertEquals(Set.of(new RegularImport(TypeName.of(List.class))), dto.getImports());
   }
 
   @Test
