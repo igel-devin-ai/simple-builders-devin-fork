@@ -49,7 +49,7 @@ import org.javahelpers.codegen.model.type.TypeName;
  * org.javahelpers.simple.builders.processor.model.core.BuilderToGenerationTypeMapper} before being
  * added to {@code GenerationTargetClassDto}.
  */
-public class BuilderMethodDto {
+public class BuilderMethodDto implements BuilderMethodDtoBuilder.With {
   // Priority constants for method conflict resolution (higher values win)
   public static final int PRIORITY_HIGHEST = 100; // Direct setters, with() methods
   public static final int PRIORITY_HIGH = 80; // Supplier, transform methods

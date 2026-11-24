@@ -44,7 +44,7 @@ import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
  *
  * <p>For example, the "With" interface that allows DTOs to implement fluent modification methods.
  */
-public class BuilderNestedTypeDto {
+public class BuilderNestedTypeDto implements BuilderNestedTypeDtoBuilder.With {
 
   /** The simple name of the nested type (e.g., "With"). */
   private String typeName;
