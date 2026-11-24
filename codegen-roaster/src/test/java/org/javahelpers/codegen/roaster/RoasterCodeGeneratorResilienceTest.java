@@ -34,15 +34,10 @@ import org.javahelpers.codegen.enums.FormattingMode;
 import org.javahelpers.codegen.logging.ProcessingLogger;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDtoBuilder;
-import org.javahelpers.codegen.model.method.ConstructorDto;
-import org.javahelpers.codegen.model.method.ConstructorDtoBuilder;
-import org.javahelpers.codegen.model.method.MethodCodeDto;
 import org.javahelpers.codegen.model.method.MethodCodeDtoBuilder;
 import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
 import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.method.MethodDtoBuilder;
-import org.javahelpers.codegen.model.method.MethodParameterDto;
-import org.javahelpers.codegen.model.method.MethodParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.roaster.exceptions.RoasterMapperException;
 import org.javahelpers.codegen.testing.CapturingProcessingLogger;
@@ -73,17 +68,18 @@ class RoasterCodeGeneratorResilienceTest {
         GenerationTargetClassDtoBuilder.create()
             .typeName(new TypeName("com.example", "FailingBuilder"))
             .classAccessModifier(AccessModifier.PUBLIC)
+            .constructors(
+                constructors ->
+                    constructors.add(
+                        c ->
+                            c.visibility(AccessModifier.PUBLIC)
+                                .methodCodeDto(
+                                    MethodCodeDtoBuilder.create()
+                                        .codeFormat("return $value:X;")
+                                        .add2CodeArguments(
+                                            new UnsupportedPlaceholder("value", "irrelevant"))
+                                        .build())))
             .build();
-
-    MethodCodeDto code = MethodCodeDtoBuilder.create().codeFormat("return $value:X;").build();
-    code.addCodeArgument(new UnsupportedPlaceholder("value", "irrelevant"));
-
-    ConstructorDto constructor =
-        ConstructorDtoBuilder.create()
-            .visibility(AccessModifier.PUBLIC)
-            .methodCodeDto(code)
-            .build();
-    classDef.addConstructor(constructor);
 
     ProcessingLogger logger = CapturingProcessingLogger.create().logger();
     RoasterCodeGenerator generator =
@@ -110,9 +106,12 @@ class RoasterCodeGeneratorResilienceTest {
             .typeName(new TypeName("com.example", "DuplicateSignatureBuilder"))
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
+            .methods(
+                methods ->
+                    methods
+                        .add(duplicateSignatureMethod("first"))
+                        .add(duplicateSignatureMethod("second")))
             .build();
-    classDef.addMethod(duplicateSignatureMethod("first"));
-    classDef.addMethod(duplicateSignatureMethod("second"));
 
     CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
     RoasterCodeGenerator generator =
@@ -127,19 +126,14 @@ class RoasterCodeGeneratorResilienceTest {
   }
 
   private static MethodDto duplicateSignatureMethod(String marker) {
-    MethodDto method =
-        MethodDtoBuilder.create()
-            .methodName("name")
-            .returnType(new TypeName("com.example", "DuplicateSignatureBuilder"))
-            .modifier(AccessModifier.PUBLIC)
-            .code("return this; // " + marker)
-            .build();
-    MethodParameterDto parameter =
-        MethodParameterDtoBuilder.create()
-            .parameterName("value")
-            .parameterTypeName(TypeName.of(String.class))
-            .build();
-    method.addParameter(parameter);
-    return method;
+    return MethodDtoBuilder.create()
+        .methodName("name")
+        .returnType(new TypeName("com.example", "DuplicateSignatureBuilder"))
+        .modifier(AccessModifier.PUBLIC)
+        .code("return this; // " + marker)
+        .parameters(
+            parameters ->
+                parameters.add(p -> p.parameterName("value").parameterTypeName(String.class)))
+        .build();
   }
 }
