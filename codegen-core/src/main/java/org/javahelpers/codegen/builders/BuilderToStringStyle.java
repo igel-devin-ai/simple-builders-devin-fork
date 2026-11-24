@@ -48,6 +48,8 @@ public class BuilderToStringStyle extends ToStringStyle {
     this.setUseIdentityHashCode(false);
   }
 
+  // Overrides ToStringStyle.append to unwrap TrackedValue fields; the signature must match the
+  // overridden method. codeql[java/confusing-method-signature]
   @Override
   public void append(StringBuffer buffer, String fieldName, Object value, Boolean fullDetail) {
     if (value instanceof TrackedValue<?> trackedValue) {
