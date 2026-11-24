@@ -27,6 +27,7 @@ package org.javahelpers.simple.builders.processor.generators.field;
 import static org.javahelpers.codegen.analysis.JavaLangMapper.map2TypeName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.TRACKED_VALUE_TYPE;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.addExampleChainFragmentTemplate;
+import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.builderBackedExampleResolver;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.generateBuilderMethodName;
 import static org.javahelpers.simple.builders.processor.generators.util.MethodGeneratorUtil.getMethodAccessModifier;
 
@@ -51,9 +52,9 @@ import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive;
 import org.javahelpers.codegen.model.type.TypeNamePrimitive.PrimitiveTypeEnum;
+import org.javahelpers.codegen.util.JavadocExampleValues;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
 import org.javahelpers.simple.builders.processor.generators.util.JavadocConstants;
-import org.javahelpers.simple.builders.processor.generators.util.JavadocExampleValues;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
 import org.javahelpers.simple.builders.processor.processing.BuilderProcessingContext;
@@ -239,7 +240,9 @@ public class UpdateHelperGenerator implements MethodGenerator {
 
     Optional<String> initialValue =
         JavadocExampleValues.getExampleValue(
-            field.getFieldType(), field.getOriginalFieldName(), context::resolveBuilderType);
+            field.getFieldType(),
+            field.getOriginalFieldName(),
+            builderBackedExampleResolver(context::resolveBuilderType));
     if (initialValue.isEmpty()) {
       return;
     }
