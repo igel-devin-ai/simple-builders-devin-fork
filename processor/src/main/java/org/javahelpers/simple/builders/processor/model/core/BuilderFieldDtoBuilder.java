@@ -47,6 +47,11 @@ import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
 import org.javahelpers.codegen.model.type.GenericParameterDto;
 import org.javahelpers.codegen.model.type.GenericParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameList;
+import org.javahelpers.codegen.model.type.TypeNameMap;
+import org.javahelpers.codegen.model.type.TypeNameSet;
 
 /**
  * Builder for {@code org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto}.
@@ -652,6 +657,114 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   public BuilderFieldDtoBuilder fieldType(TypeName fieldType) {
     this.fieldType = changedValue(fieldType);
     return this;
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementClass the list element type
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeList(Class<?> elementClass) {
+    return fieldType(TypeNameList.of(elementClass));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementType the list element type
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeList(TypeName elementType) {
+    return fieldType(TypeNameList.of(elementType));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementClass the set element type
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeSet(Class<?> elementClass) {
+    return fieldType(TypeNameSet.of(elementClass));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementType the set element type
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeSet(TypeName elementType) {
+    return fieldType(TypeNameSet.of(elementType));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameArray built from the given array component type.
+   *
+   * @param innerClass the array component type
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeArray(Class<?> innerClass) {
+    return fieldType(TypeNameArray.of(innerClass));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameArray built from the given array component type.
+   *
+   * @param innerType the array component type
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeArray(TypeName innerType) {
+    return fieldType(TypeNameArray.of(innerType));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameGeneric built from the given generic outer type and
+   * type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeGeneric(
+      Class<?> outerType, Class<?>... innerTypeArguments) {
+    return fieldType(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameGeneric built from the given generic outer type and
+   * type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeGeneric(
+      TypeName outerType, TypeName... innerTypeArguments) {
+    return fieldType(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameMap built from the given map key and value types.
+   *
+   * @param keyClass the map key and value types
+   * @param valueClass the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeMap(Class<?> keyClass, Class<?> valueClass) {
+    return fieldType(TypeNameMap.of(keyClass, valueClass));
+  }
+
+  /**
+   * Sets <code>fieldType</code> to a TypeNameMap built from the given map key and value types.
+   *
+   * @param keyType the map key and value types
+   * @param valueType the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldTypeMap(TypeName keyType, TypeName valueType) {
+    return fieldType(TypeNameMap.of(keyType, valueType));
   }
 
   /**

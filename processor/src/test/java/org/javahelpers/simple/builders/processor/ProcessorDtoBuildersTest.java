@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.model.type.NestedTypeDto;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto;
 import org.javahelpers.simple.builders.processor.model.core.BuilderFieldDtoBuilder;
 import org.javahelpers.simple.builders.processor.model.core.GetterInfoDto;
@@ -69,7 +70,7 @@ class ProcessorDtoBuildersTest {
     BuilderMethodDto dto =
         BuilderMethodDtoBuilder.create()
             .methodName("persons")
-            .returnType(String.class)
+            .returnTypeList(String.class)
             .code("return $builder:N.$fieldName:N;")
             .priority(42)
             .ordering(7)
@@ -80,7 +81,7 @@ class ProcessorDtoBuildersTest {
     dto.getParameters().add(new org.javahelpers.codegen.model.method.MethodParameterDto());
 
     assertEquals("persons", dto.getMethodName());
-    assertEquals(TypeName.of(String.class), dto.getReturnType());
+    assertEquals(TypeNameList.of(String.class), dto.getReturnType());
     assertTrue(dto.hasCode());
     assertEquals(42, dto.getPriority());
     assertEquals(7, dto.getOrdering());

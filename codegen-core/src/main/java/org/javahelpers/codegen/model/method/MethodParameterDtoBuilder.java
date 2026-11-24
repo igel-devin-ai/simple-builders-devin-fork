@@ -42,6 +42,11 @@ import org.javahelpers.codegen.builders.util.TrackedValue;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameList;
+import org.javahelpers.codegen.model.type.TypeNameMap;
+import org.javahelpers.codegen.model.type.TypeNameSet;
 
 /**
  * Builder for {@code org.javahelpers.codegen.model.method.MethodParameterDto}.
@@ -401,6 +406,118 @@ public class MethodParameterDtoBuilder implements IBuilderBase<MethodParameterDt
   public MethodParameterDtoBuilder parameterTypeName(TypeName parameterTypeName) {
     this.parameterTypeName = changedValue(parameterTypeName);
     return this;
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementClass the list element type
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameList(Class<?> elementClass) {
+    return parameterTypeName(TypeNameList.of(elementClass));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementType the list element type
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameList(TypeName elementType) {
+    return parameterTypeName(TypeNameList.of(elementType));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementClass the set element type
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameSet(Class<?> elementClass) {
+    return parameterTypeName(TypeNameSet.of(elementClass));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementType the set element type
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameSet(TypeName elementType) {
+    return parameterTypeName(TypeNameSet.of(elementType));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameArray built from the given array component
+   * type.
+   *
+   * @param innerClass the array component type
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameArray(Class<?> innerClass) {
+    return parameterTypeName(TypeNameArray.of(innerClass));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameArray built from the given array component
+   * type.
+   *
+   * @param innerType the array component type
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameArray(TypeName innerType) {
+    return parameterTypeName(TypeNameArray.of(innerType));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameGeneric built from the given generic outer
+   * type and type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameGeneric(
+      Class<?> outerType, Class<?>... innerTypeArguments) {
+    return parameterTypeName(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameGeneric built from the given generic outer
+   * type and type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameGeneric(
+      TypeName outerType, TypeName... innerTypeArguments) {
+    return parameterTypeName(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameMap built from the given map key and value
+   * types.
+   *
+   * @param keyClass the map key and value types
+   * @param valueClass the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameMap(Class<?> keyClass, Class<?> valueClass) {
+    return parameterTypeName(TypeNameMap.of(keyClass, valueClass));
+  }
+
+  /**
+   * Sets <code>parameterTypeName</code> to a TypeNameMap built from the given map key and value
+   * types.
+   *
+   * @param keyType the map key and value types
+   * @param valueType the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeNameMap(TypeName keyType, TypeName valueType) {
+    return parameterTypeName(TypeNameMap.of(keyType, valueType));
   }
 
   /**

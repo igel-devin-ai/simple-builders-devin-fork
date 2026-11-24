@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.FormattingMode;
@@ -39,6 +40,10 @@ import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.method.MethodDto;
 import org.javahelpers.codegen.model.method.MethodDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameList;
+import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.junit.jupiter.api.Test;
 
 /** Tests for the generated {@link GenerationTargetClassDtoBuilder}. */
@@ -114,7 +119,7 @@ class GenerationTargetClassDtoBuilderTest {
             .typeName("example", "Target")
             .superType(Number.class)
             .classFields(
-                fields -> fields.add(field -> field.fieldName("value").fieldType(String.class)))
+                fields -> fields.add(field -> field.fieldName("value").fieldTypeList(String.class)))
             .constructors(
                 constructors ->
                     constructors.add(
@@ -125,26 +130,30 @@ class GenerationTargetClassDtoBuilderTest {
                                         parameter ->
                                             parameter
                                                 .parameterName("arg")
-                                                .parameterTypeName("java.lang", "String")))))
+                                                .parameterTypeNameArray(String.class)))))
             .methods(
                 methods ->
                     methods.add(
                         method ->
                             method
                                 .methodName("apply")
-                                .returnType(String.class)
+                                .returnTypeGeneric(Optional.class, String.class)
                                 .parameters(
                                     parameters ->
                                         parameters.add(
                                             parameter ->
                                                 parameter
                                                     .parameterName("v")
-                                                    .parameterTypeName(Integer.class)))
+                                                    .parameterTypeNameMap(
+                                                        String.class, Integer.class)))
                                 .genericParameters(
                                     generics ->
                                         generics.add(
                                             generic ->
-                                                generic.name("T").add2UpperBounds(Number.class)))
+                                                generic
+                                                    .name("T")
+                                                    .add2UpperBounds(Number.class)
+                                                    .add2UpperBoundsSet(TypeName.of(Number.class))))
                                 .annotations(
                                     annotations ->
                                         annotations.add(
@@ -173,14 +182,19 @@ class GenerationTargetClassDtoBuilderTest {
     assertEquals(new TypeName("example", "Target"), dto.getTypeName());
     assertEquals(TypeName.of(Number.class), dto.getSuperType());
     assertEquals("value", dto.getClassFields().get(0).getFieldName());
-    assertEquals(TypeName.of(String.class), dto.getClassFields().get(0).getFieldType());
+    assertEquals(TypeNameList.of(String.class), dto.getClassFields().get(0).getFieldType());
     assertEquals("arg", dto.getConstructors().get(0).getParameters().get(0).getParameterName());
     assertEquals(
-        TypeName.of(String.class),
+        TypeNameArray.of(String.class),
         dto.getConstructors().get(0).getParameters().get(0).getParameterType());
     assertEquals("apply", dto.getMethods().get(0).getMethodName());
-    assertEquals(TypeName.of(String.class), dto.getMethods().get(0).getReturnType());
+    assertEquals(
+        TypeNameGeneric.of(Optional.class, String.class), dto.getMethods().get(0).getReturnType());
     assertEquals("v", dto.getMethods().get(0).getParameters().get(0).getParameterName());
+    assertEquals(
+        TypeNameMap.of(String.class, Integer.class),
+        dto.getMethods().get(0).getParameters().get(0).getParameterType());
+    assertEquals(2, dto.getMethods().get(0).getGenericParameters().get(0).getUpperBounds().size());
     assertEquals("T", dto.getMethods().get(0).getGenericParameters().get(0).getName());
     assertEquals("E", dto.getGenerics().get(0).getName());
     assertEquals(Set.of(new InterfaceName("java.lang", "Runnable")), dto.getInterfaces());

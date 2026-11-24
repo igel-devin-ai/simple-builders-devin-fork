@@ -60,6 +60,11 @@ import org.javahelpers.codegen.model.type.GenericParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.NestedTypeDto;
 import org.javahelpers.codegen.model.type.NestedTypeDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.TypeNameArray;
+import org.javahelpers.codegen.model.type.TypeNameGeneric;
+import org.javahelpers.codegen.model.type.TypeNameList;
+import org.javahelpers.codegen.model.type.TypeNameMap;
+import org.javahelpers.codegen.model.type.TypeNameSet;
 
 /**
  * Builder for {@code org.javahelpers.codegen.model.core.GenerationTargetClassDto}.
@@ -1560,6 +1565,114 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
+   * Sets <code>superType</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementClass the list element type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeList(Class<?> elementClass) {
+    return superType(TypeNameList.of(elementClass));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementType the list element type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeList(TypeName elementType) {
+    return superType(TypeNameList.of(elementType));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementClass the set element type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeSet(Class<?> elementClass) {
+    return superType(TypeNameSet.of(elementClass));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementType the set element type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeSet(TypeName elementType) {
+    return superType(TypeNameSet.of(elementType));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameArray built from the given array component type.
+   *
+   * @param innerClass the array component type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeArray(Class<?> innerClass) {
+    return superType(TypeNameArray.of(innerClass));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameArray built from the given array component type.
+   *
+   * @param innerType the array component type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeArray(TypeName innerType) {
+    return superType(TypeNameArray.of(innerType));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameGeneric built from the given generic outer type and
+   * type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeGeneric(
+      Class<?> outerType, Class<?>... innerTypeArguments) {
+    return superType(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameGeneric built from the given generic outer type and
+   * type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeGeneric(
+      TypeName outerType, TypeName... innerTypeArguments) {
+    return superType(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameMap built from the given map key and value types.
+   *
+   * @param keyClass the map key and value types
+   * @param valueClass the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeMap(Class<?> keyClass, Class<?> valueClass) {
+    return superType(TypeNameMap.of(keyClass, valueClass));
+  }
+
+  /**
+   * Sets <code>superType</code> to a TypeNameMap built from the given map key and value types.
+   *
+   * @param keyType the map key and value types
+   * @param valueType the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superTypeMap(TypeName keyType, TypeName valueType) {
+    return superType(TypeNameMap.of(keyType, valueType));
+  }
+
+  /**
    * Sets <code>superType</code> by class.
    *
    * @param superType the class to set as <code>superType</code>
@@ -1628,6 +1741,114 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   public GenerationTargetClassDtoBuilder typeName(TypeName typeName) {
     this.typeName = changedValue(typeName);
     return this;
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementClass the list element type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameList(Class<?> elementClass) {
+    return typeName(TypeNameList.of(elementClass));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementType the list element type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameList(TypeName elementType) {
+    return typeName(TypeNameList.of(elementType));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementClass the set element type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameSet(Class<?> elementClass) {
+    return typeName(TypeNameSet.of(elementClass));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementType the set element type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameSet(TypeName elementType) {
+    return typeName(TypeNameSet.of(elementType));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameArray built from the given array component type.
+   *
+   * @param innerClass the array component type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameArray(Class<?> innerClass) {
+    return typeName(TypeNameArray.of(innerClass));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameArray built from the given array component type.
+   *
+   * @param innerType the array component type
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameArray(TypeName innerType) {
+    return typeName(TypeNameArray.of(innerType));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameGeneric built from the given generic outer type and
+   * type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameGeneric(
+      Class<?> outerType, Class<?>... innerTypeArguments) {
+    return typeName(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameGeneric built from the given generic outer type and
+   * type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameGeneric(
+      TypeName outerType, TypeName... innerTypeArguments) {
+    return typeName(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameMap built from the given map key and value types.
+   *
+   * @param keyClass the map key and value types
+   * @param valueClass the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameMap(Class<?> keyClass, Class<?> valueClass) {
+    return typeName(TypeNameMap.of(keyClass, valueClass));
+  }
+
+  /**
+   * Sets <code>typeName</code> to a TypeNameMap built from the given map key and value types.
+   *
+   * @param keyType the map key and value types
+   * @param valueType the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeNameMap(TypeName keyType, TypeName valueType) {
+    return typeName(TypeNameMap.of(keyType, valueType));
   }
 
   /**

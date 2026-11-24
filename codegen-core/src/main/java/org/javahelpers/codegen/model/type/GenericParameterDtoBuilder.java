@@ -231,6 +231,116 @@ public class GenericParameterDtoBuilder implements IBuilderBase<GenericParameter
   }
 
   /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementClass the list element type
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsList(Class<?> elementClass) {
+    return add2UpperBounds(TypeNameList.of(elementClass));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameList built from the given list element type.
+   *
+   * @param elementType the list element type
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsList(TypeName elementType) {
+    return add2UpperBounds(TypeNameList.of(elementType));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementClass the set element type
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsSet(Class<?> elementClass) {
+    return add2UpperBounds(TypeNameSet.of(elementClass));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameSet built from the given set element type.
+   *
+   * @param elementType the set element type
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsSet(TypeName elementType) {
+    return add2UpperBounds(TypeNameSet.of(elementType));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameArray built from the given array component type.
+   *
+   * @param innerClass the array component type
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsArray(Class<?> innerClass) {
+    return add2UpperBounds(TypeNameArray.of(innerClass));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameArray built from the given array component type.
+   *
+   * @param innerType the array component type
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsArray(TypeName innerType) {
+    return add2UpperBounds(TypeNameArray.of(innerType));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameGeneric built from the given generic outer type
+   * and type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsGeneric(
+      Class<?> outerType, Class<?>... innerTypeArguments) {
+    return add2UpperBounds(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameGeneric built from the given generic outer type
+   * and type arguments.
+   *
+   * @param outerType the generic outer type and type arguments
+   * @param innerTypeArguments the generic outer type and type arguments
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsGeneric(
+      TypeName outerType, TypeName... innerTypeArguments) {
+    return add2UpperBounds(TypeNameGeneric.of(outerType, innerTypeArguments));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameMap built from the given map key and value
+   * types.
+   *
+   * @param keyClass the map key and value types
+   * @param valueClass the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsMap(Class<?> keyClass, Class<?> valueClass) {
+    return add2UpperBounds(TypeNameMap.of(keyClass, valueClass));
+  }
+
+  /**
+   * Sets <code>add2UpperBounds</code> to a TypeNameMap built from the given map key and value
+   * types.
+   *
+   * @param keyType the map key and value types
+   * @param valueType the map key and value types
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBoundsMap(TypeName keyType, TypeName valueType) {
+    return add2UpperBounds(TypeNameMap.of(keyType, valueType));
+  }
+
+  /**
    * Sets <code>add2UpperBounds</code> by class.
    *
    * @param element the class to set as <code>add2UpperBounds</code>
