@@ -24,21 +24,11 @@
 
 package org.javahelpers.codegen.model.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
@@ -49,18 +39,7 @@ import org.javahelpers.codegen.model.javadoc.JavadocCodeBlockDtoBuilder;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
 import org.javahelpers.codegen.model.javadoc.JavadocTagDto;
-import org.javahelpers.codegen.model.method.CodeTemplateDto;
-import org.javahelpers.codegen.model.method.CodeTemplateDtoBuilder;
-import org.javahelpers.codegen.model.method.ConstructorDto;
-import org.javahelpers.codegen.model.method.ConstructorDtoBuilder;
-import org.javahelpers.codegen.model.method.MethodCodeDto;
-import org.javahelpers.codegen.model.method.MethodCodeDtoBuilder;
-import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
-import org.javahelpers.codegen.model.method.MethodCodeStringPlaceholder;
-import org.javahelpers.codegen.model.method.MethodDto;
-import org.javahelpers.codegen.model.method.MethodDtoBuilder;
-import org.javahelpers.codegen.model.method.MethodParameterDto;
-import org.javahelpers.codegen.model.method.MethodParameterDtoBuilder;
+import org.javahelpers.codegen.model.method.*;
 import org.javahelpers.codegen.model.type.GenericParameterDto;
 import org.javahelpers.codegen.model.type.GenericParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.NestedTypeDto;
