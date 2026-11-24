@@ -54,7 +54,7 @@ class GenerationTargetClassDtoBuilderTest {
     // Same DTO as assembled field-by-field in RoasterCodeGeneratorTest
     GenerationTargetClassDto dto =
         GenerationTargetClassDtoBuilder.create()
-            .typeName(new TypeName("test", "AnnotatedBuilder"))
+            .typeName("test", "AnnotatedBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
             .classJavadoc(new JavadocDto("Builder for {@link Person}."))
@@ -72,7 +72,7 @@ class GenerationTargetClassDtoBuilderTest {
   void buildsNestedDtoViaBuilderConsumer() {
     GenerationTargetClassDto dto =
         GenerationTargetClassDtoBuilder.create()
-            .typeName(new TypeName("test", "EmptyBuilder"))
+            .typeName("test", "EmptyBuilder")
             .classJavadoc(javadoc -> javadoc.format("Builder for {@link %s}.", "Person"))
             .build();
 
@@ -82,9 +82,7 @@ class GenerationTargetClassDtoBuilderTest {
   @Test
   void unsetPropertiesRemainNull() {
     GenerationTargetClassDto dto =
-        GenerationTargetClassDtoBuilder.create()
-            .typeName(new TypeName("test", "EmptyBuilder"))
-            .build();
+        GenerationTargetClassDtoBuilder.create().typeName("test", "EmptyBuilder").build();
 
     assertNull(dto.getClassAccessModifier());
     assertNull(dto.getClassJavadoc());
@@ -96,7 +94,7 @@ class GenerationTargetClassDtoBuilderTest {
   void builderInitializedFromInstanceAppliesChanges() {
     GenerationTargetClassDto original =
         GenerationTargetClassDtoBuilder.create()
-            .typeName(new TypeName("test", "Builder"))
+            .typeName("test", "Builder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .build();
 
@@ -118,65 +116,39 @@ class GenerationTargetClassDtoBuilderTest {
         GenerationTargetClassDtoBuilder.create()
             .typeName("example", "Target")
             .superType(Number.class)
-            .classFields(
-                fields -> fields.add(field -> field.fieldName("value").fieldTypeList(String.class)))
+            .classFields(field -> field.fieldName("value").fieldTypeList(String.class))
             .constructors(
-                constructors ->
-                    constructors.add(
-                        constructor ->
-                            constructor.parameters(
-                                parameters ->
-                                    parameters.add(
-                                        parameter ->
-                                            parameter
-                                                .parameterName("arg")
-                                                .parameterTypeNameArray(String.class)))))
+                constructor ->
+                    constructor.parameters(
+                        parameter ->
+                            parameter.parameterName("arg").parameterTypeNameArray(String.class)))
             .methods(
-                methods ->
-                    methods.add(
-                        method ->
-                            method
-                                .methodName("apply")
-                                .returnTypeGeneric(Optional.class, String.class)
-                                .parameters(
-                                    parameters ->
-                                        parameters.add(
-                                            parameter ->
-                                                parameter
-                                                    .parameterName("v")
-                                                    .parameterTypeNameMap(
-                                                        String.class, Integer.class)))
-                                .genericParameters(
-                                    generics ->
-                                        generics.add(
-                                            generic ->
-                                                generic
-                                                    .name("T")
-                                                    .add2UpperBounds(Number.class)
-                                                    .add2UpperBoundsSet(TypeName.of(Number.class))))
-                                .annotations(
-                                    annotations ->
-                                        annotations.add(
-                                            annotation ->
-                                                annotation.annotationType(Deprecated.class)))))
-            .generics(generics -> generics.add(generic -> generic.name("E")))
-            .interfaces(interfaces -> interfaces.add(new InterfaceName("java.lang", "Runnable")))
+                method ->
+                    method
+                        .methodName("apply")
+                        .returnTypeGeneric(Optional.class, String.class)
+                        .parameters(
+                            parameter ->
+                                parameter
+                                    .parameterName("v")
+                                    .parameterTypeNameMap(String.class, Integer.class))
+                        .genericParameters(
+                            generic ->
+                                generic
+                                    .name("T")
+                                    .add2UpperBounds(Number.class)
+                                    .add2UpperBoundsSet(TypeName.of(Number.class)))
+                        .annotations(annotation -> annotation.annotationType(Deprecated.class)))
+            .generics(generic -> generic.name("E"))
+            .interfaces(new InterfaceName("java.lang", "Runnable"))
             .nestedTypes(
-                nestedTypes ->
-                    nestedTypes.add(
-                        nested ->
-                            nested
-                                .typeName("Factory")
-                                .methods(
-                                    methods -> methods.add(method -> method.methodName("create")))))
+                nested -> nested.typeName("Factory").methods(method -> method.methodName("create")))
             .classAnnotations(
-                annotations ->
-                    annotations.add(
-                        annotation ->
-                            annotation
-                                .annotationType("java.lang", "Deprecated")
-                                .members(Map.of("since", "\"1\""))))
-            .imports(imports -> imports.add(new RegularImport(TypeName.of(List.class))))
+                annotation ->
+                    annotation
+                        .annotationType("java.lang", "Deprecated")
+                        .members(Map.of("since", "\"1\"")))
+            .imports(new RegularImport(TypeName.of(List.class)))
             .build();
 
     assertEquals(new TypeName("example", "Target"), dto.getTypeName());

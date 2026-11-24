@@ -40,7 +40,7 @@ import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
-import org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders;
+import org.javahelpers.codegen.model.type.NestedTypeDto;
 import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
 import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
 import org.javahelpers.simple.builders.core.util.TrackedValue;
@@ -77,8 +77,7 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   private TrackedValue<JavadocDto> javadoc = unsetValue();
 
   /** Tracked value for <code>kind</code>: kind. */
-  private TrackedValue<org.javahelpers.codegen.model.type.NestedTypeDto.NestedTypeKind> kind =
-      unsetValue();
+  private TrackedValue<NestedTypeDto.NestedTypeKind> kind = unsetValue();
 
   /** Tracked value for <code>typeName</code>: typeName. */
   private TrackedValue<String> typeName = unsetValue();
@@ -222,8 +221,7 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
    * @param kindSupplier supplier for kind
    * @return current instance of builder
    */
-  public BuilderNestedTypeDtoBuilder kind(
-      Supplier<org.javahelpers.codegen.model.type.NestedTypeDto.NestedTypeKind> kindSupplier) {
+  public BuilderNestedTypeDtoBuilder kind(Supplier<NestedTypeDto.NestedTypeKind> kindSupplier) {
     this.kind = changedValue(kindSupplier.get());
     return this;
   }
@@ -237,8 +235,7 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
    * @param kind kind
    * @return current instance of builder
    */
-  public BuilderNestedTypeDtoBuilder kind(
-      org.javahelpers.codegen.model.type.NestedTypeDto.NestedTypeKind kind) {
+  public BuilderNestedTypeDtoBuilder kind(NestedTypeDto.NestedTypeKind kind) {
     this.kind = changedValue(kind);
     return this;
   }
@@ -258,7 +255,7 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
    * @throws IllegalStateException if <code>kind</code> has not been set yet
    */
   public BuilderNestedTypeDtoBuilder kindUpdate(
-      UnaryOperator<org.javahelpers.codegen.model.type.NestedTypeDto.NestedTypeKind> kindUpdater) {
+      UnaryOperator<NestedTypeDto.NestedTypeKind> kindUpdater) {
     if (!this.kind.isSet()) {
       throw new IllegalStateException("Cannot update 'kind' before it is set");
     }
@@ -491,51 +488,30 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Sets the value for <code>methods</code>.
+   * Adds one element to <code>methods</code>, configured through its builder.
    *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
-   * setMethods(List<BuilderMethodDto> methods)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.methods(BuilderMethodDtoBuilder.create().build(), BuilderMethodDtoBuilder.create().build());
-   * }</pre>
-   *
-   * @param methods methods
-   * @return current instance of builder
-   */
-  public BuilderNestedTypeDtoBuilder methods(BuilderMethodDto... methods) {
-    this.methods = changedValue(List.of(methods));
-    return this;
-  }
-
-  /**
-   * Sets the value for <code>methods</code> using a builder consumer that produces the value.
-   *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
-   * setMethods(List<BuilderMethodDto> methods)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.methods(t -> t.add(el -> el));
-   * }</pre>
-   *
-   * @param methodsBuilderConsumer consumer providing an instance of a builder for methods
+   * @param methodBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
   public BuilderNestedTypeDtoBuilder methods(
-      Consumer<ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>>
-          methodsBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder> builder =
-        this.methods.isSet()
-            ? new ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>(
-                this.methods.value(), BuilderMethodDtoBuilder::new)
-            : new ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>(
-                BuilderMethodDtoBuilder::new);
-    methodsBuilderConsumer.accept(builder);
-    this.methods = changedValue(builder.build());
+      Consumer<BuilderMethodDtoBuilder> methodBuilderConsumer) {
+    BuilderMethodDtoBuilder elementBuilder = BuilderMethodDtoBuilder.create();
+    methodBuilderConsumer.accept(elementBuilder);
+    return add2Methods(elementBuilder.build());
+  }
+
+  /**
+   * Adds elements to <code>methods</code>, each configured through its builder.
+   *
+   * @param methodBuilderConsumers consumers configuring the new elements (not null)
+   * @return current instance of builder
+   */
+  @SafeVarargs
+  public final BuilderNestedTypeDtoBuilder methods(
+      Consumer<BuilderMethodDtoBuilder>... methodBuilderConsumers) {
+    for (Consumer<BuilderMethodDtoBuilder> consumer : methodBuilderConsumers) {
+      methods(consumer);
+    }
     return this;
   }
 
@@ -635,51 +611,52 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Sets the value for <code>annotations</code>.
+   * Adds one annotation of the given type to <code>2Annotations</code>.
    *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build());
-   * }</pre>
-   *
-   * @param annotations annotations
+   * @param annotationType the annotation type (not null)
    * @return current instance of builder
    */
-  public BuilderNestedTypeDtoBuilder annotations(AnnotationDto... annotations) {
-    this.annotations = changedValue(List.of(annotations));
-    return this;
+  public BuilderNestedTypeDtoBuilder add2Annotations(Class<?> annotationType) {
+    return add2Annotations(AnnotationDtoBuilder.create().annotationType(annotationType).build());
   }
 
   /**
-   * Sets the value for <code>annotations</code> using a builder consumer that produces the value.
+   * Adds one annotation of the given type to <code>2Annotations</code>.
    *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
+   * @param packageName package of the annotation type
+   * @param className simple name of the annotation type
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder add2Annotations(String packageName, String className) {
+    return add2Annotations(
+        AnnotationDtoBuilder.create().annotationType(packageName, className).build());
+  }
+
+  /**
+   * Adds one element to <code>annotations</code>, configured through its builder.
    *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(t -> t.add(el -> el));
-   * }</pre>
-   *
-   * @param annotationsBuilderConsumer consumer providing an instance of a builder for annotations
+   * @param annotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
   public BuilderNestedTypeDtoBuilder annotations(
-      Consumer<ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>>
-          annotationsBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder> builder =
-        this.annotations.isSet()
-            ? new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>(
-                this.annotations.value(), AnnotationDtoElementBuilder::new)
-            : new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>(
-                AnnotationDtoElementBuilder::new);
-    annotationsBuilderConsumer.accept(builder);
-    this.annotations = changedValue(builder.build());
+      Consumer<AnnotationDtoBuilder> annotationBuilderConsumer) {
+    AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
+    annotationBuilderConsumer.accept(elementBuilder);
+    return add2Annotations(elementBuilder.build());
+  }
+
+  /**
+   * Adds elements to <code>annotations</code>, each configured through its builder.
+   *
+   * @param annotationBuilderConsumers consumers configuring the new elements (not null)
+   * @return current instance of builder
+   */
+  @SafeVarargs
+  public final BuilderNestedTypeDtoBuilder annotations(
+      Consumer<AnnotationDtoBuilder>... annotationBuilderConsumers) {
+    for (Consumer<AnnotationDtoBuilder> consumer : annotationBuilderConsumers) {
+      annotations(consumer);
+    }
     return this;
   }
 
@@ -829,11 +806,4 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
       }
     }
   }
-
-  /**
-   * Element builder for {@link AnnotationDto} collections that bridges the codegen builder to the
-   * core {@link IBuilderBase} contract used by the core collection helpers.
-   */
-  public static final class AnnotationDtoElementBuilder extends AnnotationDtoBuilder
-      implements IBuilderBase<AnnotationDto> {}
 }

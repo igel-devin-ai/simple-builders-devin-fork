@@ -53,7 +53,7 @@ import org.junit.jupiter.api.TestFactory;
 class CodegenDtoBuildersTest {
   private static final AnnotationDto ANNOTATION =
       AnnotationDtoBuilder.create()
-          .annotationType(TypeName.of(Deprecated.class))
+          .annotationType(Deprecated.class)
           .add2Members("since", "\"1\"")
           .build();
   private static final ImportStatement IMPORT = new RegularImport(TypeName.of(List.class));
@@ -64,7 +64,7 @@ class CodegenDtoBuildersTest {
   void buildsAnnotation() {
     AnnotationDto dto =
         AnnotationDtoBuilder.create()
-            .annotationType(TypeName.of(Deprecated.class))
+            .annotationType(Deprecated.class)
             .add2Members("since", "\"2\"")
             .build();
     assertEquals(TypeName.of(Deprecated.class), dto.getAnnotationType());
@@ -76,7 +76,7 @@ class CodegenDtoBuildersTest {
     ClassFieldDto dto =
         ClassFieldDtoBuilder.create()
             .fieldName("names")
-            .fieldType(TypeName.of(List.class))
+            .fieldType(List.class)
             .add2FieldTypeImports(List.class)
             .build();
     assertEquals("names", dto.getFieldName());
@@ -189,31 +189,26 @@ class CodegenDtoBuildersTest {
 
   @Test
   void buildsGenerationTarget() {
-    ClassFieldDto field = ClassFieldDtoBuilder.create().fieldName("value").build();
-    MethodDto method = MethodDtoBuilder.create().methodName("apply").build();
-    ConstructorDto constructor = ConstructorDtoBuilder.create().build();
-    GenericParameterDto generic = generic();
-    NestedTypeDto nested = NestedTypeDtoBuilder.create().typeName("Factory").build();
     InterfaceName contract = new InterfaceName("java.lang", "Runnable");
     GenerationTargetClassDto dto =
         GenerationTargetClassDtoBuilder.create()
-            .typeName(new TypeName("example", "Target"))
-            .classFields(List.of(field))
-            .methods(List.of(method))
-            .constructors(List.of(constructor))
-            .generics(List.of(generic))
+            .typeName("example", "Target")
+            .classFields(f -> f.fieldName("value"))
+            .methods(m -> m.methodName("apply"))
+            .constructors(c -> {})
+            .generics(g -> g.name("T").upperBounds(List.of(TypeName.of(Number.class))))
             .interfaces(Set.of(contract))
-            .nestedTypes(List.of(nested))
-            .classAnnotations(Set.of(ANNOTATION))
+            .nestedTypes(n -> n.typeName("Factory"))
+            .add2ClassAnnotations(ANNOTATION)
             .add2Imports(List.class)
             .build();
     assertEquals(new TypeName("example", "Target"), dto.getTypeName());
-    assertEquals(List.of(field), dto.getClassFields());
-    assertEquals(List.of(method), dto.getMethods());
-    assertEquals(List.of(constructor), dto.getConstructors());
-    assertEquals(List.of(generic), dto.getGenerics());
+    assertEquals("value", dto.getClassFields().get(0).getFieldName());
+    assertEquals("apply", dto.getMethods().get(0).getMethodName());
+    assertEquals(1, dto.getConstructors().size());
+    assertEquals("T", dto.getGenerics().get(0).getName());
     assertEquals(Set.of(contract), dto.getInterfaces());
-    assertEquals(List.of(nested), dto.getNestedTypes());
+    assertEquals("Factory", dto.getNestedTypes().get(0).getTypeName());
     assertEquals(Set.of(ANNOTATION), dto.getClassAnnotations());
     assertEquals(Set.of(IMPORT), dto.getImports());
   }
@@ -285,7 +280,7 @@ class CodegenDtoBuildersTest {
   private static MethodParameterDto parameter() {
     return MethodParameterDtoBuilder.create()
         .parameterName("value")
-        .parameterTypeName(TypeName.of(String.class))
+        .parameterTypeName(String.class)
         .annotations(List.of(ANNOTATION))
         .build();
   }

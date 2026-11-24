@@ -228,8 +228,8 @@ class CustomizingDocumentationTest {
                             .methodName(methodName)
                             .returnType(builderType)
                             .parameters(
-                                p -> p.add(el -> el.parameterName("value")
-                                        .parameterTypeName(new TypeName("java.lang", "String"))))
+                                el -> el.parameterName("value")
+                                        .parameterTypeName(new TypeName("java.lang", "String")))
                             .build();
 
                     method.setCode("return this." + fieldName + "(value.toUpperCase());");
@@ -445,8 +445,8 @@ class CustomizingDocumentationTest {
                             .methodName(methodName)
                             .returnType(builderType)
                             .parameters(
-                                p -> p.add(el -> el.parameterName(parameterName)
-                                        .parameterTypeName(new TypeName("java.lang", "String"))))
+                                el -> el.parameterName(parameterName)
+                                        .parameterTypeName(new TypeName("java.lang", "String")))
                             .build();
 
                     method.setCode(String.format(
@@ -637,8 +637,8 @@ class CustomizingDocumentationTest {
                             .methodName(methodName)
                             .returnType(builderType)
                             .parameters(
-                                p -> p.add(el -> el.parameterName(parameterName)
-                                        .parameterTypeName(new TypeName("java.lang", "String"))))
+                                el -> el.parameterName(parameterName)
+                                        .parameterTypeName(new TypeName("java.lang", "String")))
                             .build();
 
                     method.setCode(String.format(
@@ -702,8 +702,8 @@ class CustomizingDocumentationTest {
                             .returnType(builderType)
                             .isStatic(true)
                             .parameters(
-                                p -> p.add(el -> el.parameterName("template")
-                                        .parameterTypeName(builderType)))
+                                el -> el.parameterName("template")
+                                        .parameterTypeName(builderType))
                             .build();
 
                     factoryMethod.setCode(String.format("return new %s();", builderType.getClassName()));

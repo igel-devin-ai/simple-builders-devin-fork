@@ -197,15 +197,10 @@ public class JacksonModuleGenerator {
         .kind(NestedTypeDto.NestedTypeKind.INTERFACE)
         .visibility(AccessModifier.PRIVATE)
         .annotations(
-            a ->
-                a.add(
-                    el ->
-                        el.annotationType(JSON_DESERIALIZE_TYPE)
-                            .members(
-                                m ->
-                                    m.put(
-                                        "builder",
-                                        entry.generatedType().getClassName() + ".class"))))
+            el ->
+                el.annotationType(JSON_DESERIALIZE_TYPE)
+                    .members(
+                        m -> m.put("builder", entry.generatedType().getClassName() + ".class")))
         .build();
   }
 

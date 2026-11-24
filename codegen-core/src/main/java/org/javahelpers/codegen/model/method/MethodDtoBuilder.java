@@ -35,7 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.ArrayListBuilderWithElementBuilders;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
 import org.javahelpers.codegen.builders.IBuilderBase;
 import org.javahelpers.codegen.builders.TrackedValue;
@@ -72,7 +71,7 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  *     .methodNameUpdate(String::trim)
  *     .annotations(List.of(AnnotationDtoBuilder.create().build()))
  *     .annotations(() -> List.of(AnnotationDtoBuilder.create().build()))
- *     .annotations(t -> t.add(annotationDtoBuilder -> annotationDtoBuilder))
+ *     .annotations(annotationDtoBuilder -> annotationDtoBuilder)
  *     .annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
  *     .annotationsUpdate(list -> list.stream().sorted().toList())
  *     .add2Annotations(AnnotationDtoBuilder.create().build())
@@ -83,7 +82,7 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  *     .codeUpdate(String::trim)
  *     .genericParameters(List.of(GenericParameterDtoBuilder.create().build()))
  *     .genericParameters(() -> List.of(GenericParameterDtoBuilder.create().build()))
- *     .genericParameters(t -> t.add(genericParameterDtoBuilder -> genericParameterDtoBuilder))
+ *     .genericParameters(genericParameterDtoBuilder -> genericParameterDtoBuilder)
  *     .genericParameters(GenericParameterDtoBuilder.create().build(), GenericParameterDtoBuilder.create().build())
  *     .genericParametersUpdate(list -> list.stream().sorted().toList())
  *     .add2GenericParameters(GenericParameterDtoBuilder.create().build())
@@ -95,7 +94,7 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  *     .methodCodeDto(methodCodeDtoBuilder -> methodCodeDtoBuilder)
  *     .parameters(List.of(MethodParameterDtoBuilder.create().build()))
  *     .parameters(() -> List.of(MethodParameterDtoBuilder.create().build()))
- *     .parameters(t -> t.add(methodParameterDtoBuilder -> methodParameterDtoBuilder))
+ *     .parameters(methodParameterDtoBuilder -> methodParameterDtoBuilder)
  *     .parameters(MethodParameterDtoBuilder.create().build(), MethodParameterDtoBuilder.create().build())
  *     .parametersUpdate(list -> list.stream().sorted().toList())
  *     .add2Parameters(MethodParameterDtoBuilder.create().build())
@@ -202,52 +201,51 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
   }
 
   /**
-   * Sets the value for <code>annotations</code>.
+   * Adds one annotation of the given type to <code>2Annotations</code>.
    *
-   * <p>Generated from setter {@link MethodDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build());
-   * }</pre>
-   *
-   * @param annotations the replacement collection (not null)
+   * @param annotationType the annotation type (not null)
    * @return current instance of builder
    */
-  public MethodDtoBuilder annotations(AnnotationDto... annotations) {
-    this.annotations = changedValue(List.of(annotations));
-    return this;
+  public MethodDtoBuilder add2Annotations(Class<?> annotationType) {
+    return add2Annotations(AnnotationDtoBuilder.create().annotationType(annotationType).build());
   }
 
   /**
-   * Sets the value for <code>annotations</code> using a builder consumer that produces the value.
+   * Adds one annotation of the given type to <code>2Annotations</code>.
    *
-   * <p>Generated from setter {@link MethodDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(t -> t.add(annotationDtoBuilder -> annotationDtoBuilder));
-   * }</pre>
-   *
-   * @param annotationsBuilderConsumer consumer providing an instance of a builder for the
-   *     replacement collection (not null)
+   * @param packageName package of the annotation type
+   * @param className simple name of the annotation type
    * @return current instance of builder
    */
-  public MethodDtoBuilder annotations(
-      Consumer<ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>>
-          annotationsBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder> builder =
-        this.annotations.isSet()
-            ? new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>(
-                this.annotations.value(), AnnotationDtoBuilder::create)
-            : new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>(
-                AnnotationDtoBuilder::create);
-    annotationsBuilderConsumer.accept(builder);
-    this.annotations = changedValue(builder.build());
+  public MethodDtoBuilder add2Annotations(String packageName, String className) {
+    return add2Annotations(
+        AnnotationDtoBuilder.create().annotationType(packageName, className).build());
+  }
+
+  /**
+   * Adds one element to <code>annotations</code>, configured through its builder.
+   *
+   * @param annotationBuilderConsumer consumer configuring the new element (not null)
+   * @return current instance of builder
+   */
+  public MethodDtoBuilder annotations(Consumer<AnnotationDtoBuilder> annotationBuilderConsumer) {
+    AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
+    annotationBuilderConsumer.accept(elementBuilder);
+    return add2Annotations(elementBuilder.build());
+  }
+
+  /**
+   * Adds elements to <code>annotations</code>, each configured through its builder.
+   *
+   * @param annotationBuilderConsumers consumers configuring the new elements (not null)
+   * @return current instance of builder
+   */
+  @SafeVarargs
+  public final MethodDtoBuilder annotations(
+      Consumer<AnnotationDtoBuilder>... annotationBuilderConsumers) {
+    for (Consumer<AnnotationDtoBuilder> consumer : annotationBuilderConsumers) {
+      annotations(consumer);
+    }
     return this;
   }
 
@@ -457,55 +455,30 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
   }
 
   /**
-   * Sets the value for <code>genericParameters</code>.
+   * Adds one element to <code>genericParameters</code>, configured through its builder.
    *
-   * <p>Generated from setter {@link MethodDto#setGenericParameters(List)
-   * setGenericParameters(List<GenericParameterDto> genericParameters)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.genericParameters(GenericParameterDtoBuilder.create().build(), GenericParameterDtoBuilder.create().build());
-   * }</pre>
-   *
-   * @param genericParameters the replacement collection (not null)
-   * @return current instance of builder
-   */
-  public MethodDtoBuilder genericParameters(GenericParameterDto... genericParameters) {
-    this.genericParameters = changedValue(List.of(genericParameters));
-    return this;
-  }
-
-  /**
-   * Sets the value for <code>genericParameters</code> using a builder consumer that produces the
-   * value.
-   *
-   * <p>Generated from setter {@link MethodDto#setGenericParameters(List)
-   * setGenericParameters(List<GenericParameterDto> genericParameters)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.genericParameters(t -> t.add(genericParameterDtoBuilder -> genericParameterDtoBuilder));
-   * }</pre>
-   *
-   * @param genericParametersBuilderConsumer consumer providing an instance of a builder for the
-   *     replacement collection (not null)
+   * @param genericParameterBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
   public MethodDtoBuilder genericParameters(
-      Consumer<ArrayListBuilderWithElementBuilders<GenericParameterDto, GenericParameterDtoBuilder>>
-          genericParametersBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<GenericParameterDto, GenericParameterDtoBuilder> builder =
-        this.genericParameters.isSet()
-            ? new ArrayListBuilderWithElementBuilders<
-                GenericParameterDto, GenericParameterDtoBuilder>(
-                this.genericParameters.value(), GenericParameterDtoBuilder::create)
-            : new ArrayListBuilderWithElementBuilders<
-                GenericParameterDto, GenericParameterDtoBuilder>(
-                GenericParameterDtoBuilder::create);
-    genericParametersBuilderConsumer.accept(builder);
-    this.genericParameters = changedValue(builder.build());
+      Consumer<GenericParameterDtoBuilder> genericParameterBuilderConsumer) {
+    GenericParameterDtoBuilder elementBuilder = GenericParameterDtoBuilder.create();
+    genericParameterBuilderConsumer.accept(elementBuilder);
+    return add2GenericParameters(elementBuilder.build());
+  }
+
+  /**
+   * Adds elements to <code>genericParameters</code>, each configured through its builder.
+   *
+   * @param genericParameterBuilderConsumers consumers configuring the new elements (not null)
+   * @return current instance of builder
+   */
+  @SafeVarargs
+  public final MethodDtoBuilder genericParameters(
+      Consumer<GenericParameterDtoBuilder>... genericParameterBuilderConsumers) {
+    for (Consumer<GenericParameterDtoBuilder> consumer : genericParameterBuilderConsumers) {
+      genericParameters(consumer);
+    }
     return this;
   }
 
@@ -1019,53 +992,29 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
   }
 
   /**
-   * Sets the value for <code>parameters</code>.
+   * Adds one element to <code>parameters</code>, configured through its builder.
    *
-   * <p>Generated from setter {@link MethodDto#setParameters(List)
-   * setParameters(List<MethodParameterDto> parameters)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.parameters(MethodParameterDtoBuilder.create().build(), MethodParameterDtoBuilder.create().build());
-   * }</pre>
-   *
-   * @param parameters the replacement collection (not null)
+   * @param parameterBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public MethodDtoBuilder parameters(MethodParameterDto... parameters) {
-    this.parameters = changedValue(List.of(parameters));
-    return this;
+  public MethodDtoBuilder parameters(Consumer<MethodParameterDtoBuilder> parameterBuilderConsumer) {
+    MethodParameterDtoBuilder elementBuilder = MethodParameterDtoBuilder.create();
+    parameterBuilderConsumer.accept(elementBuilder);
+    return add2Parameters(elementBuilder.build());
   }
 
   /**
-   * Sets the value for <code>parameters</code> using a builder consumer that produces the value.
+   * Adds elements to <code>parameters</code>, each configured through its builder.
    *
-   * <p>Generated from setter {@link MethodDto#setParameters(List)
-   * setParameters(List<MethodParameterDto> parameters)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.parameters(t -> t.add(methodParameterDtoBuilder -> methodParameterDtoBuilder));
-   * }</pre>
-   *
-   * @param parametersBuilderConsumer consumer providing an instance of a builder for the
-   *     replacement collection (not null)
+   * @param parameterBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
-  public MethodDtoBuilder parameters(
-      Consumer<ArrayListBuilderWithElementBuilders<MethodParameterDto, MethodParameterDtoBuilder>>
-          parametersBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<MethodParameterDto, MethodParameterDtoBuilder> builder =
-        this.parameters.isSet()
-            ? new ArrayListBuilderWithElementBuilders<
-                MethodParameterDto, MethodParameterDtoBuilder>(
-                this.parameters.value(), MethodParameterDtoBuilder::create)
-            : new ArrayListBuilderWithElementBuilders<
-                MethodParameterDto, MethodParameterDtoBuilder>(MethodParameterDtoBuilder::create);
-    parametersBuilderConsumer.accept(builder);
-    this.parameters = changedValue(builder.build());
+  @SafeVarargs
+  public final MethodDtoBuilder parameters(
+      Consumer<MethodParameterDtoBuilder>... parameterBuilderConsumers) {
+    for (Consumer<MethodParameterDtoBuilder> consumer : parameterBuilderConsumers) {
+      parameters(consumer);
+    }
     return this;
   }
 

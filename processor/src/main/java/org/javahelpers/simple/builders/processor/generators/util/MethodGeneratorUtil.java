@@ -320,11 +320,7 @@ public final class MethodGeneratorUtil {
             .modifier(AccessModifier.PRIVATE)
             .isStatic(true)
             .ordering(2100) // last: private helpers go below toString
-            .parameters(
-                p ->
-                    p.add(
-                        el ->
-                            el.parameterName("value").parameterTypeName(prefillCall.sourceType())))
+            .parameters(el -> el.parameterName("value").parameterTypeName(prefillCall.sourceType()))
             .build();
     StringBuilder code = new StringBuilder();
     code.append("$builderType:T builder = ")

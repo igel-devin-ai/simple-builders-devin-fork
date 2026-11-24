@@ -27,6 +27,7 @@ package org.javahelpers.codegen.roaster;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
 import org.javahelpers.codegen.CodeGenerationException;
 import org.javahelpers.codegen.SourceFormatter;
 import org.javahelpers.codegen.enums.AccessModifier;
@@ -66,19 +67,17 @@ class RoasterCodeGeneratorResilienceTest {
   void shouldWrapRenderingRuntimeExceptionInCodeGenerationException() {
     GenerationTargetClassDto classDef =
         GenerationTargetClassDtoBuilder.create()
-            .typeName(new TypeName("com.example", "FailingBuilder"))
+            .typeName("com.example", "FailingBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .constructors(
-                constructors ->
-                    constructors.add(
-                        c ->
-                            c.visibility(AccessModifier.PUBLIC)
-                                .methodCodeDto(
-                                    MethodCodeDtoBuilder.create()
-                                        .codeFormat("return $value:X;")
-                                        .add2CodeArguments(
-                                            new UnsupportedPlaceholder("value", "irrelevant"))
-                                        .build())))
+                c ->
+                    c.visibility(AccessModifier.PUBLIC)
+                        .methodCodeDto(
+                            MethodCodeDtoBuilder.create()
+                                .codeFormat("return $value:X;")
+                                .add2CodeArguments(
+                                    new UnsupportedPlaceholder("value", "irrelevant"))
+                                .build()))
             .build();
 
     ProcessingLogger logger = CapturingProcessingLogger.create().logger();
@@ -103,14 +102,10 @@ class RoasterCodeGeneratorResilienceTest {
   void shouldKeepFirstMethodAndWarnOnDuplicateSignature() {
     GenerationTargetClassDto classDef =
         GenerationTargetClassDtoBuilder.create()
-            .typeName(new TypeName("com.example", "DuplicateSignatureBuilder"))
+            .typeName("com.example", "DuplicateSignatureBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .methods(
-                methods ->
-                    methods
-                        .add(duplicateSignatureMethod("first"))
-                        .add(duplicateSignatureMethod("second")))
+            .methods(List.of(duplicateSignatureMethod("first"), duplicateSignatureMethod("second")))
             .build();
 
     CapturingProcessingLogger capturing = CapturingProcessingLogger.create();
@@ -131,9 +126,7 @@ class RoasterCodeGeneratorResilienceTest {
         .returnType(new TypeName("com.example", "DuplicateSignatureBuilder"))
         .modifier(AccessModifier.PUBLIC)
         .code("return this; // " + marker)
-        .parameters(
-            parameters ->
-                parameters.add(p -> p.parameterName("value").parameterTypeName(String.class)))
+        .parameters(p -> p.parameterName("value").parameterTypeName(String.class))
         .build();
   }
 }

@@ -85,11 +85,9 @@ public class ConstructorEnhancer implements BuilderEnhancer {
         ConstructorDtoBuilder.create()
             .visibility(builderDto.getConfiguration().getBuilderConstructorAccess())
             .parameters(
-                p ->
-                    p.add(
-                        el ->
-                            el.parameterName("instance")
-                                .parameterTypeName(builderDto.getBuildingTargetTypeName())))
+                el ->
+                    el.parameterName("instance")
+                        .parameterTypeName(builderDto.getBuildingTargetTypeName()))
             .build();
 
     // Build constructor code body

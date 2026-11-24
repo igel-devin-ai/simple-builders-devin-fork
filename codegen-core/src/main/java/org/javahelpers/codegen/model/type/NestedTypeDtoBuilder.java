@@ -35,7 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.ArrayListBuilderWithElementBuilders;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
 import org.javahelpers.codegen.builders.IBuilderBase;
 import org.javahelpers.codegen.builders.TrackedValue;
@@ -61,7 +60,7 @@ import org.javahelpers.codegen.model.method.MethodDtoBuilder;
  * NestedTypeDto result = NestedTypeDtoBuilder.create()
  *     .annotations(List.of(AnnotationDtoBuilder.create().build()))
  *     .annotations(() -> List.of(AnnotationDtoBuilder.create().build()))
- *     .annotations(t -> t.add(annotationDtoBuilder -> annotationDtoBuilder))
+ *     .annotations(annotationDtoBuilder -> annotationDtoBuilder)
  *     .annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
  *     .annotationsUpdate(list -> list.stream().sorted().toList())
  *     .add2Annotations(AnnotationDtoBuilder.create().build())
@@ -70,7 +69,7 @@ import org.javahelpers.codegen.model.method.MethodDtoBuilder;
  *     .javadoc(javadocDtoBuilder -> javadocDtoBuilder)
  *     .methods(List.of(MethodDtoBuilder.create().build()))
  *     .methods(() -> List.of(MethodDtoBuilder.create().build()))
- *     .methods(t -> t.add(methodDtoBuilder -> methodDtoBuilder))
+ *     .methods(methodDtoBuilder -> methodDtoBuilder)
  *     .methods(MethodDtoBuilder.create().build(), MethodDtoBuilder.create().build())
  *     .methodsUpdate(list -> list.stream().sorted().toList())
  *     .add2Methods(MethodDtoBuilder.create().build())
@@ -164,52 +163,52 @@ public class NestedTypeDtoBuilder implements IBuilderBase<NestedTypeDto> {
   }
 
   /**
-   * Sets the value for <code>annotations</code>.
+   * Adds one annotation of the given type to <code>2Annotations</code>.
    *
-   * <p>Generated from setter {@link NestedTypeDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build());
-   * }</pre>
-   *
-   * @param annotations the replacement collection (not null)
+   * @param annotationType the annotation type (not null)
    * @return current instance of builder
    */
-  public NestedTypeDtoBuilder annotations(AnnotationDto... annotations) {
-    this.annotations = changedValue(List.of(annotations));
-    return this;
+  public NestedTypeDtoBuilder add2Annotations(Class<?> annotationType) {
+    return add2Annotations(AnnotationDtoBuilder.create().annotationType(annotationType).build());
   }
 
   /**
-   * Sets the value for <code>annotations</code> using a builder consumer that produces the value.
+   * Adds one annotation of the given type to <code>2Annotations</code>.
    *
-   * <p>Generated from setter {@link NestedTypeDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
+   * @param packageName package of the annotation type
+   * @param className simple name of the annotation type
+   * @return current instance of builder
+   */
+  public NestedTypeDtoBuilder add2Annotations(String packageName, String className) {
+    return add2Annotations(
+        AnnotationDtoBuilder.create().annotationType(packageName, className).build());
+  }
+
+  /**
+   * Adds one element to <code>annotations</code>, configured through its builder.
    *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(t -> t.add(annotationDtoBuilder -> annotationDtoBuilder));
-   * }</pre>
-   *
-   * @param annotationsBuilderConsumer consumer providing an instance of a builder for the
-   *     replacement collection (not null)
+   * @param annotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
   public NestedTypeDtoBuilder annotations(
-      Consumer<ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>>
-          annotationsBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder> builder =
-        this.annotations.isSet()
-            ? new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>(
-                this.annotations.value(), AnnotationDtoBuilder::create)
-            : new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>(
-                AnnotationDtoBuilder::create);
-    annotationsBuilderConsumer.accept(builder);
-    this.annotations = changedValue(builder.build());
+      Consumer<AnnotationDtoBuilder> annotationBuilderConsumer) {
+    AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
+    annotationBuilderConsumer.accept(elementBuilder);
+    return add2Annotations(elementBuilder.build());
+  }
+
+  /**
+   * Adds elements to <code>annotations</code>, each configured through its builder.
+   *
+   * @param annotationBuilderConsumers consumers configuring the new elements (not null)
+   * @return current instance of builder
+   */
+  @SafeVarargs
+  public final NestedTypeDtoBuilder annotations(
+      Consumer<AnnotationDtoBuilder>... annotationBuilderConsumers) {
+    for (Consumer<AnnotationDtoBuilder> consumer : annotationBuilderConsumers) {
+      annotations(consumer);
+    }
     return this;
   }
 
@@ -454,52 +453,28 @@ public class NestedTypeDtoBuilder implements IBuilderBase<NestedTypeDto> {
   }
 
   /**
-   * Sets the value for <code>methods</code>.
+   * Adds one element to <code>methods</code>, configured through its builder.
    *
-   * <p>Generated from setter {@link NestedTypeDto#setMethods(List) setMethods(List<MethodDto>
-   * methods)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.methods(MethodDtoBuilder.create().build(), MethodDtoBuilder.create().build());
-   * }</pre>
-   *
-   * @param methods the replacement collection (not null)
+   * @param methodBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public NestedTypeDtoBuilder methods(MethodDto... methods) {
-    this.methods = changedValue(List.of(methods));
-    return this;
+  public NestedTypeDtoBuilder methods(Consumer<MethodDtoBuilder> methodBuilderConsumer) {
+    MethodDtoBuilder elementBuilder = MethodDtoBuilder.create();
+    methodBuilderConsumer.accept(elementBuilder);
+    return add2Methods(elementBuilder.build());
   }
 
   /**
-   * Sets the value for <code>methods</code> using a builder consumer that produces the value.
+   * Adds elements to <code>methods</code>, each configured through its builder.
    *
-   * <p>Generated from setter {@link NestedTypeDto#setMethods(List) setMethods(List<MethodDto>
-   * methods)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.methods(t -> t.add(methodDtoBuilder -> methodDtoBuilder));
-   * }</pre>
-   *
-   * @param methodsBuilderConsumer consumer providing an instance of a builder for the replacement
-   *     collection (not null)
+   * @param methodBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
-  public NestedTypeDtoBuilder methods(
-      Consumer<ArrayListBuilderWithElementBuilders<MethodDto, MethodDtoBuilder>>
-          methodsBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<MethodDto, MethodDtoBuilder> builder =
-        this.methods.isSet()
-            ? new ArrayListBuilderWithElementBuilders<MethodDto, MethodDtoBuilder>(
-                this.methods.value(), MethodDtoBuilder::create)
-            : new ArrayListBuilderWithElementBuilders<MethodDto, MethodDtoBuilder>(
-                MethodDtoBuilder::create);
-    methodsBuilderConsumer.accept(builder);
-    this.methods = changedValue(builder.build());
+  @SafeVarargs
+  public final NestedTypeDtoBuilder methods(Consumer<MethodDtoBuilder>... methodBuilderConsumers) {
+    for (Consumer<MethodDtoBuilder> consumer : methodBuilderConsumers) {
+      methods(consumer);
+    }
     return this;
   }
 
