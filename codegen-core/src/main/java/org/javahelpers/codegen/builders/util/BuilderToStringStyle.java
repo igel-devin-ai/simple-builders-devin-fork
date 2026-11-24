@@ -30,6 +30,11 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  * Custom ToStringStyle for builders that automatically handles TrackedValue fields. This style only
  * includes fields that have been set (TrackedValue.isSet() returns true) and unwraps their values
  * automatically.
+ *
+ * <p><b>Origin:</b> copied from {@code
+ * org.javahelpers.simple.builders.core.util.BuilderToStringStyle} of simple-builders-core so that
+ * codegen-core does not depend on the builders runtime module. The DTO builders committed in this
+ * module must work without forcing a simple-builders-core dependency onto codegen users.
  */
 public class BuilderToStringStyle extends ToStringStyle {
 

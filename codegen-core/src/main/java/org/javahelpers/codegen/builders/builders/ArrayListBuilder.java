@@ -32,6 +32,11 @@ import java.util.List;
  * extending lists. Using ArrayLists inside.
  *
  * @param <T> the type of elements in the targeting list
+ *     <p><b>Origin:</b> copied from {@code
+ *     org.javahelpers.simple.builders.core.builders.ArrayListBuilder} of simple-builders-core so
+ *     that codegen-core does not depend on the builders runtime module. The DTO builders committed
+ *     in this module must work without forcing a simple-builders-core dependency onto codegen
+ *     users.
  */
 public class ArrayListBuilder<T> {
   private final List<T> mList = new ArrayList<>();

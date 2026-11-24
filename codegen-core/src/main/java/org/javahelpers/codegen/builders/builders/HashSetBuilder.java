@@ -32,6 +32,10 @@ import java.util.Set;
  * extending setws. Using HashSet inside.
  *
  * @param <T> the type of elements in the targeting Set
+ *     <p><b>Origin:</b> copied from {@code
+ *     org.javahelpers.simple.builders.core.builders.HashSetBuilder} of simple-builders-core so that
+ *     codegen-core does not depend on the builders runtime module. The DTO builders committed in
+ *     this module must work without forcing a simple-builders-core dependency onto codegen users.
  */
 public class HashSetBuilder<T> {
   private final Set<T> mSet = new HashSet<>();

@@ -44,6 +44,10 @@ import java.util.function.Consumer;
  * @param value the underlying value (may be {@code null})
  * @param isChanged whether the value was explicitly changed by the builder API
  * @param isInitial whether the value is an initial value from an existing instance
+ *     <p><b>Origin:</b> copied from {@code org.javahelpers.simple.builders.core.util.TrackedValue}
+ *     of simple-builders-core so that codegen-core does not depend on the builders runtime module.
+ *     The DTO builders committed in this module must work without forcing a simple-builders-core
+ *     dependency onto codegen users.
  */
 public record TrackedValue<T>(T value, boolean isChanged, boolean isInitial) {
 

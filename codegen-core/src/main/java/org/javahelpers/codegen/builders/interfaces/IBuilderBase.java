@@ -28,6 +28,10 @@ package org.javahelpers.codegen.builders.interfaces;
  * Interface for all generated builders.
  *
  * @param <T> the type of build instances
+ *     <p><b>Origin:</b> copied from {@code
+ *     org.javahelpers.simple.builders.core.interfaces.IBuilderBase} of simple-builders-core so that
+ *     codegen-core does not depend on the builders runtime module. The DTO builders committed in
+ *     this module must work without forcing a simple-builders-core dependency onto codegen users.
  */
 public interface IBuilderBase<T> {
   /**
