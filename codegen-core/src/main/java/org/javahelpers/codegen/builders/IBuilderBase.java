@@ -22,40 +22,23 @@
  * SOFTWARE.
  */
 
-package org.javahelpers.codegen.builders.util;
-
-import org.apache.commons.lang3.builder.ToStringStyle;
+package org.javahelpers.codegen.builders;
 
 /**
- * Custom ToStringStyle for builders that automatically handles TrackedValue fields. This style only
- * includes fields that have been set (TrackedValue.isSet() returns true) and unwraps their values
- * automatically.
+ * Interface for all generated builders.
  *
  * <p><b>Origin:</b> copied from {@code
- * org.javahelpers.simple.builders.core.util.BuilderToStringStyle} of simple-builders-core so that
+ * org.javahelpers.simple.builders.core.interfaces.IBuilderBase} of simple-builders-core so that
  * codegen-core does not depend on the builders runtime module. The DTO builders committed in this
  * module must work without forcing a simple-builders-core dependency onto codegen users.
+ *
+ * @param <T> the type of build instances
  */
-public class BuilderToStringStyle extends ToStringStyle {
-
-  private static final long serialVersionUID = 1L;
-
-  public static final BuilderToStringStyle INSTANCE = new BuilderToStringStyle();
-
-  public BuilderToStringStyle() {
-    super();
-    this.setUseClassName(true);
-    this.setUseIdentityHashCode(false);
-  }
-
-  @Override
-  public void append(StringBuffer buffer, String fieldName, Object value, Boolean fullDetail) {
-    if (value instanceof TrackedValue<?> trackedValue) {
-      if (trackedValue.isSet()) {
-        super.append(buffer, fieldName, trackedValue.value(), fullDetail);
-      }
-    } else {
-      super.append(buffer, fieldName, value, fullDetail);
-    }
-  }
+public interface IBuilderBase<T> {
+  /**
+   * Baseinterface for all builders.
+   *
+   * @return building target of builder
+   */
+  T build();
 }

@@ -24,9 +24,9 @@
 
 package org.javahelpers.codegen.model.method;
 
-import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
+import static org.javahelpers.codegen.builders.TrackedValue.changedValue;
+import static org.javahelpers.codegen.builders.TrackedValue.initialValue;
+import static org.javahelpers.codegen.builders.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,10 +35,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.builders.ArrayListBuilderWithElementBuilders;
-import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
-import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
-import org.javahelpers.codegen.builders.util.TrackedValue;
+import org.javahelpers.codegen.builders.ArrayListBuilderWithElementBuilders;
+import org.javahelpers.codegen.builders.BuilderToStringStyle;
+import org.javahelpers.codegen.builders.IBuilderBase;
+import org.javahelpers.codegen.builders.TrackedValue;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;

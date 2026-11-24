@@ -24,9 +24,9 @@
 
 package org.javahelpers.codegen.model.core;
 
-import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
+import static org.javahelpers.codegen.builders.TrackedValue.changedValue;
+import static org.javahelpers.codegen.builders.TrackedValue.initialValue;
+import static org.javahelpers.codegen.builders.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -37,18 +37,19 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.builders.ArrayListBuilderWithElementBuilders;
-import org.javahelpers.codegen.builders.builders.HashSetBuilder;
-import org.javahelpers.codegen.builders.builders.HashSetBuilderWithElementBuilders;
-import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
-import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
-import org.javahelpers.codegen.builders.util.TrackedValue;
+import org.javahelpers.codegen.builders.ArrayListBuilderWithElementBuilders;
+import org.javahelpers.codegen.builders.BuilderToStringStyle;
+import org.javahelpers.codegen.builders.HashSetBuilder;
+import org.javahelpers.codegen.builders.HashSetBuilderWithElementBuilders;
+import org.javahelpers.codegen.builders.IBuilderBase;
+import org.javahelpers.codegen.builders.TrackedValue;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.FormattingMode;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.annotation.InterfaceName;
 import org.javahelpers.codegen.model.imports.ImportStatement;
+import org.javahelpers.codegen.model.imports.RegularImport;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
 import org.javahelpers.codegen.model.method.ConstructorDto;
@@ -1030,6 +1031,26 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
     newCollection.add(element);
     this.imports = changedValue(newCollection);
     return this;
+  }
+
+  /**
+   * Adds an import for the given class.
+   *
+   * @param clazz class to import
+   * @return this builder
+   */
+  public GenerationTargetClassDtoBuilder add2Imports(Class<?> clazz) {
+    return add2Imports(new RegularImport(TypeName.of(clazz)));
+  }
+
+  /**
+   * Adds an import for the given type.
+   *
+   * @param typeName type to import
+   * @return this builder
+   */
+  public GenerationTargetClassDtoBuilder add2Imports(TypeName typeName) {
+    return add2Imports(new RegularImport(typeName));
   }
 
   /**

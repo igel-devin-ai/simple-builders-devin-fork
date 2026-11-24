@@ -75,7 +75,7 @@ class CodegenDtoBuildersTest {
   private static final AnnotationDto ANNOTATION =
       AnnotationDtoBuilder.create()
           .annotationType(TypeName.of(Deprecated.class))
-          .members(Map.of("since", "\"1\""))
+          .add2Members("since", "\"1\"")
           .build();
   private static final ImportStatement IMPORT = new RegularImport(TypeName.of(List.class));
   private static final MethodCodePlaceholder<?> ARGUMENT =
@@ -86,7 +86,7 @@ class CodegenDtoBuildersTest {
     AnnotationDto dto =
         AnnotationDtoBuilder.create()
             .annotationType(TypeName.of(Deprecated.class))
-            .members(Map.of("since", "\"2\""))
+            .add2Members("since", "\"2\"")
             .build();
     assertEquals(TypeName.of(Deprecated.class), dto.getAnnotationType());
     assertEquals(Map.of("since", "\"2\""), dto.getMembers());
@@ -98,7 +98,7 @@ class CodegenDtoBuildersTest {
         ClassFieldDtoBuilder.create()
             .fieldName("names")
             .fieldType(TypeName.of(List.class))
-            .fieldTypeImports(Set.of(IMPORT))
+            .add2FieldTypeImports(List.class)
             .build();
     assertEquals("names", dto.getFieldName());
     assertEquals(TypeName.of(List.class), dto.getFieldType());
@@ -122,9 +122,9 @@ class CodegenDtoBuildersTest {
         MethodDtoBuilder.create()
             .methodName("render")
             .isStatic(true)
-            .parameters(List.of(parameter))
-            .genericParameters(List.of(generic))
-            .annotations(List.of(ANNOTATION))
+            .add2Parameters(parameter)
+            .add2GenericParameters(generic)
+            .add2Annotations(ANNOTATION)
             .methodCodeDto(code)
             .build();
     assertEquals("render", dto.getMethodName());
@@ -144,8 +144,8 @@ class CodegenDtoBuildersTest {
     MethodCodeDto code = code();
     ConstructorDto dto =
         ConstructorDtoBuilder.create()
-            .parameters(List.of(parameter))
-            .annotations(List.of(ANNOTATION))
+            .add2Parameters(parameter)
+            .add2Annotations(ANNOTATION)
             .methodCodeDto(code)
             .build();
     assertEquals(List.of(parameter), dto.getParameters());
@@ -166,8 +166,8 @@ class CodegenDtoBuildersTest {
     NestedTypeDto dto =
         NestedTypeDtoBuilder.create()
             .typeName("Factory")
-            .methods(List.of(method))
-            .annotations(List.of(ANNOTATION))
+            .add2Methods(method)
+            .add2Annotations(ANNOTATION)
             .build();
     assertEquals("Factory", dto.getTypeName());
     assertEquals(List.of(method), dto.getMethods());
@@ -178,7 +178,7 @@ class CodegenDtoBuildersTest {
   void buildsJavadoc() {
     JavadocTagDto tag = new JavadocTagDto("return", "a value");
     JavadocDto dto =
-        JavadocDtoBuilder.create().format("Summary").args(new Object[0]).tags(List.of(tag)).build();
+        JavadocDtoBuilder.create().format("Summary").args(new Object[0]).add2Tags(tag).build();
     assertEquals("Summary", dto.getDescription());
     assertEquals(List.of(tag), dto.getTags());
   }
@@ -188,8 +188,8 @@ class CodegenDtoBuildersTest {
     assertCode(
         CodeTemplateDtoBuilder.create()
             .codeFormat("return $value:S;")
-            .codeArguments(List.of(ARGUMENT))
-            .codeBlockImports(Set.of(IMPORT))
+            .add2CodeArguments(ARGUMENT)
+            .add2CodeBlockImports(List.class)
             .build());
   }
 
@@ -203,8 +203,8 @@ class CodegenDtoBuildersTest {
     assertCode(
         JavadocCodeBlockDtoBuilder.create()
             .codeFormat("return $value:S;")
-            .codeArguments(List.of(ARGUMENT))
-            .codeBlockImports(Set.of(IMPORT))
+            .add2CodeArguments(ARGUMENT)
+            .add2CodeBlockImports(List.class)
             .build());
   }
 
@@ -226,7 +226,7 @@ class CodegenDtoBuildersTest {
             .interfaces(Set.of(contract))
             .nestedTypes(List.of(nested))
             .classAnnotations(Set.of(ANNOTATION))
-            .imports(Set.of(IMPORT))
+            .add2Imports(List.class)
             .build();
     assertEquals(new TypeName("example", "Target"), dto.getTypeName());
     assertEquals(List.of(field), dto.getClassFields());

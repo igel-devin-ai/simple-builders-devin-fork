@@ -22,22 +22,22 @@
  * SOFTWARE.
  */
 
-package org.javahelpers.codegen.builders.builders;
+package org.javahelpers.codegen.builders;
 
-import java.util.Set;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
 
 /**
- * Enhanced builder for Sets that supports adding elements via builder consumers. This class extends
- * {@link HashSetBuilder} and adds methods to accept {@link Consumer} functions that configure
- * element builders, eliminating the need to manually call {@code build()} on each element builder.
+ * Enhanced builder for Lists that supports adding elements via builder consumers. This class
+ * extends {@link ArrayListBuilder} and adds methods to accept {@link Consumer} functions that
+ * configure element builders, eliminating the need to manually call {@code build()} on each element
+ * builder.
  *
  * <p>Example usage:
  *
  * <pre>{@code
- * Set<Person> people = new HashSetBuilderWithElementBuilders<>(PersonBuilder::create)
+ * List<Person> people = new ArrayListBuilderWithElementBuilders<>(PersonBuilder::create)
  *     .add(personBuilder -> personBuilder
  *         .name("John Doe")
  *         .age(30))
@@ -48,48 +48,50 @@ import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
  * }</pre>
  *
  * <p><b>Origin:</b> copied from {@code
- * org.javahelpers.simple.builders.core.builders.HashSetBuilderWithElementBuilders} of
+ * org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders} of
  * simple-builders-core so that codegen-core does not depend on the builders runtime module. The DTO
  * builders committed in this module must work without forcing a simple-builders-core dependency
  * onto codegen users.
  *
- * @param <T> the type of elements in the targeting set
+ * @param <T> the type of elements in the targeting list
  * @param <B> the type of builder used to create elements, must implement {@link IBuilderBase} and
  *     building objects of type T
  */
-public class HashSetBuilderWithElementBuilders<T, B extends IBuilderBase<T>>
-    extends HashSetBuilder<T> {
+public class ArrayListBuilderWithElementBuilders<T, B extends IBuilderBase<T>>
+    extends ArrayListBuilder<T> {
   private final Supplier<B> elementBuilderProvider;
 
   /**
-   * Creates an empty HashSetBuilderWithElementBuilders.
+   * Creates an empty ArrayListBuilderWithElementBuilders.
    *
    * @param elementBuilderProvider supplier that provides new instances of element builders
    */
-  public HashSetBuilderWithElementBuilders(Supplier<B> elementBuilderProvider) {
+  public ArrayListBuilderWithElementBuilders(Supplier<B> elementBuilderProvider) {
     this.elementBuilderProvider = elementBuilderProvider;
   }
 
   /**
-   * Creates a HashSetBuilderWithElementBuilders initialized with the elements from the given set.
+   * Creates an ArrayListBuilderWithElementBuilders initialized with the elements from the given
+   * list.
    *
-   * @param initialSet set to initialize from
+   * @param initialList list to initialize from
    * @param elementBuilderProvider supplier that provides new instances of element builders
    */
-  public HashSetBuilderWithElementBuilders(Set<T> initialSet, Supplier<B> elementBuilderProvider) {
-    super(initialSet);
+  public ArrayListBuilderWithElementBuilders(
+      List<T> initialList, Supplier<B> elementBuilderProvider) {
+    super(initialList);
     this.elementBuilderProvider = elementBuilderProvider;
   }
 
   /**
-   * Adds an element to the set by providing a consumer that configures an element builder. The
+   * Adds an element to the list by providing a consumer that configures an element builder. The
    * builder is automatically created using the elementBuilderProvider and built after
    * configuration.
    *
    * @param elementBuilderConsumer consumer that configures the element builder
    * @return this builder instance for method chaining
    */
-  public HashSetBuilderWithElementBuilders<T, B> add(Consumer<B> elementBuilderConsumer) {
+  public ArrayListBuilderWithElementBuilders<T, B> add(Consumer<B> elementBuilderConsumer) {
     B elementBuilder = elementBuilderProvider.get();
     elementBuilderConsumer.accept(elementBuilder);
     super.add(elementBuilder.build());
@@ -97,7 +99,7 @@ public class HashSetBuilderWithElementBuilders<T, B extends IBuilderBase<T>>
   }
 
   /**
-   * Adds multiple elements to the set by providing consumers that configure element builders. Each
+   * Adds multiple elements to the list by providing consumers that configure element builders. Each
    * builder is automatically created using the elementBuilderProvider and built after
    * configuration.
    *
@@ -105,7 +107,8 @@ public class HashSetBuilderWithElementBuilders<T, B extends IBuilderBase<T>>
    * @return this builder instance for method chaining
    */
   @SafeVarargs
-  public final HashSetBuilderWithElementBuilders<T, B> add(Consumer<B>... elementBuilderConsumers) {
+  public final ArrayListBuilderWithElementBuilders<T, B> add(
+      Consumer<B>... elementBuilderConsumers) {
     for (Consumer<B> elementBuilderConsumer : elementBuilderConsumers) {
       this.add(elementBuilderConsumer);
     }

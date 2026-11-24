@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package org.javahelpers.codegen.builders.builders;
+package org.javahelpers.codegen.builders;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package org.javahelpers.codegen.builders.util;
+package org.javahelpers.codegen.builders;
 
 import java.util.function.Consumer;
 

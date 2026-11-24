@@ -24,9 +24,9 @@
 
 package org.javahelpers.codegen.model.javadoc;
 
-import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
+import static org.javahelpers.codegen.builders.TrackedValue.changedValue;
+import static org.javahelpers.codegen.builders.TrackedValue.initialValue;
+import static org.javahelpers.codegen.builders.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -37,13 +37,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.builders.ArrayListBuilder;
-import org.javahelpers.codegen.builders.builders.HashSetBuilder;
-import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
-import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
-import org.javahelpers.codegen.builders.util.TrackedValue;
+import org.javahelpers.codegen.builders.ArrayListBuilder;
+import org.javahelpers.codegen.builders.BuilderToStringStyle;
+import org.javahelpers.codegen.builders.HashSetBuilder;
+import org.javahelpers.codegen.builders.IBuilderBase;
+import org.javahelpers.codegen.builders.TrackedValue;
 import org.javahelpers.codegen.model.imports.ImportStatement;
+import org.javahelpers.codegen.model.imports.RegularImport;
 import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
+import org.javahelpers.codegen.model.type.TypeName;
 
 /**
  * Builder for {@code org.javahelpers.codegen.model.javadoc.JavadocCodeBlockDto}.
@@ -245,6 +247,26 @@ public class JavadocCodeBlockDtoBuilder implements IBuilderBase<JavadocCodeBlock
     newCollection.add(element);
     this.codeBlockImports = changedValue(newCollection);
     return this;
+  }
+
+  /**
+   * Adds a code block import for the given class.
+   *
+   * @param clazz class to import
+   * @return this builder
+   */
+  public JavadocCodeBlockDtoBuilder add2CodeBlockImports(Class<?> clazz) {
+    return add2CodeBlockImports(new RegularImport(TypeName.of(clazz)));
+  }
+
+  /**
+   * Adds a code block import for the given type.
+   *
+   * @param typeName type to import
+   * @return this builder
+   */
+  public JavadocCodeBlockDtoBuilder add2CodeBlockImports(TypeName typeName) {
+    return add2CodeBlockImports(new RegularImport(typeName));
   }
 
   /**

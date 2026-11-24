@@ -24,10 +24,11 @@
 
 package org.javahelpers.codegen.model.annotation;
 
-import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
+import static org.javahelpers.codegen.builders.TrackedValue.changedValue;
+import static org.javahelpers.codegen.builders.TrackedValue.initialValue;
+import static org.javahelpers.codegen.builders.TrackedValue.unsetValue;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BooleanSupplier;
@@ -35,10 +36,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.builders.HashMapBuilder;
-import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
-import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
-import org.javahelpers.codegen.builders.util.TrackedValue;
+import org.javahelpers.codegen.builders.BuilderToStringStyle;
+import org.javahelpers.codegen.builders.HashMapBuilder;
+import org.javahelpers.codegen.builders.IBuilderBase;
+import org.javahelpers.codegen.builders.TrackedValue;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
@@ -302,6 +303,21 @@ public class AnnotationDtoBuilder implements IBuilderBase<AnnotationDto> {
    */
   public AnnotationDtoBuilder members(Entry<String, String>... members) {
     this.members = changedValue(Map.ofEntries(members));
+    return this;
+  }
+
+  /**
+   * Adds a single member to the annotation.
+   *
+   * @param key member name
+   * @param value member value
+   * @return this builder
+   */
+  public AnnotationDtoBuilder add2Members(String key, String value) {
+    Map<String, String> newMap =
+        this.members.isSet() ? new LinkedHashMap<>(this.members.value()) : new LinkedHashMap<>();
+    newMap.put(key, value);
+    this.members = changedValue(newMap);
     return this;
   }
 
