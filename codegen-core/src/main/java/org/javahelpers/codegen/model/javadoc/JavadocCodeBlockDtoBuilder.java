@@ -24,9 +24,9 @@
 
 package org.javahelpers.codegen.model.javadoc;
 
-import static org.javahelpers.simple.builders.core.util.TrackedValue.changedValue;
-import static org.javahelpers.simple.builders.core.util.TrackedValue.initialValue;
-import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
+import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
+import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
+import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,14 +38,14 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import javax.annotation.processing.Generated;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.javahelpers.codegen.builders.annotations.BuilderImplementation;
+import org.javahelpers.codegen.builders.builders.ArrayListBuilder;
+import org.javahelpers.codegen.builders.builders.HashSetBuilder;
+import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
+import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
+import org.javahelpers.codegen.builders.util.TrackedValue;
 import org.javahelpers.codegen.model.imports.ImportStatement;
 import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
-import org.javahelpers.simple.builders.core.annotations.BuilderImplementation;
-import org.javahelpers.simple.builders.core.builders.ArrayListBuilder;
-import org.javahelpers.simple.builders.core.builders.HashSetBuilder;
-import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
-import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
-import org.javahelpers.simple.builders.core.util.TrackedValue;
 
 /**
  * Builder for {@code org.javahelpers.codegen.model.javadoc.JavadocCodeBlockDto}.

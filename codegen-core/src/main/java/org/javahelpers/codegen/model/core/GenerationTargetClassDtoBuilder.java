@@ -24,9 +24,9 @@
 
 package org.javahelpers.codegen.model.core;
 
-import static org.javahelpers.simple.builders.core.util.TrackedValue.changedValue;
-import static org.javahelpers.simple.builders.core.util.TrackedValue.initialValue;
-import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
+import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
+import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
+import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,6 +38,13 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import javax.annotation.processing.Generated;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.javahelpers.codegen.builders.annotations.BuilderImplementation;
+import org.javahelpers.codegen.builders.builders.ArrayListBuilderWithElementBuilders;
+import org.javahelpers.codegen.builders.builders.HashSetBuilder;
+import org.javahelpers.codegen.builders.builders.HashSetBuilderWithElementBuilders;
+import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
+import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
+import org.javahelpers.codegen.builders.util.TrackedValue;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.FormattingMode;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
@@ -55,13 +62,6 @@ import org.javahelpers.codegen.model.type.GenericParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.NestedTypeDto;
 import org.javahelpers.codegen.model.type.NestedTypeDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
-import org.javahelpers.simple.builders.core.annotations.BuilderImplementation;
-import org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders;
-import org.javahelpers.simple.builders.core.builders.HashSetBuilder;
-import org.javahelpers.simple.builders.core.builders.HashSetBuilderWithElementBuilders;
-import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
-import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
-import org.javahelpers.simple.builders.core.util.TrackedValue;
 
 /**
  * Builder for {@code org.javahelpers.codegen.model.core.GenerationTargetClassDto}.

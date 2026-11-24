@@ -47,18 +47,6 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class JavadocDto {
 
-  /**
-   * Replaces tags with a defensive copy; the DTO retains its own mutable collection.
-   *
-   * @param tags the replacement collection (not null)
-   * @throws NullPointerException if tags is null
-   */
-  public void setTags(List<JavadocTagDto> tags) {
-    List<JavadocTagDto> copy = new ArrayList<>(tags);
-    this.tags.clear();
-    this.tags.addAll(copy);
-  }
-
   /** The main description text (everything before the first tag). */
   private String description;
 
@@ -170,6 +158,18 @@ public class JavadocDto {
     if (tagName != null) {
       tags.add(JavadocTagDto.withoutValue(tagName));
     }
+  }
+
+  /**
+   * Replaces tags with the given collection; the DTO retains its own mutable collection.
+   *
+   * @param tags the replacement collection (not null)
+   * @throws NullPointerException if tags is null
+   */
+  public void setTags(List<JavadocTagDto> tags) {
+    List<JavadocTagDto> copy = new ArrayList<>(Objects.requireNonNull(tags));
+    this.tags.clear();
+    this.tags.addAll(copy);
   }
 
   /**

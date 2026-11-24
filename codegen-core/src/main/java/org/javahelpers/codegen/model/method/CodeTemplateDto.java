@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.codegen.model.imports.ImportStatement;
@@ -46,30 +47,6 @@ import org.javahelpers.codegen.model.type.TypeNameWildcard;
  * code generation.
  */
 public class CodeTemplateDto {
-
-  /**
-   * Replaces codeArguments with a defensive copy; the DTO retains its own mutable collection.
-   *
-   * @param codeArguments the replacement collection (not null)
-   * @throws NullPointerException if codeArguments is null
-   */
-  public void setCodeArguments(List<MethodCodePlaceholder<?>> codeArguments) {
-    List<MethodCodePlaceholder<?>> copy = new ArrayList<>(codeArguments);
-    this.codeArguments.clear();
-    this.codeArguments.addAll(copy);
-  }
-
-  /**
-   * Replaces codeBlockImports with a defensive copy; the DTO retains its own mutable collection.
-   *
-   * @param codeBlockImports the replacement collection (not null)
-   * @throws NullPointerException if codeBlockImports is null
-   */
-  public void setCodeBlockImports(Set<ImportStatement> codeBlockImports) {
-    Set<ImportStatement> copy = new LinkedHashSet<>(codeBlockImports);
-    this.codeBlockImports.clear();
-    this.codeBlockImports.addAll(copy);
-  }
 
   /** Format of code. Holding placeholder for dynamic values. */
   private String codeFormat;
@@ -134,6 +111,18 @@ public class CodeTemplateDto {
   }
 
   /**
+   * Replaces codeArguments with the given collection; the DTO retains its own mutable collection.
+   *
+   * @param codeArguments the replacement collection (not null)
+   * @throws NullPointerException if codeArguments is null
+   */
+  public void setCodeArguments(List<MethodCodePlaceholder<?>> codeArguments) {
+    List<MethodCodePlaceholder<?>> copy = new ArrayList<>(Objects.requireNonNull(codeArguments));
+    this.codeArguments.clear();
+    this.codeArguments.addAll(copy);
+  }
+
+  /**
    * Checks if this code DTO has code content.
    *
    * @return true if code format is not null and not blank
@@ -186,6 +175,19 @@ public class CodeTemplateDto {
    */
   public void addStaticImport(Class<?> clazz, String memberName) {
     this.codeBlockImports.add(new StaticImport(TypeName.of(clazz), memberName));
+  }
+
+  /**
+   * Replaces codeBlockImports with the given collection; the DTO retains its own mutable
+   * collection.
+   *
+   * @param codeBlockImports the replacement collection (not null)
+   * @throws NullPointerException if codeBlockImports is null
+   */
+  public void setCodeBlockImports(Set<ImportStatement> codeBlockImports) {
+    Set<ImportStatement> copy = new LinkedHashSet<>(Objects.requireNonNull(codeBlockImports));
+    this.codeBlockImports.clear();
+    this.codeBlockImports.addAll(copy);
   }
 
   /**

@@ -27,6 +27,7 @@ package org.javahelpers.codegen.model.core;
 import static org.javahelpers.codegen.enums.AccessModifier.PRIVATE;
 
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -46,18 +47,6 @@ import org.javahelpers.codegen.model.type.TypeNameWildcard;
  * <p>This DTO contains only rendering information for a field, consumed by the code generator.
  */
 public class ClassFieldDto {
-
-  /**
-   * Replaces fieldTypeImports with a defensive copy; the DTO retains its own mutable collection.
-   *
-   * @param fieldTypeImports the replacement collection (not null)
-   * @throws NullPointerException if fieldTypeImports is null
-   */
-  public void setFieldTypeImports(Set<ImportStatement> fieldTypeImports) {
-    Set<ImportStatement> copy = new LinkedHashSet<>(fieldTypeImports);
-    this.fieldTypeImports.clear();
-    this.fieldTypeImports.addAll(copy);
-  }
 
   /** Field name in generated class. */
   private String fieldName;
@@ -174,6 +163,19 @@ public class ClassFieldDto {
   public void addStaticImport(TypeName type, String memberName) {
     TypeName typeRaw = new TypeName(type.getPackageName(), type.getClassName());
     this.fieldTypeImports.add(new StaticImport(typeRaw, memberName));
+  }
+
+  /**
+   * Replaces fieldTypeImports with the given collection; the DTO retains its own mutable
+   * collection.
+   *
+   * @param fieldTypeImports the replacement collection (not null)
+   * @throws NullPointerException if fieldTypeImports is null
+   */
+  public void setFieldTypeImports(Set<ImportStatement> fieldTypeImports) {
+    Set<ImportStatement> copy = new LinkedHashSet<>(Objects.requireNonNull(fieldTypeImports));
+    this.fieldTypeImports.clear();
+    this.fieldTypeImports.addAll(copy);
   }
 
   /**

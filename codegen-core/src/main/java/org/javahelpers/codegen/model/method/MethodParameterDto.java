@@ -26,23 +26,12 @@ package org.javahelpers.codegen.model.method;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.type.TypeName;
 
 /** MethodParameterDto contains all information for generating parameters in method headers. */
 public class MethodParameterDto {
-
-  /**
-   * Replaces annotations with a defensive copy; the DTO retains its own mutable collection.
-   *
-   * @param annotations the replacement collection (not null)
-   * @throws NullPointerException if annotations is null
-   */
-  public void setAnnotations(List<AnnotationDto> annotations) {
-    List<AnnotationDto> copy = new ArrayList<>(annotations);
-    this.annotations.clear();
-    this.annotations.addAll(copy);
-  }
 
   /** Name of parameter. */
   private String parameterName;
@@ -105,5 +94,17 @@ public class MethodParameterDto {
    */
   public void addAnnotation(AnnotationDto annotation) {
     this.annotations.add(annotation);
+  }
+
+  /**
+   * Replaces annotations with the given collection; the DTO retains its own mutable collection.
+   *
+   * @param annotations the replacement collection (not null)
+   * @throws NullPointerException if annotations is null
+   */
+  public void setAnnotations(List<AnnotationDto> annotations) {
+    List<AnnotationDto> copy = new ArrayList<>(Objects.requireNonNull(annotations));
+    this.annotations.clear();
+    this.annotations.addAll(copy);
   }
 }

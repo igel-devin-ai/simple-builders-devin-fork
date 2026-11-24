@@ -46,42 +46,6 @@ import org.javahelpers.codegen.model.type.TypeName;
  */
 public class MethodDto {
 
-  /**
-   * Replaces parameters with a defensive copy; the DTO retains its own mutable collection.
-   *
-   * @param parameters the replacement collection (not null)
-   * @throws NullPointerException if parameters is null
-   */
-  public void setParameters(List<MethodParameterDto> parameters) {
-    List<MethodParameterDto> copy = new ArrayList<>(parameters);
-    this.parameters.clear();
-    this.parameters.addAll(copy);
-  }
-
-  /**
-   * Replaces genericParameters with a defensive copy; the DTO retains its own mutable collection.
-   *
-   * @param genericParameters the replacement collection (not null)
-   * @throws NullPointerException if genericParameters is null
-   */
-  public void setGenericParameters(List<GenericParameterDto> genericParameters) {
-    List<GenericParameterDto> copy = new ArrayList<>(genericParameters);
-    this.genericParameters.clear();
-    this.genericParameters.addAll(copy);
-  }
-
-  /**
-   * Replaces annotations with a defensive copy; the DTO retains its own mutable collection.
-   *
-   * @param annotations the replacement collection (not null)
-   * @throws NullPointerException if annotations is null
-   */
-  public void setAnnotations(List<AnnotationDto> annotations) {
-    List<AnnotationDto> copy = new ArrayList<>(annotations);
-    this.annotations.clear();
-    this.annotations.addAll(copy);
-  }
-
   /** Access modifier for method. */
   private Optional<AccessModifier> modifier = Optional.empty();
 
@@ -214,6 +178,18 @@ public class MethodDto {
   }
 
   /**
+   * Replaces parameters with the given collection; the DTO retains its own mutable collection.
+   *
+   * @param parameters the replacement collection (not null)
+   * @throws NullPointerException if parameters is null
+   */
+  public void setParameters(List<MethodParameterDto> parameters) {
+    List<MethodParameterDto> copy = new ArrayList<>(Objects.requireNonNull(parameters));
+    this.parameters.clear();
+    this.parameters.addAll(copy);
+  }
+
+  /**
    * Getting a list of parameters of method.
    *
    * @return List of parameters
@@ -229,6 +205,19 @@ public class MethodDto {
    */
   public void addGenericParameter(GenericParameterDto genericParameter) {
     this.genericParameters.add(genericParameter);
+  }
+
+  /**
+   * Replaces genericParameters with the given collection; the DTO retains its own mutable
+   * collection.
+   *
+   * @param genericParameters the replacement collection (not null)
+   * @throws NullPointerException if genericParameters is null
+   */
+  public void setGenericParameters(List<GenericParameterDto> genericParameters) {
+    List<GenericParameterDto> copy = new ArrayList<>(Objects.requireNonNull(genericParameters));
+    this.genericParameters.clear();
+    this.genericParameters.addAll(copy);
   }
 
   /**
@@ -346,6 +335,18 @@ public class MethodDto {
    */
   public void addAnnotation(AnnotationDto annotation) {
     this.annotations.add(annotation);
+  }
+
+  /**
+   * Replaces annotations with the given collection; the DTO retains its own mutable collection.
+   *
+   * @param annotations the replacement collection (not null)
+   * @throws NullPointerException if annotations is null
+   */
+  public void setAnnotations(List<AnnotationDto> annotations) {
+    List<AnnotationDto> copy = new ArrayList<>(Objects.requireNonNull(annotations));
+    this.annotations.clear();
+    this.annotations.addAll(copy);
   }
 
   /**
