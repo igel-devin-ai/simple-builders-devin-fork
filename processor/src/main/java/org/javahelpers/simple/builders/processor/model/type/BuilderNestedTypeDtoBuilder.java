@@ -28,17 +28,24 @@ import static org.javahelpers.simple.builders.core.util.TrackedValue.changedValu
 import static org.javahelpers.simple.builders.core.util.TrackedValue.initialValue;
 import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
+import org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders;
 import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
 import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
 import org.javahelpers.simple.builders.core.util.TrackedValue;
+import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
+import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDtoBuilder;
 
 /**
  * Builder for {@code org.javahelpers.simple.builders.processor.model.type.BuilderNestedTypeDto}.
@@ -78,6 +85,9 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
 
   /** Tracked value for <code>visibility</code>: visibility. */
   private TrackedValue<AccessModifier> visibility = unsetValue();
+
+  private TrackedValue<List<BuilderMethodDto>> methods = unsetValue();
+  private TrackedValue<List<AnnotationDto>> annotations = unsetValue();
 
   /**
    * Empty constructor of builder for {@code
@@ -454,6 +464,297 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
+   * Adds a single element to <code>methods</code>.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.add2Methods(BuilderMethodDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param element the element to add
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder add2Methods(BuilderMethodDto element) {
+    List<BuilderMethodDto> newCollection;
+    if (this.methods.isSet()) {
+      newCollection = new ArrayList<>(this.methods.value());
+    } else {
+      newCollection = new ArrayList<>();
+    }
+    newCollection.add(element);
+    this.methods = changedValue(newCollection);
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>methods</code>.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(BuilderMethodDtoBuilder.create().build(), BuilderMethodDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param methods methods
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder methods(BuilderMethodDto... methods) {
+    this.methods = changedValue(List.of(methods));
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>methods</code> using a builder consumer that produces the value.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(t -> t.add(el -> el));
+   * }</pre>
+   *
+   * @param methodsBuilderConsumer consumer providing an instance of a builder for methods
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder methods(
+      Consumer<ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>>
+          methodsBuilderConsumer) {
+    ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder> builder =
+        this.methods.isSet()
+            ? new ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>(
+                this.methods.value(), BuilderMethodDtoBuilder::new)
+            : new ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>(
+                BuilderMethodDtoBuilder::new);
+    methodsBuilderConsumer.accept(builder);
+    this.methods = changedValue(builder.build());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>methods</code> by invoking the provided supplier.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(() -> List.of(BuilderMethodDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param methodsSupplier supplier for methods
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder methods(Supplier<List<BuilderMethodDto>> methodsSupplier) {
+    this.methods = changedValue(methodsSupplier.get());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>methods</code>.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(List.of(BuilderMethodDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param methods methods
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder methods(List<BuilderMethodDto> methods) {
+    this.methods = changedValue(methods);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>methods</code> in place by applying the given operator. The
+   * value must have been set before (directly or via an existing instance). For changing multiple
+   * elements of a nested DTO, prefer the builder-consumer helper {@link #methods(Consumer)}.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(List.of(BuilderMethodDtoBuilder.create().build()))
+   *     .methodsUpdate(list -> list.stream().sorted().toList());
+   * }</pre>
+   *
+   * @param methodsUpdater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>methods</code> has not been set yet
+   */
+  public BuilderNestedTypeDtoBuilder methodsUpdate(
+      UnaryOperator<List<BuilderMethodDto>> methodsUpdater) {
+    if (!this.methods.isSet()) {
+      throw new IllegalStateException("Cannot update 'methods' before it is set");
+    }
+    this.methods = changedValue(methodsUpdater.apply(this.methods.value()));
+    return this;
+  }
+
+  /**
+   * Adds a single element to <code>annotations</code>.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.add2Annotations(AnnotationDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param element the element to add
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder add2Annotations(AnnotationDto element) {
+    List<AnnotationDto> newCollection;
+    if (this.annotations.isSet()) {
+      newCollection = new ArrayList<>(this.annotations.value());
+    } else {
+      newCollection = new ArrayList<>();
+    }
+    newCollection.add(element);
+    this.annotations = changedValue(newCollection);
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>annotations</code>.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param annotations annotations
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder annotations(AnnotationDto... annotations) {
+    this.annotations = changedValue(List.of(annotations));
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>annotations</code> using a builder consumer that produces the value.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(t -> t.add(el -> el));
+   * }</pre>
+   *
+   * @param annotationsBuilderConsumer consumer providing an instance of a builder for annotations
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder annotations(
+      Consumer<ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>>
+          annotationsBuilderConsumer) {
+    ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder> builder =
+        this.annotations.isSet()
+            ? new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>(
+                this.annotations.value(), AnnotationDtoElementBuilder::new)
+            : new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>(
+                AnnotationDtoElementBuilder::new);
+    annotationsBuilderConsumer.accept(builder);
+    this.annotations = changedValue(builder.build());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>annotations</code> by invoking the provided supplier.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(() -> List.of(AnnotationDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param annotationsSupplier supplier for annotations
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder annotations(
+      Supplier<List<AnnotationDto>> annotationsSupplier) {
+    this.annotations = changedValue(annotationsSupplier.get());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>annotations</code>.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(List.of(AnnotationDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param annotations annotations
+   * @return current instance of builder
+   */
+  public BuilderNestedTypeDtoBuilder annotations(List<AnnotationDto> annotations) {
+    this.annotations = changedValue(annotations);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>annotations</code> in place by applying the given operator.
+   * The value must have been set before (directly or via an existing instance). For changing
+   * multiple elements of a nested DTO, prefer the builder-consumer helper {@link
+   * #annotations(Consumer)}.
+   *
+   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(List.of(AnnotationDtoBuilder.create().build()))
+   *     .annotationsUpdate(list -> list.stream().sorted().toList());
+   * }</pre>
+   *
+   * @param annotationsUpdater operator applied to the current value; its result becomes the new
+   *     value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>annotations</code> has not been set yet
+   */
+  public BuilderNestedTypeDtoBuilder annotationsUpdate(
+      UnaryOperator<List<AnnotationDto>> annotationsUpdater) {
+    if (!this.annotations.isSet()) {
+      throw new IllegalStateException("Cannot update 'annotations' before it is set");
+    }
+    this.annotations = changedValue(annotationsUpdater.apply(this.annotations.value()));
+    return this;
+  }
+
+  /**
    * Builds the configured DTO instance.
    *
    * <h4>Example:</h4>
@@ -469,6 +770,8 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
     this.kind.ifSet(result::setKind);
     this.typeName.ifSet(result::setTypeName);
     this.visibility.ifSet(result::setVisibility);
+    this.methods.ifSet(result::setMethods);
+    this.annotations.ifSet(result::setAnnotations);
     return result;
   }
 
@@ -484,6 +787,8 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
         .append("kind", this.kind)
         .append("typeName", this.typeName)
         .append("visibility", this.visibility)
+        .append("methods", this.methods)
+        .append("annotations", this.annotations)
         .toString();
   }
 
@@ -524,4 +829,11 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
       }
     }
   }
+
+  /**
+   * Element builder for {@link AnnotationDto} collections that bridges the codegen builder to the
+   * core {@link IBuilderBase} contract used by the core collection helpers.
+   */
+  public static final class AnnotationDtoElementBuilder extends AnnotationDtoBuilder
+      implements IBuilderBase<AnnotationDto> {}
 }

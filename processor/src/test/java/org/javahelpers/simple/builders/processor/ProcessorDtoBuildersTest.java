@@ -4,7 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.method.MethodParameterDtoBuilder;
+import org.javahelpers.codegen.model.type.GenericParameterDto;
+import org.javahelpers.codegen.model.type.GenericParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.NestedTypeDto;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameList;
@@ -77,8 +84,10 @@ class ProcessorDtoBuildersTest {
             .isStatic(true)
             .modifier(AccessModifier.PRIVATE)
             .sourceFieldName("persons")
+            .parameters(
+                p ->
+                    p.add(el -> el.parameterName("value").parameterTypeName("java.lang", "String")))
             .build();
-    dto.getParameters().add(new org.javahelpers.codegen.model.method.MethodParameterDto());
 
     assertEquals("persons", dto.getMethodName());
     assertEquals(TypeNameList.of(String.class), dto.getReturnType());
@@ -102,8 +111,8 @@ class ProcessorDtoBuildersTest {
             .typeName("Factory")
             .kind(NestedTypeDto.NestedTypeKind.CLASS)
             .visibility(AccessModifier.PROTECTED)
+            .methods(m -> m.add(el -> el.methodName("create")))
             .build();
-    dto.getMethods().add(BuilderMethodDtoBuilder.create().methodName("create").build());
 
     assertEquals("Factory", dto.getTypeName());
     assertEquals(NestedTypeDto.NestedTypeKind.CLASS, dto.getKind());
@@ -113,5 +122,68 @@ class ProcessorDtoBuildersTest {
     BuilderNestedTypeDto copy = dto.with(b -> b.typeName("Renamed"));
     assertEquals("Renamed", copy.getTypeName());
     assertEquals("Factory", dto.getTypeName());
+  }
+
+  @Test
+  void builderMethodDtoBuilderCollectionSuite() {
+    MethodParameterDto param =
+        MethodParameterDtoBuilder.create()
+            .parameterName("value")
+            .parameterTypeName("java.lang", "String")
+            .build();
+    AnnotationDto anno =
+        AnnotationDtoBuilder.create().annotationType("java.lang", "Deprecated").build();
+    GenericParameterDto generic =
+        GenericParameterDtoBuilder.create().name("T").add2UpperBounds(String.class).build();
+
+    BuilderMethodDto dto =
+        BuilderMethodDtoBuilder.create()
+            .methodName("m")
+            .parameters(param)
+            .parameters(List.of(param))
+            .parameters(() -> List.of(param))
+            .parameters(p -> p.add(el -> el.parameterName("x")))
+            .add2Parameters(param)
+            .parametersUpdate(list -> list.stream().limit(2).toList())
+            .annotations(anno)
+            .genericParameters(generic)
+            .build();
+
+    assertEquals(2, dto.getParameters().size());
+    assertEquals(1, dto.getAnnotations().size());
+    assertEquals(1, dto.getGenericParameters().size());
+
+    BuilderMethodDtoBuilder.create()
+        .methodName("m")
+        .returnType("java.lang", "Void")
+        .returnTypeList(String.class);
+  }
+
+  @Test
+  void builderFieldDtoBuilderMethodsAndTypeNameOverloads() {
+    BuilderFieldDto dto =
+        BuilderFieldDtoBuilder.create()
+            .fieldType("java.lang", "String")
+            .fieldTypeList(String.class)
+            .methods(m -> m.add(el -> el.methodName("setter")))
+            .add2Methods(BuilderMethodDtoBuilder.create().methodName("other").build())
+            .build();
+
+    assertEquals(2, dto.getMethods().size());
+    assertEquals(TypeNameList.of(String.class), dto.getFieldType());
+  }
+
+  @Test
+  void builderNestedTypeDtoBuilderAnnotations() {
+    BuilderNestedTypeDto dto =
+        BuilderNestedTypeDtoBuilder.create()
+            .typeName("Inner")
+            .annotations(a -> a.add(el -> el.annotationType("java.lang", "Deprecated")))
+            .add2Annotations(
+                AnnotationDtoBuilder.create().annotationType("java.lang", "Deprecated").build())
+            .annotationsUpdate(list -> list.stream().limit(1).toList())
+            .build();
+
+    assertEquals(1, dto.getAnnotations().size());
   }
 }

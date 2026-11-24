@@ -28,20 +28,29 @@ import static org.javahelpers.simple.builders.core.util.TrackedValue.changedValu
 import static org.javahelpers.simple.builders.core.util.TrackedValue.initialValue;
 import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.model.annotation.AnnotationDto;
+import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
+import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.method.MethodParameterDtoBuilder;
+import org.javahelpers.codegen.model.type.GenericParameterDto;
+import org.javahelpers.codegen.model.type.GenericParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNameSet;
+import org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders;
 import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
 import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
 import org.javahelpers.simple.builders.core.util.TrackedValue;
@@ -139,6 +148,10 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
 
   /** Tracked value for <code>isStatic</code>: isStatic. */
   private TrackedValue<Boolean> isStatic = unsetValue();
+
+  private TrackedValue<List<MethodParameterDto>> parameters = unsetValue();
+  private TrackedValue<List<GenericParameterDto>> genericParameters = unsetValue();
+  private TrackedValue<List<AnnotationDto>> annotations = unsetValue();
 
   /**
    * Empty constructor of builder for {@code
@@ -1075,6 +1088,17 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
+   * Sets the value for <code>returnType</code> from a package and simple class name.
+   *
+   * @param packageName package of the type
+   * @param className simple name of the type
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder returnType(String packageName, String className) {
+    return returnType(new TypeName(packageName, className));
+  }
+
+  /**
    * Updates the current value of <code>returnType</code> in place by applying the given operator,
    * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
    * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
@@ -1362,6 +1386,458 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
+   * Adds a single element to <code>parameters</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setParameters(List)
+   * setParameters(List<MethodParameterDto> parameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.add2Parameters(MethodParameterDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param element the element to add
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder add2Parameters(MethodParameterDto element) {
+    List<MethodParameterDto> newCollection;
+    if (this.parameters.isSet()) {
+      newCollection = new ArrayList<>(this.parameters.value());
+    } else {
+      newCollection = new ArrayList<>();
+    }
+    newCollection.add(element);
+    this.parameters = changedValue(newCollection);
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>parameters</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setParameters(List)
+   * setParameters(List<MethodParameterDto> parameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.parameters(MethodParameterDtoBuilder.create().build(), MethodParameterDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param parameters parameters
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder parameters(MethodParameterDto... parameters) {
+    this.parameters = changedValue(List.of(parameters));
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>parameters</code> using a builder consumer that produces the value.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setParameters(List)
+   * setParameters(List<MethodParameterDto> parameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.parameters(t -> t.add(el -> el));
+   * }</pre>
+   *
+   * @param parametersBuilderConsumer consumer providing an instance of a builder for parameters
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder parameters(
+      Consumer<
+              ArrayListBuilderWithElementBuilders<
+                  MethodParameterDto, MethodParameterDtoElementBuilder>>
+          parametersBuilderConsumer) {
+    ArrayListBuilderWithElementBuilders<MethodParameterDto, MethodParameterDtoElementBuilder>
+        builder =
+            this.parameters.isSet()
+                ? new ArrayListBuilderWithElementBuilders<
+                    MethodParameterDto, MethodParameterDtoElementBuilder>(
+                    this.parameters.value(), MethodParameterDtoElementBuilder::new)
+                : new ArrayListBuilderWithElementBuilders<
+                    MethodParameterDto, MethodParameterDtoElementBuilder>(
+                    MethodParameterDtoElementBuilder::new);
+    parametersBuilderConsumer.accept(builder);
+    this.parameters = changedValue(builder.build());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>parameters</code> by invoking the provided supplier.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setParameters(List)
+   * setParameters(List<MethodParameterDto> parameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.parameters(() -> List.of(MethodParameterDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param parametersSupplier supplier for parameters
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder parameters(Supplier<List<MethodParameterDto>> parametersSupplier) {
+    this.parameters = changedValue(parametersSupplier.get());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>parameters</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setParameters(List)
+   * setParameters(List<MethodParameterDto> parameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.parameters(List.of(MethodParameterDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param parameters parameters
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder parameters(List<MethodParameterDto> parameters) {
+    this.parameters = changedValue(parameters);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>parameters</code> in place by applying the given operator.
+   * The value must have been set before (directly or via an existing instance). For changing
+   * multiple elements of a nested DTO, prefer the builder-consumer helper {@link
+   * #parameters(Consumer)}.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setParameters(List)
+   * setParameters(List<MethodParameterDto> parameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.parameters(List.of(MethodParameterDtoBuilder.create().build()))
+   *     .parametersUpdate(list -> list.stream().sorted().toList());
+   * }</pre>
+   *
+   * @param parametersUpdater operator applied to the current value; its result becomes the new
+   *     value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>parameters</code> has not been set yet
+   */
+  public BuilderMethodDtoBuilder parametersUpdate(
+      UnaryOperator<List<MethodParameterDto>> parametersUpdater) {
+    if (!this.parameters.isSet()) {
+      throw new IllegalStateException("Cannot update 'parameters' before it is set");
+    }
+    this.parameters = changedValue(parametersUpdater.apply(this.parameters.value()));
+    return this;
+  }
+
+  /**
+   * Adds a single element to <code>genericParameters</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setGenericParameters(List)
+   * setGenericParameters(List<GenericParameterDto> genericParameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.add2GenericParameters(GenericParameterDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param element the element to add
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder add2GenericParameters(GenericParameterDto element) {
+    List<GenericParameterDto> newCollection;
+    if (this.genericParameters.isSet()) {
+      newCollection = new ArrayList<>(this.genericParameters.value());
+    } else {
+      newCollection = new ArrayList<>();
+    }
+    newCollection.add(element);
+    this.genericParameters = changedValue(newCollection);
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>genericParameters</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setGenericParameters(List)
+   * setGenericParameters(List<GenericParameterDto> genericParameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.genericParameters(GenericParameterDtoBuilder.create().build(), GenericParameterDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param genericParameters genericParameters
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder genericParameters(GenericParameterDto... genericParameters) {
+    this.genericParameters = changedValue(List.of(genericParameters));
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>genericParameters</code> using a builder consumer that produces the
+   * value.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setGenericParameters(List)
+   * setGenericParameters(List<GenericParameterDto> genericParameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.genericParameters(t -> t.add(el -> el));
+   * }</pre>
+   *
+   * @param genericParametersBuilderConsumer consumer providing an instance of a builder for
+   *     genericParameters
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder genericParameters(
+      Consumer<
+              ArrayListBuilderWithElementBuilders<
+                  GenericParameterDto, GenericParameterDtoElementBuilder>>
+          genericParametersBuilderConsumer) {
+    ArrayListBuilderWithElementBuilders<GenericParameterDto, GenericParameterDtoElementBuilder>
+        builder =
+            this.genericParameters.isSet()
+                ? new ArrayListBuilderWithElementBuilders<
+                    GenericParameterDto, GenericParameterDtoElementBuilder>(
+                    this.genericParameters.value(), GenericParameterDtoElementBuilder::new)
+                : new ArrayListBuilderWithElementBuilders<
+                    GenericParameterDto, GenericParameterDtoElementBuilder>(
+                    GenericParameterDtoElementBuilder::new);
+    genericParametersBuilderConsumer.accept(builder);
+    this.genericParameters = changedValue(builder.build());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>genericParameters</code> by invoking the provided supplier.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setGenericParameters(List)
+   * setGenericParameters(List<GenericParameterDto> genericParameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.genericParameters(() -> List.of(GenericParameterDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param genericParametersSupplier supplier for genericParameters
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder genericParameters(
+      Supplier<List<GenericParameterDto>> genericParametersSupplier) {
+    this.genericParameters = changedValue(genericParametersSupplier.get());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>genericParameters</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setGenericParameters(List)
+   * setGenericParameters(List<GenericParameterDto> genericParameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.genericParameters(List.of(GenericParameterDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param genericParameters genericParameters
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder genericParameters(List<GenericParameterDto> genericParameters) {
+    this.genericParameters = changedValue(genericParameters);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>genericParameters</code> in place by applying the given
+   * operator. The value must have been set before (directly or via an existing instance). For
+   * changing multiple elements of a nested DTO, prefer the builder-consumer helper {@link
+   * #genericParameters(Consumer)}.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setGenericParameters(List)
+   * setGenericParameters(List<GenericParameterDto> genericParameters)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.genericParameters(List.of(GenericParameterDtoBuilder.create().build()))
+   *     .genericParametersUpdate(list -> list.stream().sorted().toList());
+   * }</pre>
+   *
+   * @param genericParametersUpdater operator applied to the current value; its result becomes the
+   *     new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>genericParameters</code> has not been set yet
+   */
+  public BuilderMethodDtoBuilder genericParametersUpdate(
+      UnaryOperator<List<GenericParameterDto>> genericParametersUpdater) {
+    if (!this.genericParameters.isSet()) {
+      throw new IllegalStateException("Cannot update 'genericParameters' before it is set");
+    }
+    this.genericParameters =
+        changedValue(genericParametersUpdater.apply(this.genericParameters.value()));
+    return this;
+  }
+
+  /**
+   * Adds a single element to <code>annotations</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.add2Annotations(AnnotationDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param element the element to add
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder add2Annotations(AnnotationDto element) {
+    List<AnnotationDto> newCollection;
+    if (this.annotations.isSet()) {
+      newCollection = new ArrayList<>(this.annotations.value());
+    } else {
+      newCollection = new ArrayList<>();
+    }
+    newCollection.add(element);
+    this.annotations = changedValue(newCollection);
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>annotations</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param annotations annotations
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder annotations(AnnotationDto... annotations) {
+    this.annotations = changedValue(List.of(annotations));
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>annotations</code> using a builder consumer that produces the value.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(t -> t.add(el -> el));
+   * }</pre>
+   *
+   * @param annotationsBuilderConsumer consumer providing an instance of a builder for annotations
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder annotations(
+      Consumer<ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>>
+          annotationsBuilderConsumer) {
+    ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder> builder =
+        this.annotations.isSet()
+            ? new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>(
+                this.annotations.value(), AnnotationDtoElementBuilder::new)
+            : new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>(
+                AnnotationDtoElementBuilder::new);
+    annotationsBuilderConsumer.accept(builder);
+    this.annotations = changedValue(builder.build());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>annotations</code> by invoking the provided supplier.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(() -> List.of(AnnotationDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param annotationsSupplier supplier for annotations
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder annotations(Supplier<List<AnnotationDto>> annotationsSupplier) {
+    this.annotations = changedValue(annotationsSupplier.get());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>annotations</code>.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(List.of(AnnotationDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param annotations annotations
+   * @return current instance of builder
+   */
+  public BuilderMethodDtoBuilder annotations(List<AnnotationDto> annotations) {
+    this.annotations = changedValue(annotations);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>annotations</code> in place by applying the given operator.
+   * The value must have been set before (directly or via an existing instance). For changing
+   * multiple elements of a nested DTO, prefer the builder-consumer helper {@link
+   * #annotations(Consumer)}.
+   *
+   * <p>Generated from setter {@link BuilderMethodDto#setAnnotations(List)
+   * setAnnotations(List<AnnotationDto> annotations)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.annotations(List.of(AnnotationDtoBuilder.create().build()))
+   *     .annotationsUpdate(list -> list.stream().sorted().toList());
+   * }</pre>
+   *
+   * @param annotationsUpdater operator applied to the current value; its result becomes the new
+   *     value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>annotations</code> has not been set yet
+   */
+  public BuilderMethodDtoBuilder annotationsUpdate(
+      UnaryOperator<List<AnnotationDto>> annotationsUpdater) {
+    if (!this.annotations.isSet()) {
+      throw new IllegalStateException("Cannot update 'annotations' before it is set");
+    }
+    this.annotations = changedValue(annotationsUpdater.apply(this.annotations.value()));
+    return this;
+  }
+
+  /**
    * Builds the configured DTO instance.
    *
    * <h4>Example:</h4>
@@ -1400,6 +1876,9 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
     this.sourceDescription.ifSet(result::setSourceDescription);
     this.sourceFieldName.ifSet(result::setSourceFieldName);
     this.isStatic.ifSet(result::setStatic);
+    this.parameters.ifSet(result::setParameters);
+    this.genericParameters.ifSet(result::setGenericParameters);
+    this.annotations.ifSet(result::setAnnotations);
     return result;
   }
 
@@ -1423,6 +1902,9 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
         .append("sourceDescription", this.sourceDescription)
         .append("sourceFieldName", this.sourceFieldName)
         .append("isStatic", this.isStatic)
+        .append("parameters", this.parameters)
+        .append("genericParameters", this.genericParameters)
+        .append("annotations", this.annotations)
         .toString();
   }
 
@@ -1463,4 +1945,25 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
       }
     }
   }
+
+  /**
+   * Element builder for {@link MethodParameterDto} collections that bridges the codegen builder to
+   * the core {@link IBuilderBase} contract used by the core collection helpers.
+   */
+  public static final class MethodParameterDtoElementBuilder extends MethodParameterDtoBuilder
+      implements IBuilderBase<MethodParameterDto> {}
+
+  /**
+   * Element builder for {@link GenericParameterDto} collections that bridges the codegen builder to
+   * the core {@link IBuilderBase} contract used by the core collection helpers.
+   */
+  public static final class GenericParameterDtoElementBuilder extends GenericParameterDtoBuilder
+      implements IBuilderBase<GenericParameterDto> {}
+
+  /**
+   * Element builder for {@link AnnotationDto} collections that bridges the codegen builder to the
+   * core {@link IBuilderBase} contract used by the core collection helpers.
+   */
+  public static final class AnnotationDtoElementBuilder extends AnnotationDtoBuilder
+      implements IBuilderBase<AnnotationDto> {}
 }

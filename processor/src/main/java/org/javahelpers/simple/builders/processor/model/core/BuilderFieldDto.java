@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.core.DeprecationInfoDto;
@@ -208,6 +209,18 @@ public class BuilderFieldDto implements BuilderFieldDtoBuilder.With {
    */
   public void addMethod(BuilderMethodDto methodDto) {
     this.fieldSetterMethodsList.add(methodDto);
+  }
+
+  /**
+   * Sets the methods of the field definition, replacing the current list.
+   *
+   * @param methods the methods to set
+   * @throws NullPointerException if methods is null
+   */
+  public void setMethods(List<BuilderMethodDto> methods) {
+    List<BuilderMethodDto> copy = new ArrayList<>(Objects.requireNonNull(methods));
+    this.fieldSetterMethodsList.clear();
+    this.fieldSetterMethodsList.addAll(copy);
   }
 
   /**

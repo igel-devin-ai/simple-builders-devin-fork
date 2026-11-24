@@ -52,6 +52,8 @@ import org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElement
 import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
 import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
 import org.javahelpers.simple.builders.core.util.TrackedValue;
+import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto;
+import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDtoBuilder;
 
 /**
  * Builder for {@code org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto}.
@@ -152,6 +154,8 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
 
   /** Tracked value for <code>setterName</code>: setterName. */
   private TrackedValue<String> setterName = unsetValue();
+
+  private TrackedValue<List<BuilderMethodDto>> methods = unsetValue();
 
   /**
    * Empty constructor of builder for {@code
@@ -778,6 +782,17 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    */
   public BuilderFieldDtoBuilder fieldType(Class<?> fieldType) {
     return fieldType(TypeName.of(fieldType));
+  }
+
+  /**
+   * Sets the value for <code>fieldType</code> from a package and simple class name.
+   *
+   * @param packageName package of the type
+   * @param className simple name of the type
+   * @return current instance of builder
+   */
+  public BuilderFieldDtoBuilder fieldType(String packageName, String className) {
+    return fieldType(new TypeName(packageName, className));
   }
 
   /**
@@ -1586,6 +1601,150 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
+   * Adds a single element to <code>methods</code>.
+   *
+   * <p>Generated from setter {@link BuilderFieldDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.add2Methods(BuilderMethodDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param element the element to add
+   * @return current instance of builder
+   */
+  public BuilderFieldDtoBuilder add2Methods(BuilderMethodDto element) {
+    List<BuilderMethodDto> newCollection;
+    if (this.methods.isSet()) {
+      newCollection = new ArrayList<>(this.methods.value());
+    } else {
+      newCollection = new ArrayList<>();
+    }
+    newCollection.add(element);
+    this.methods = changedValue(newCollection);
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>methods</code>.
+   *
+   * <p>Generated from setter {@link BuilderFieldDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(BuilderMethodDtoBuilder.create().build(), BuilderMethodDtoBuilder.create().build());
+   * }</pre>
+   *
+   * @param methods methods
+   * @return current instance of builder
+   */
+  public BuilderFieldDtoBuilder methods(BuilderMethodDto... methods) {
+    this.methods = changedValue(List.of(methods));
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>methods</code> using a builder consumer that produces the value.
+   *
+   * <p>Generated from setter {@link BuilderFieldDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(t -> t.add(el -> el));
+   * }</pre>
+   *
+   * @param methodsBuilderConsumer consumer providing an instance of a builder for methods
+   * @return current instance of builder
+   */
+  public BuilderFieldDtoBuilder methods(
+      Consumer<ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>>
+          methodsBuilderConsumer) {
+    ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder> builder =
+        this.methods.isSet()
+            ? new ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>(
+                this.methods.value(), BuilderMethodDtoBuilder::new)
+            : new ArrayListBuilderWithElementBuilders<BuilderMethodDto, BuilderMethodDtoBuilder>(
+                BuilderMethodDtoBuilder::new);
+    methodsBuilderConsumer.accept(builder);
+    this.methods = changedValue(builder.build());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>methods</code> by invoking the provided supplier.
+   *
+   * <p>Generated from setter {@link BuilderFieldDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(() -> List.of(BuilderMethodDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param methodsSupplier supplier for methods
+   * @return current instance of builder
+   */
+  public BuilderFieldDtoBuilder methods(Supplier<List<BuilderMethodDto>> methodsSupplier) {
+    this.methods = changedValue(methodsSupplier.get());
+    return this;
+  }
+
+  /**
+   * Sets the value for <code>methods</code>.
+   *
+   * <p>Generated from setter {@link BuilderFieldDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(List.of(BuilderMethodDtoBuilder.create().build()));
+   * }</pre>
+   *
+   * @param methods methods
+   * @return current instance of builder
+   */
+  public BuilderFieldDtoBuilder methods(List<BuilderMethodDto> methods) {
+    this.methods = changedValue(methods);
+    return this;
+  }
+
+  /**
+   * Updates the current value of <code>methods</code> in place by applying the given operator. The
+   * value must have been set before (directly or via an existing instance). For changing multiple
+   * elements of a nested DTO, prefer the builder-consumer helper {@link #methods(Consumer)}.
+   *
+   * <p>Generated from setter {@link BuilderFieldDto#setMethods(List)
+   * setMethods(List<BuilderMethodDto> methods)}
+   *
+   * <h4>Example:</h4>
+   *
+   * <pre>{@code
+   * builder.methods(List.of(BuilderMethodDtoBuilder.create().build()))
+   *     .methodsUpdate(list -> list.stream().sorted().toList());
+   * }</pre>
+   *
+   * @param methodsUpdater operator applied to the current value; its result becomes the new value
+   * @return current instance of builder
+   * @throws IllegalStateException if <code>methods</code> has not been set yet
+   */
+  public BuilderFieldDtoBuilder methodsUpdate(
+      UnaryOperator<List<BuilderMethodDto>> methodsUpdater) {
+    if (!this.methods.isSet()) {
+      throw new IllegalStateException("Cannot update 'methods' before it is set");
+    }
+    this.methods = changedValue(methodsUpdater.apply(this.methods.value()));
+    return this;
+  }
+
+  /**
    * Builds the configured DTO instance.
    *
    * <h4>Example:</h4>
@@ -1613,6 +1772,7 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
     this.originalJavaDocDescription.ifSet(result::setOriginalJavaDocDescription);
     this.parameterAnnotations.ifSet(result::setParameterAnnotations);
     this.setterName.ifSet(result::setSetterName);
+    this.methods.ifSet(result::setMethods);
     return result;
   }
 
@@ -1636,6 +1796,7 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
         .append("originalJavaDocDescription", this.originalJavaDocDescription)
         .append("parameterAnnotations", this.parameterAnnotations)
         .append("setterName", this.setterName)
+        .append("methods", this.methods)
         .toString();
   }
 

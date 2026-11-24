@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.codegen.enums.AccessModifier;
@@ -289,6 +290,20 @@ public class BuilderMethodDto implements BuilderMethodDtoBuilder.With {
   }
 
   /**
+   * Sets the parameters of method, replacing the current list.
+   *
+   * @param parameters the parameters to set
+   * @throws NullPointerException if parameters is null
+   */
+  public void setParameters(List<MethodParameterDto> parameters) {
+    Objects.requireNonNull(parameters);
+    if (parameters != this.parameters) {
+      this.parameters.clear();
+      this.parameters.addAll(parameters);
+    }
+  }
+
+  /**
    * Getting a list of parameters of method.
    *
    * @return List of parameters of type {@code
@@ -305,6 +320,20 @@ public class BuilderMethodDto implements BuilderMethodDtoBuilder.With {
    */
   public void addGenericParameter(GenericParameterDto genericParameter) {
     this.genericParameters.add(genericParameter);
+  }
+
+  /**
+   * Sets the generic type parameters of method, replacing the current list.
+   *
+   * @param genericParameters the generic type parameters to set
+   * @throws NullPointerException if genericParameters is null
+   */
+  public void setGenericParameters(List<GenericParameterDto> genericParameters) {
+    Objects.requireNonNull(genericParameters);
+    if (genericParameters != this.genericParameters) {
+      this.genericParameters.clear();
+      this.genericParameters.addAll(genericParameters);
+    }
   }
 
   /**
@@ -422,6 +451,20 @@ public class BuilderMethodDto implements BuilderMethodDtoBuilder.With {
    */
   public void addAnnotation(AnnotationDto annotation) {
     this.annotations.add(annotation);
+  }
+
+  /**
+   * Sets the annotations of method, replacing the current list.
+   *
+   * @param annotations the annotations to set
+   * @throws NullPointerException if annotations is null
+   */
+  public void setAnnotations(List<AnnotationDto> annotations) {
+    Objects.requireNonNull(annotations);
+    if (annotations != this.annotations) {
+      this.annotations.clear();
+      this.annotations.addAll(annotations);
+    }
   }
 
   /**
