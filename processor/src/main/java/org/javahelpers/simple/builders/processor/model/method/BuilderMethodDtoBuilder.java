@@ -24,18 +24,15 @@
 
 package org.javahelpers.simple.builders.processor.model.method;
 
-import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.changedValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.initialValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
-import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
-import org.javahelpers.codegen.builders.util.TrackedValue;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
@@ -45,6 +42,9 @@ import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNameSet;
+import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
+import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
+import org.javahelpers.simple.builders.core.util.TrackedValue;
 
 /**
  * Builder for {@code org.javahelpers.simple.builders.processor.model.method.BuilderMethodDto}.

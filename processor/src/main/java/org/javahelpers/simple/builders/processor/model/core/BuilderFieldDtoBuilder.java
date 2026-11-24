@@ -24,9 +24,9 @@
 
 package org.javahelpers.simple.builders.processor.model.core;
 
-import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.changedValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.initialValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,10 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.builders.ArrayListBuilderWithElementBuilders;
-import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
-import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
-import org.javahelpers.codegen.builders.util.TrackedValue;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.core.DeprecationInfoDto;
@@ -52,6 +48,10 @@ import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.codegen.model.type.TypeNameList;
 import org.javahelpers.codegen.model.type.TypeNameMap;
 import org.javahelpers.codegen.model.type.TypeNameSet;
+import org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders;
+import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
+import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
+import org.javahelpers.simple.builders.core.util.TrackedValue;
 
 /**
  * Builder for {@code org.javahelpers.simple.builders.processor.model.core.BuilderFieldDto}.
@@ -426,16 +426,19 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    * @return current instance of builder
    */
   public BuilderFieldDtoBuilder fieldGenerics(
-      Consumer<ArrayListBuilderWithElementBuilders<GenericParameterDto, GenericParameterDtoBuilder>>
+      Consumer<
+              ArrayListBuilderWithElementBuilders<
+                  GenericParameterDto, GenericParameterDtoElementBuilder>>
           fieldGenericsBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<GenericParameterDto, GenericParameterDtoBuilder> builder =
-        this.fieldGenerics.isSet()
-            ? new ArrayListBuilderWithElementBuilders<
-                GenericParameterDto, GenericParameterDtoBuilder>(
-                this.fieldGenerics.value(), GenericParameterDtoBuilder::create)
-            : new ArrayListBuilderWithElementBuilders<
-                GenericParameterDto, GenericParameterDtoBuilder>(
-                GenericParameterDtoBuilder::create);
+    ArrayListBuilderWithElementBuilders<GenericParameterDto, GenericParameterDtoElementBuilder>
+        builder =
+            this.fieldGenerics.isSet()
+                ? new ArrayListBuilderWithElementBuilders<
+                    GenericParameterDto, GenericParameterDtoElementBuilder>(
+                    this.fieldGenerics.value(), GenericParameterDtoElementBuilder::new)
+                : new ArrayListBuilderWithElementBuilders<
+                    GenericParameterDto, GenericParameterDtoElementBuilder>(
+                    GenericParameterDtoElementBuilder::new);
     fieldGenericsBuilderConsumer.accept(builder);
     this.fieldGenerics = changedValue(builder.build());
     return this;
@@ -1349,14 +1352,14 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    * @return current instance of builder
    */
   public BuilderFieldDtoBuilder parameterAnnotations(
-      Consumer<ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>>
+      Consumer<ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>>
           parameterAnnotationsBuilderConsumer) {
-    ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder> builder =
+    ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder> builder =
         this.parameterAnnotations.isSet()
-            ? new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>(
-                this.parameterAnnotations.value(), AnnotationDtoBuilder::create)
-            : new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoBuilder>(
-                AnnotationDtoBuilder::create);
+            ? new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>(
+                this.parameterAnnotations.value(), AnnotationDtoElementBuilder::new)
+            : new ArrayListBuilderWithElementBuilders<AnnotationDto, AnnotationDtoElementBuilder>(
+                AnnotationDtoElementBuilder::new);
     parameterAnnotationsBuilderConsumer.accept(builder);
     this.parameterAnnotations = changedValue(builder.build());
     return this;
@@ -1673,4 +1676,18 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
       }
     }
   }
+
+  /**
+   * Element builder for {@link GenericParameterDto} collections that bridges the codegen builder to
+   * the core {@link IBuilderBase} contract used by the core collection helpers.
+   */
+  public static final class GenericParameterDtoElementBuilder extends GenericParameterDtoBuilder
+      implements IBuilderBase<GenericParameterDto> {}
+
+  /**
+   * Element builder for {@link AnnotationDto} collections that bridges the codegen builder to the
+   * core {@link IBuilderBase} contract used by the core collection helpers.
+   */
+  public static final class AnnotationDtoElementBuilder extends AnnotationDtoBuilder
+      implements IBuilderBase<AnnotationDto> {}
 }

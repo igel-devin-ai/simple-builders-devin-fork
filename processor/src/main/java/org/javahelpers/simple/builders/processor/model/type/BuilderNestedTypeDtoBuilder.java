@@ -24,21 +24,21 @@
 
 package org.javahelpers.simple.builders.processor.model.type;
 
-import static org.javahelpers.codegen.builders.util.TrackedValue.changedValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.initialValue;
-import static org.javahelpers.codegen.builders.util.TrackedValue.unsetValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.changedValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.initialValue;
+import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
-import org.javahelpers.codegen.builders.util.BuilderToStringStyle;
-import org.javahelpers.codegen.builders.util.TrackedValue;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
+import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
+import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
+import org.javahelpers.simple.builders.core.util.TrackedValue;
 
 /**
  * Builder for {@code org.javahelpers.simple.builders.processor.model.type.BuilderNestedTypeDto}.
