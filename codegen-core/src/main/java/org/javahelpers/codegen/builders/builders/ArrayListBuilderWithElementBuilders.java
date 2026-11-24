@@ -48,14 +48,15 @@ import org.javahelpers.codegen.builders.interfaces.IBuilderBase;
  *     .build();
  * }</pre>
  *
+ * <p><b>Origin:</b> copied from {@code
+ * org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders} of
+ * simple-builders-core so that codegen-core does not depend on the builders runtime module. The DTO
+ * builders committed in this module must work without forcing a simple-builders-core dependency
+ * onto codegen users.
+ *
  * @param <T> the type of elements in the targeting list
  * @param <B> the type of builder used to create elements, must implement {@link IBuilderBase} and
  *     building objects of type T
- *     <p><b>Origin:</b> copied from {@code
- *     org.javahelpers.simple.builders.core.builders.ArrayListBuilderWithElementBuilders} of
- *     simple-builders-core so that codegen-core does not depend on the builders runtime module. The
- *     DTO builders committed in this module must work without forcing a simple-builders-core
- *     dependency onto codegen users.
  */
 public class ArrayListBuilderWithElementBuilders<T, B extends IBuilderBase<T>>
     extends ArrayListBuilder<T> {

@@ -31,12 +31,13 @@ import java.util.Map;
  * Generic Builder for Maps. Helperclass for being able to provide functional interfaces in
  * extending maps. Using HashMap inside.
  *
+ * <p><b>Origin:</b> copied from {@code
+ * org.javahelpers.simple.builders.core.builders.HashMapBuilder} of simple-builders-core so that
+ * codegen-core does not depend on the builders runtime module. The DTO builders committed in this
+ * module must work without forcing a simple-builders-core dependency onto codegen users.
+ *
  * @param <K> the type of keys in the targeting map
  * @param <V> the type of values in the targeting map
- *     <p><b>Origin:</b> copied from {@code
- *     org.javahelpers.simple.builders.core.builders.HashMapBuilder} of simple-builders-core so that
- *     codegen-core does not depend on the builders runtime module. The DTO builders committed in
- *     this module must work without forcing a simple-builders-core dependency onto codegen users.
  */
 public class HashMapBuilder<K, V> {
   private final Map<K, V> mMap = new HashMap<>();
