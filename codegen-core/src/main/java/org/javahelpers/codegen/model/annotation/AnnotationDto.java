@@ -28,7 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.javahelpers.codegen.model.type.TypeName;
+import org.javahelpers.codegen.model.type.*;
 
 /**
  * DTO representing an annotation to be generated in the output class. Contains the annotation type
@@ -60,6 +60,15 @@ public class AnnotationDto {
    * @param annotationType the type of the annotation
    */
   public void setAnnotationType(TypeName annotationType) {
+    if (annotationType instanceof TypeNameGeneric
+        || annotationType instanceof TypeNameArray
+        || annotationType instanceof TypeNameWildcard
+        || annotationType instanceof TypeNamePrimitive
+        || annotationType instanceof TypeNameVariable) {
+      throw new IllegalArgumentException(
+          "annotationType must be a plain class type; annotations can never be "
+              + annotationType.getClass().getSimpleName());
+    }
     this.annotationType = annotationType;
   }
 

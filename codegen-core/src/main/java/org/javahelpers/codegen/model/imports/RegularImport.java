@@ -42,6 +42,15 @@ public class RegularImport implements ImportStatement {
   private final TypeName type;
 
   /**
+   * Creates a regular import from a class.
+   *
+   * @param clazz the class to import
+   */
+  public RegularImport(Class<?> clazz) {
+    this(TypeName.of(clazz));
+  }
+
+  /**
    * Creates a regular import from a TypeName.
    *
    * @param type the type to import
