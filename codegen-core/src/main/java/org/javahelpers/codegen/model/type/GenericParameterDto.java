@@ -24,7 +24,6 @@
 
 package org.javahelpers.codegen.model.type;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -74,9 +73,11 @@ public class GenericParameterDto implements GenericParameterDtoBuilder.With {
    * @throws NullPointerException if upperBounds is null
    */
   public void setUpperBounds(List<TypeName> upperBounds) {
-    List<TypeName> copy = new ArrayList<>(Objects.requireNonNull(upperBounds));
-    this.upperBounds.clear();
-    this.upperBounds.addAll(copy);
+    Objects.requireNonNull(upperBounds);
+    if (upperBounds != this.upperBounds) {
+      this.upperBounds.clear();
+      this.upperBounds.addAll(upperBounds);
+    }
   }
 
   /**

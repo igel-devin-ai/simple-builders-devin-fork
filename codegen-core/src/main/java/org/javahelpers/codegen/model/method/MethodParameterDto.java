@@ -103,8 +103,10 @@ public class MethodParameterDto implements MethodParameterDtoBuilder.With {
    * @throws NullPointerException if annotations is null
    */
   public void setAnnotations(List<AnnotationDto> annotations) {
-    List<AnnotationDto> copy = new ArrayList<>(Objects.requireNonNull(annotations));
-    this.annotations.clear();
-    this.annotations.addAll(copy);
+    Objects.requireNonNull(annotations);
+    if (annotations != this.annotations) {
+      this.annotations.clear();
+      this.annotations.addAll(annotations);
+    }
   }
 }

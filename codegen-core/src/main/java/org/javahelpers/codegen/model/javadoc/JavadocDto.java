@@ -167,9 +167,11 @@ public class JavadocDto implements JavadocDtoBuilder.With {
    * @throws NullPointerException if tags is null
    */
   public void setTags(List<JavadocTagDto> tags) {
-    List<JavadocTagDto> copy = new ArrayList<>(Objects.requireNonNull(tags));
-    this.tags.clear();
-    this.tags.addAll(copy);
+    Objects.requireNonNull(tags);
+    if (tags != this.tags) {
+      this.tags.clear();
+      this.tags.addAll(tags);
+    }
   }
 
   /**

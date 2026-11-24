@@ -106,9 +106,11 @@ public class NestedTypeDto implements NestedTypeDtoBuilder.With {
    * @throws NullPointerException if methods is null
    */
   public void setMethods(List<MethodDto> methods) {
-    List<MethodDto> copy = new ArrayList<>(Objects.requireNonNull(methods));
-    this.methods.clear();
-    this.methods.addAll(copy);
+    Objects.requireNonNull(methods);
+    if (methods != this.methods) {
+      this.methods.clear();
+      this.methods.addAll(methods);
+    }
   }
 
   public JavadocDto getJavadoc() {
@@ -134,8 +136,10 @@ public class NestedTypeDto implements NestedTypeDtoBuilder.With {
    * @throws NullPointerException if annotations is null
    */
   public void setAnnotations(List<AnnotationDto> annotations) {
-    List<AnnotationDto> copy = new ArrayList<>(Objects.requireNonNull(annotations));
-    this.annotations.clear();
-    this.annotations.addAll(copy);
+    Objects.requireNonNull(annotations);
+    if (annotations != this.annotations) {
+      this.annotations.clear();
+      this.annotations.addAll(annotations);
+    }
   }
 }

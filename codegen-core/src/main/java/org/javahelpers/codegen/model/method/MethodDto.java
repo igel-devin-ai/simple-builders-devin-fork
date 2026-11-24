@@ -184,9 +184,11 @@ public class MethodDto implements MethodDtoBuilder.With {
    * @throws NullPointerException if parameters is null
    */
   public void setParameters(List<MethodParameterDto> parameters) {
-    List<MethodParameterDto> copy = new ArrayList<>(Objects.requireNonNull(parameters));
-    this.parameters.clear();
-    this.parameters.addAll(copy);
+    Objects.requireNonNull(parameters);
+    if (parameters != this.parameters) {
+      this.parameters.clear();
+      this.parameters.addAll(parameters);
+    }
   }
 
   /**
@@ -215,9 +217,11 @@ public class MethodDto implements MethodDtoBuilder.With {
    * @throws NullPointerException if genericParameters is null
    */
   public void setGenericParameters(List<GenericParameterDto> genericParameters) {
-    List<GenericParameterDto> copy = new ArrayList<>(Objects.requireNonNull(genericParameters));
-    this.genericParameters.clear();
-    this.genericParameters.addAll(copy);
+    Objects.requireNonNull(genericParameters);
+    if (genericParameters != this.genericParameters) {
+      this.genericParameters.clear();
+      this.genericParameters.addAll(genericParameters);
+    }
   }
 
   /**
@@ -344,9 +348,11 @@ public class MethodDto implements MethodDtoBuilder.With {
    * @throws NullPointerException if annotations is null
    */
   public void setAnnotations(List<AnnotationDto> annotations) {
-    List<AnnotationDto> copy = new ArrayList<>(Objects.requireNonNull(annotations));
-    this.annotations.clear();
-    this.annotations.addAll(copy);
+    Objects.requireNonNull(annotations);
+    if (annotations != this.annotations) {
+      this.annotations.clear();
+      this.annotations.addAll(annotations);
+    }
   }
 
   /**

@@ -173,9 +173,11 @@ public class ClassFieldDto implements ClassFieldDtoBuilder.With {
    * @throws NullPointerException if fieldTypeImports is null
    */
   public void setFieldTypeImports(Set<ImportStatement> fieldTypeImports) {
-    Set<ImportStatement> copy = new LinkedHashSet<>(Objects.requireNonNull(fieldTypeImports));
-    this.fieldTypeImports.clear();
-    this.fieldTypeImports.addAll(copy);
+    Objects.requireNonNull(fieldTypeImports);
+    if (fieldTypeImports != this.fieldTypeImports) {
+      this.fieldTypeImports.clear();
+      this.fieldTypeImports.addAll(fieldTypeImports);
+    }
   }
 
   /**

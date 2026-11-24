@@ -24,7 +24,6 @@
 
 package org.javahelpers.codegen.model.core;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -141,9 +140,11 @@ public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder
    * @throws NullPointerException if classFields is null
    */
   public void setClassFields(List<ClassFieldDto> classFields) {
-    List<ClassFieldDto> copy = new ArrayList<>(Objects.requireNonNull(classFields));
-    this.classFields.clear();
-    this.classFields.addAll(copy);
+    Objects.requireNonNull(classFields);
+    if (classFields != this.classFields) {
+      this.classFields.clear();
+      this.classFields.addAll(classFields);
+    }
   }
 
   public List<ConstructorDto> getConstructors() {
@@ -161,9 +162,11 @@ public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder
    * @throws NullPointerException if constructors is null
    */
   public void setConstructors(List<ConstructorDto> constructors) {
-    List<ConstructorDto> copy = new ArrayList<>(Objects.requireNonNull(constructors));
-    this.constructors.clear();
-    this.constructors.addAll(copy);
+    Objects.requireNonNull(constructors);
+    if (constructors != this.constructors) {
+      this.constructors.clear();
+      this.constructors.addAll(constructors);
+    }
   }
 
   public List<MethodDto> getMethods() {
@@ -181,9 +184,11 @@ public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder
    * @throws NullPointerException if methods is null
    */
   public void setMethods(List<MethodDto> methods) {
-    List<MethodDto> copy = new ArrayList<>(Objects.requireNonNull(methods));
-    this.methods.clear();
-    this.methods.addAll(copy);
+    Objects.requireNonNull(methods);
+    if (methods != this.methods) {
+      this.methods.clear();
+      this.methods.addAll(methods);
+    }
   }
 
   public Set<ImportStatement> getImports() {
@@ -251,9 +256,11 @@ public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder
    * @throws NullPointerException if imports is null
    */
   public void setImports(Set<ImportStatement> imports) {
-    Set<ImportStatement> copy = new LinkedHashSet<>(Objects.requireNonNull(imports));
-    this.imports.clear();
-    this.imports.addAll(copy);
+    Objects.requireNonNull(imports);
+    if (imports != this.imports) {
+      this.imports.clear();
+      this.imports.addAll(imports);
+    }
   }
 
   /**
@@ -272,9 +279,11 @@ public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder
    * @throws NullPointerException if generics is null
    */
   public void setGenerics(List<GenericParameterDto> generics) {
-    List<GenericParameterDto> copy = new ArrayList<>(Objects.requireNonNull(generics));
-    this.generics.clear();
-    this.generics.addAll(copy);
+    Objects.requireNonNull(generics);
+    if (generics != this.generics) {
+      this.generics.clear();
+      this.generics.addAll(generics);
+    }
   }
 
   /**
@@ -312,9 +321,11 @@ public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder
    * @throws NullPointerException if nestedTypes is null
    */
   public void setNestedTypes(List<NestedTypeDto> nestedTypes) {
-    List<NestedTypeDto> copy = new ArrayList<>(Objects.requireNonNull(nestedTypes));
-    this.nestedTypes.clear();
-    this.nestedTypes.addAll(copy);
+    Objects.requireNonNull(nestedTypes);
+    if (nestedTypes != this.nestedTypes) {
+      this.nestedTypes.clear();
+      this.nestedTypes.addAll(nestedTypes);
+    }
   }
 
   /**
@@ -343,9 +354,11 @@ public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder
    * @throws NullPointerException if classAnnotations is null
    */
   public void setClassAnnotations(Set<AnnotationDto> classAnnotations) {
-    Set<AnnotationDto> copy = new LinkedHashSet<>(Objects.requireNonNull(classAnnotations));
-    this.classAnnotations.clear();
-    this.classAnnotations.addAll(copy);
+    Objects.requireNonNull(classAnnotations);
+    if (classAnnotations != this.classAnnotations) {
+      this.classAnnotations.clear();
+      this.classAnnotations.addAll(classAnnotations);
+    }
   }
 
   /**
@@ -373,9 +386,11 @@ public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder
    * @throws NullPointerException if interfaces is null
    */
   public void setInterfaces(Set<InterfaceName> interfaces) {
-    Set<InterfaceName> copy = new LinkedHashSet<>(Objects.requireNonNull(interfaces));
-    this.interfaces.clear();
-    this.interfaces.addAll(copy);
+    Objects.requireNonNull(interfaces);
+    if (interfaces != this.interfaces) {
+      this.interfaces.clear();
+      this.interfaces.addAll(interfaces);
+    }
   }
 
   /**

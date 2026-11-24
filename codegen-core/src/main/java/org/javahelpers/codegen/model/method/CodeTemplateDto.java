@@ -185,9 +185,11 @@ public class CodeTemplateDto {
    * @throws NullPointerException if codeBlockImports is null
    */
   public void setCodeBlockImports(Set<ImportStatement> codeBlockImports) {
-    Set<ImportStatement> copy = new LinkedHashSet<>(Objects.requireNonNull(codeBlockImports));
-    this.codeBlockImports.clear();
-    this.codeBlockImports.addAll(copy);
+    Objects.requireNonNull(codeBlockImports);
+    if (codeBlockImports != this.codeBlockImports) {
+      this.codeBlockImports.clear();
+      this.codeBlockImports.addAll(codeBlockImports);
+    }
   }
 
   /**
