@@ -33,8 +33,10 @@ import static org.javahelpers.simple.builders.processor.generators.util.MethodGe
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
-import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
+import org.javahelpers.codegen.model.javadoc.JavadocTagDto;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.method.MethodParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
 import org.javahelpers.simple.builders.processor.generators.MethodGenerator;
@@ -131,9 +133,11 @@ public class SupplierMethodGenerator implements MethodGenerator {
     TypeNameGeneric supplierType = new TypeNameGeneric(map2TypeName(Supplier.class), fieldType);
     String parameterName = fieldName + SUFFIX_SUPPLIER;
 
-    MethodParameterDto parameter = new MethodParameterDto();
-    parameter.setParameterName(parameterName);
-    parameter.setParameterTypeName(supplierType);
+    MethodParameterDto parameter =
+        MethodParameterDtoBuilder.create()
+            .parameterName(parameterName)
+            .parameterTypeName(supplierType)
+            .build();
 
     BuilderMethodDto methodDto = createBuilderMethod(fieldName, builderType, context);
     methodDto.addParameter(parameter);
@@ -149,10 +153,14 @@ public class SupplierMethodGenerator implements MethodGenerator {
     methodDto.setPriority(BuilderMethodDto.PRIORITY_HIGH);
 
     methodDto.setJavadoc(
-        new JavadocDto(
+        JavadocDtoBuilder.create()
+            .format(
                 "Sets the value for <code>%s</code> by invoking the provided supplier.", fieldName)
-            .addParam(parameterName, "supplier for %s", fieldJavaDoc)
-            .addReturn(JavadocConstants.RETURN_BUILDER_INSTANCE));
+            .add2Tags(
+                new JavadocTagDto(
+                    "param", parameterName + " " + "supplier for %s".formatted(fieldJavaDoc)))
+            .add2Tags(new JavadocTagDto("return", JavadocConstants.RETURN_BUILDER_INSTANCE))
+            .build());
 
     addExampleChainFragmentWithSupplier(
         methodDto, fieldType, fieldName, context::resolveBuilderType);

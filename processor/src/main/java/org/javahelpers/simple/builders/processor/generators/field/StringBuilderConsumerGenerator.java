@@ -30,8 +30,10 @@ import static org.javahelpers.simple.builders.processor.generators.util.MethodGe
 
 import java.util.List;
 import java.util.Optional;
-import org.javahelpers.codegen.model.javadoc.JavadocDto;
+import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
+import org.javahelpers.codegen.model.javadoc.JavadocTagDto;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
+import org.javahelpers.codegen.model.method.MethodParameterDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
@@ -138,9 +140,11 @@ public class StringBuilderConsumerGenerator implements MethodGenerator {
       BuilderProcessingContext context) {
     TypeName stringBuilderType = map2TypeName(StringBuilder.class);
     TypeNameGeneric consumerType = createConsumerType(stringBuilderType);
-    MethodParameterDto parameter = new MethodParameterDto();
-    parameter.setParameterName(fieldName + "StringBuilderConsumer");
-    parameter.setParameterTypeName(consumerType);
+    MethodParameterDto parameter =
+        MethodParameterDtoBuilder.create()
+            .parameterName(fieldName + "StringBuilderConsumer")
+            .parameterTypeName(consumerType)
+            .build();
     BuilderMethodDto methodDto = createBuilderMethod(fieldName, builderType, context);
     methodDto.addParameter(parameter);
     methodDto.setCode(
@@ -157,11 +161,17 @@ public class StringBuilderConsumerGenerator implements MethodGenerator {
     methodDto.setReturnType(builderType);
     methodDto.setPriority(BuilderMethodDto.PRIORITY_LOW);
     methodDto.setJavadoc(
-        new JavadocDto(
+        JavadocDtoBuilder.create()
+            .format(
                 "Sets the value for <code>%s</code> by executing the provided consumer.", fieldName)
-            .addParam(
-                parameter.getParameterName(), "consumer providing an instance of %s", fieldJavadoc)
-            .addReturn(JavadocConstants.RETURN_BUILDER_INSTANCE));
+            .add2Tags(
+                new JavadocTagDto(
+                    "param",
+                    parameter.getParameterName()
+                        + " "
+                        + "consumer providing an instance of %s".formatted(fieldJavadoc)))
+            .add2Tags(new JavadocTagDto("return", JavadocConstants.RETURN_BUILDER_INSTANCE))
+            .build());
 
     // Add example fragment for StringBuilder consumer method
     addExampleChainFragmentTemplate(methodDto, "#{methodName}(sb -> sb.append(\"text\"))");
