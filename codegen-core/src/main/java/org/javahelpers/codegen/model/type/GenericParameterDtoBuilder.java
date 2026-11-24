@@ -231,6 +231,16 @@ public class GenericParameterDtoBuilder implements IBuilderBase<GenericParameter
   }
 
   /**
+   * Sets <code>add2UpperBounds</code> by class.
+   *
+   * @param element the class to set as <code>add2UpperBounds</code>
+   * @return fluent {@code builder} instance
+   */
+  public GenericParameterDtoBuilder add2UpperBounds(Class<?> element) {
+    return add2UpperBounds(TypeName.of(element));
+  }
+
+  /**
    * Sets the value for <code>upperBounds</code>.
    *
    * <p>Generated from setter {@link GenericParameterDto#setUpperBounds(List)

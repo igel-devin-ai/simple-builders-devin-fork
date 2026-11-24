@@ -27,7 +27,7 @@ class ProcessorDtoBuildersTest {
             .originalFieldName("persons")
             .fieldNameInBuilder("persons")
             .setterName("setPersons")
-            .fieldType(TypeName.of(String.class))
+            .fieldType(String.class)
             .nonNullable(true)
             .fieldGenerics(generics -> generics.add(g -> g.name("T")))
             .parameterAnnotations(
@@ -69,7 +69,7 @@ class ProcessorDtoBuildersTest {
     BuilderMethodDto dto =
         BuilderMethodDtoBuilder.create()
             .methodName("persons")
-            .returnType(TypeName.of(String.class))
+            .returnType(String.class)
             .code("return $builder:N.$fieldName:N;")
             .priority(42)
             .ordering(7)

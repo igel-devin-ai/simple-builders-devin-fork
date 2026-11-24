@@ -655,6 +655,16 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
+   * Sets <code>fieldType</code> by class.
+   *
+   * @param fieldType the class to set as <code>fieldType</code>
+   * @return fluent {@code builder} instance
+   */
+  public BuilderFieldDtoBuilder fieldType(Class<?> fieldType) {
+    return fieldType(TypeName.of(fieldType));
+  }
+
+  /**
    * Updates the current value of <code>fieldType</code> in place by applying the given operator,
    * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
    * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination

@@ -129,6 +129,16 @@ public class AnnotationDtoBuilder implements IBuilderBase<AnnotationDto> {
   }
 
   /**
+   * Sets <code>annotationType</code> by class.
+   *
+   * @param annotationType the class to set as <code>annotationType</code>
+   * @return fluent {@code builder} instance
+   */
+  public AnnotationDtoBuilder annotationType(Class<?> annotationType) {
+    return annotationType(TypeName.of(annotationType));
+  }
+
+  /**
    * Sets the value for <code>annotationType</code> from package and class name.
    *
    * @param packageName the package of the type

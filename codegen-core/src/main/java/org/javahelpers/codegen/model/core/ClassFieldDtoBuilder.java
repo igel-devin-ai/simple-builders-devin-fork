@@ -268,6 +268,16 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
   }
 
   /**
+   * Sets <code>fieldType</code> by class.
+   *
+   * @param fieldType the class to set as <code>fieldType</code>
+   * @return fluent {@code builder} instance
+   */
+  public ClassFieldDtoBuilder fieldType(Class<?> fieldType) {
+    return fieldType(TypeName.of(fieldType));
+  }
+
+  /**
    * Sets the value for <code>fieldType</code> from package and class name.
    *
    * @param packageName the package of the type

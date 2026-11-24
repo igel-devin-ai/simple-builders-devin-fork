@@ -1560,6 +1560,16 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
+   * Sets <code>superType</code> by class.
+   *
+   * @param superType the class to set as <code>superType</code>
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder superType(Class<?> superType) {
+    return superType(TypeName.of(superType));
+  }
+
+  /**
    * Sets the value for <code>superType</code> from package and class name.
    *
    * @param packageName the package of the type
@@ -1618,6 +1628,16 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   public GenerationTargetClassDtoBuilder typeName(TypeName typeName) {
     this.typeName = changedValue(typeName);
     return this;
+  }
+
+  /**
+   * Sets <code>typeName</code> by class.
+   *
+   * @param typeName the class to set as <code>typeName</code>
+   * @return fluent {@code builder} instance
+   */
+  public GenerationTargetClassDtoBuilder typeName(Class<?> typeName) {
+    return typeName(TypeName.of(typeName));
   }
 
   /**

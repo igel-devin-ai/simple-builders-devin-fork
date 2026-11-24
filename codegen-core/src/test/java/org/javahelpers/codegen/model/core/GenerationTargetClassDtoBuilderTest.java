@@ -112,9 +112,9 @@ class GenerationTargetClassDtoBuilderTest {
     GenerationTargetClassDto dto =
         GenerationTargetClassDtoBuilder.create()
             .typeName("example", "Target")
+            .superType(Number.class)
             .classFields(
-                fields ->
-                    fields.add(field -> field.fieldName("value").fieldType("java.lang", "String")))
+                fields -> fields.add(field -> field.fieldName("value").fieldType(String.class)))
             .constructors(
                 constructors ->
                     constructors.add(
@@ -132,27 +132,24 @@ class GenerationTargetClassDtoBuilderTest {
                         method ->
                             method
                                 .methodName("apply")
-                                .returnType("java.lang", "String")
+                                .returnType(String.class)
                                 .parameters(
                                     parameters ->
                                         parameters.add(
                                             parameter ->
                                                 parameter
                                                     .parameterName("v")
-                                                    .parameterTypeName("java.lang", "Integer")))
+                                                    .parameterTypeName(Integer.class)))
                                 .genericParameters(
                                     generics ->
                                         generics.add(
                                             generic ->
-                                                generic
-                                                    .name("T")
-                                                    .upperBounds(TypeName.of(Number.class))))
+                                                generic.name("T").add2UpperBounds(Number.class)))
                                 .annotations(
                                     annotations ->
                                         annotations.add(
                                             annotation ->
-                                                annotation.annotationType(
-                                                    "java.lang", "Deprecated")))))
+                                                annotation.annotationType(Deprecated.class)))))
             .generics(generics -> generics.add(generic -> generic.name("E")))
             .interfaces(interfaces -> interfaces.add(new InterfaceName("java.lang", "Runnable")))
             .nestedTypes(
@@ -174,6 +171,7 @@ class GenerationTargetClassDtoBuilderTest {
             .build();
 
     assertEquals(new TypeName("example", "Target"), dto.getTypeName());
+    assertEquals(TypeName.of(Number.class), dto.getSuperType());
     assertEquals("value", dto.getClassFields().get(0).getFieldName());
     assertEquals(TypeName.of(String.class), dto.getClassFields().get(0).getFieldType());
     assertEquals("arg", dto.getConstructors().get(0).getParameters().get(0).getParameterName());
@@ -193,9 +191,10 @@ class GenerationTargetClassDtoBuilderTest {
     assertEquals(Set.of(new RegularImport(TypeName.of(List.class))), dto.getImports());
 
     // The DTO implements its builder's With interface: copy-and-modify in one call.
-    GenerationTargetClassDto renamed = dto.with(b -> b.typeName("example", "Renamed"));
-    assertEquals(new TypeName("example", "Renamed"), renamed.getTypeName());
+    GenerationTargetClassDto renamed = dto.with(b -> b.typeName(Integer.class));
+    assertEquals(TypeName.of(Integer.class), renamed.getTypeName());
     assertEquals(new TypeName("example", "Target"), dto.getTypeName());
+    assertEquals(TypeName.of(Number.class), dto.getSuperType());
     assertEquals(dto.getClassFields(), renamed.getClassFields());
   }
 

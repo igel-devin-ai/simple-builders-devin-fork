@@ -404,6 +404,16 @@ public class MethodParameterDtoBuilder implements IBuilderBase<MethodParameterDt
   }
 
   /**
+   * Sets <code>parameterTypeName</code> by class.
+   *
+   * @param parameterTypeName the class to set as <code>parameterTypeName</code>
+   * @return fluent {@code builder} instance
+   */
+  public MethodParameterDtoBuilder parameterTypeName(Class<?> parameterTypeName) {
+    return parameterTypeName(TypeName.of(parameterTypeName));
+  }
+
+  /**
    * Sets the value for <code>parameterTypeName</code> from package and class name.
    *
    * @param packageName the package of the type

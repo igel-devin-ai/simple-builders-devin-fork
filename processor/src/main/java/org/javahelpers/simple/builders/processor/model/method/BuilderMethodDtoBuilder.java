@@ -952,6 +952,16 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
+   * Sets <code>returnType</code> by class.
+   *
+   * @param returnType the class to set as <code>returnType</code>
+   * @return fluent {@code builder} instance
+   */
+  public BuilderMethodDtoBuilder returnType(Class<?> returnType) {
+    return returnType(TypeName.of(returnType));
+  }
+
+  /**
    * Updates the current value of <code>returnType</code> in place by applying the given operator,
    * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
    * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination

@@ -1165,6 +1165,16 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
   }
 
   /**
+   * Sets <code>returnType</code> by class.
+   *
+   * @param returnType the class to set as <code>returnType</code>
+   * @return fluent {@code builder} instance
+   */
+  public MethodDtoBuilder returnType(Class<?> returnType) {
+    return returnType(TypeName.of(returnType));
+  }
+
+  /**
    * Sets the value for <code>returnType</code> from package and class name.
    *
    * @param packageName the package of the type
