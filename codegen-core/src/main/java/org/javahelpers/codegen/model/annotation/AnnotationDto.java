@@ -35,7 +35,7 @@ import org.javahelpers.codegen.model.type.TypeName;
  * DTO representing an annotation to be generated in the output class. Contains the annotation type
  * and its members in a plain format suitable for code generation.
  */
-public class AnnotationDto {
+public class AnnotationDto implements AnnotationDtoBuilder.With {
 
   /** The annotation type (fully qualified name). */
   private TypeName annotationType;

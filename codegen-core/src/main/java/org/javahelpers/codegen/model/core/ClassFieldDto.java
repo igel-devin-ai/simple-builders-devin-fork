@@ -46,7 +46,7 @@ import org.javahelpers.codegen.model.type.TypeNameWildcard;
  *
  * <p>This DTO contains only rendering information for a field, consumed by the code generator.
  */
-public class ClassFieldDto {
+public class ClassFieldDto implements ClassFieldDtoBuilder.With {
 
   /** Field name in generated class. */
   private String fieldName;

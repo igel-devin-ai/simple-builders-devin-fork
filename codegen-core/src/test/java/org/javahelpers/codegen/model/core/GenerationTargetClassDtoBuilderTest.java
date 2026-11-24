@@ -191,6 +191,12 @@ class GenerationTargetClassDtoBuilderTest {
     assertEquals(
         Map.of("since", "\"1\""), dto.getClassAnnotations().iterator().next().getMembers());
     assertEquals(Set.of(new RegularImport(TypeName.of(List.class))), dto.getImports());
+
+    // The DTO implements its builder's With interface: copy-and-modify in one call.
+    GenerationTargetClassDto renamed = dto.with(b -> b.typeName("example", "Renamed"));
+    assertEquals(new TypeName("example", "Renamed"), renamed.getTypeName());
+    assertEquals(new TypeName("example", "Target"), dto.getTypeName());
+    assertEquals(dto.getClassFields(), renamed.getClassFields());
   }
 
   @Test

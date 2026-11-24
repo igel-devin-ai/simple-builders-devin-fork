@@ -53,7 +53,7 @@ import org.javahelpers.codegen.model.type.TypeNameWildcard;
  * <p>This base class contains all information needed by the code generator to render a class,
  * independent of whether it's a builder, Jackson module, or other generated class type.
  */
-public class GenerationTargetClassDto {
+public class GenerationTargetClassDto implements GenerationTargetClassDtoBuilder.With {
 
   /** Generated class FQN. */
   private TypeName typeName;

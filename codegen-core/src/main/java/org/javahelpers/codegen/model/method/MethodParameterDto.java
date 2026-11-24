@@ -31,7 +31,7 @@ import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.type.TypeName;
 
 /** MethodParameterDto contains all information for generating parameters in method headers. */
-public class MethodParameterDto {
+public class MethodParameterDto implements MethodParameterDtoBuilder.With {
 
   /** Name of parameter. */
   private String parameterName;

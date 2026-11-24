@@ -45,7 +45,7 @@ import org.apache.commons.lang3.StringUtils;
  *     .addReturn("a new PersonDto instance");
  * }</pre>
  */
-public class JavadocDto {
+public class JavadocDto implements JavadocDtoBuilder.With {
 
   /** The main description text (everything before the first tag). */
   private String description;

@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 /** Represents a generic type parameter (e.g., {@code T extends Number & Comparable<T>}). */
-public class GenericParameterDto {
+public class GenericParameterDto implements GenericParameterDtoBuilder.With {
 
   /** The name of the generic parameter (e.g., "T"). */
   private String name;

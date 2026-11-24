@@ -44,7 +44,7 @@ import org.javahelpers.codegen.model.type.TypeName;
  * holds only rendering-relevant data — no field-origin metadata or other generation-phase-only
  * information.
  */
-public class MethodDto {
+public class MethodDto implements MethodDtoBuilder.With {
 
   /** Access modifier for method. */
   private Optional<AccessModifier> modifier = Optional.empty();

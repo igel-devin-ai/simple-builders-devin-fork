@@ -39,7 +39,7 @@ import org.javahelpers.codegen.model.javadoc.JavadocDto;
  *
  * <p>This DTO contains all information needed to render a constructor in the generated class.
  */
-public class ConstructorDto {
+public class ConstructorDto implements ConstructorDtoBuilder.With {
 
   /** Constructor parameters. */
   private final LinkedList<MethodParameterDto> parameters = new LinkedList<>();
