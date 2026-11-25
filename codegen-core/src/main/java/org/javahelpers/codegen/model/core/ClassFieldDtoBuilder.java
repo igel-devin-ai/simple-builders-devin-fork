@@ -28,7 +28,9 @@ import static org.javahelpers.codegen.builders.TrackedValue.changedValue;
 import static org.javahelpers.codegen.builders.TrackedValue.initialValue;
 import static org.javahelpers.codegen.builders.TrackedValue.unsetValue;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -473,7 +475,7 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
    * @return current instance of builder
    */
   public ClassFieldDtoBuilder fieldTypeImports(ImportStatement... fieldTypeImports) {
-    this.fieldTypeImports = changedValue(Set.of(fieldTypeImports));
+    this.fieldTypeImports = changedValue(new LinkedHashSet<>(Arrays.asList(fieldTypeImports)));
     return this;
   }
 

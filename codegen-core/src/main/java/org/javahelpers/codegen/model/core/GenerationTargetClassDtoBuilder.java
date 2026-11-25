@@ -29,7 +29,9 @@ import static org.javahelpers.codegen.builders.TrackedValue.initialValue;
 import static org.javahelpers.codegen.builders.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -994,7 +996,7 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    * @return current instance of builder
    */
   public GenerationTargetClassDtoBuilder imports(ImportStatement... imports) {
-    this.imports = changedValue(Set.of(imports));
+    this.imports = changedValue(new LinkedHashSet<>(Arrays.asList(imports)));
     return this;
   }
 
@@ -1107,7 +1109,7 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    * @return current instance of builder
    */
   public GenerationTargetClassDtoBuilder interfaces(InterfaceName... interfaces) {
-    this.interfaces = changedValue(Set.of(interfaces));
+    this.interfaces = changedValue(new LinkedHashSet<>(Arrays.asList(interfaces)));
     return this;
   }
 

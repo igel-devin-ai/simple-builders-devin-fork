@@ -29,7 +29,9 @@ import static org.javahelpers.codegen.builders.TrackedValue.initialValue;
 import static org.javahelpers.codegen.builders.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -279,7 +281,7 @@ public class JavadocCodeBlockDtoBuilder implements IBuilderBase<JavadocCodeBlock
    * @return current instance of builder
    */
   public JavadocCodeBlockDtoBuilder codeBlockImports(ImportStatement... codeBlockImports) {
-    this.codeBlockImports = changedValue(Set.of(codeBlockImports));
+    this.codeBlockImports = changedValue(new LinkedHashSet<>(Arrays.asList(codeBlockImports)));
     return this;
   }
 
