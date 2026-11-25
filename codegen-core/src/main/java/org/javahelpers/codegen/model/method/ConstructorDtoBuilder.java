@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
 import org.javahelpers.codegen.builders.IBuilderBase;
@@ -60,7 +59,6 @@ import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
  *     .annotations(() -> List.of(AnnotationDtoBuilder.create().build()))
  *     .annotations(annotationDtoBuilder -> annotationDtoBuilder)
  *     .annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
- *     .annotationsUpdate(list -> list.stream().sorted().toList())
  *     .add2Annotations(AnnotationDtoBuilder.create().build())
  *     .javadoc(new JavadocDto())
  *     .javadoc(JavadocDto::new)
@@ -72,7 +70,6 @@ import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
  *     .parameters(() -> List.of(MethodParameterDtoBuilder.create().build()))
  *     .parameters(methodParameterDtoBuilder -> methodParameterDtoBuilder)
  *     .parameters(MethodParameterDtoBuilder.create().build(), MethodParameterDtoBuilder.create().build())
- *     .parametersUpdate(list -> list.stream().sorted().toList())
  *     .add2Parameters(MethodParameterDtoBuilder.create().build())
  *     .build();
  * }</pre>
@@ -246,38 +243,6 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
   }
 
   /**
-   * Updates the current value of <code>annotations</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple elements of a nested DTO, prefer the
-   * builder-consumer helper {@link #annotations(Consumer)}.
-   *
-   * <p>Generated from setter {@link ConstructorDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(List.of(AnnotationDtoBuilder.create().build()))
-   *     .annotationsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param annotationsUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>annotations</code> has not been set yet
-   */
-  public ConstructorDtoBuilder annotationsUpdate(
-      UnaryOperator<List<AnnotationDto>> annotationsUpdater) {
-    if (!this.annotations.isSet()) {
-      throw new IllegalStateException("Cannot update 'annotations' before it is set");
-    }
-    this.annotations = changedValue(annotationsUpdater.apply(this.annotations.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>javadoc</code> using a builder consumer that produces the value.
    *
    * <p>Generated from setter {@link ConstructorDto#setJavadoc(JavadocDto) setJavadoc(JavadocDto
@@ -339,29 +304,6 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
    */
   public ConstructorDtoBuilder javadoc(JavadocDto javadoc) {
     this.javadoc = changedValue(javadoc);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>javadoc</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple values of a nested DTO, prefer the
-   * builder-consumer helper {@link #javadoc(Consumer)}.
-   *
-   * <p>Generated from setter {@link ConstructorDto#setJavadoc(JavadocDto) setJavadoc(JavadocDto
-   * javadoc)}
-   *
-   * @param javadocUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>javadoc</code> has not been set yet
-   */
-  public ConstructorDtoBuilder javadocUpdate(UnaryOperator<JavadocDto> javadocUpdater) {
-    if (!this.javadoc.isSet()) {
-      throw new IllegalStateException("Cannot update 'javadoc' before it is set");
-    }
-    this.javadoc = changedValue(javadocUpdater.apply(this.javadoc.value()));
     return this;
   }
 
@@ -429,31 +371,6 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
    */
   public ConstructorDtoBuilder methodCodeDto(MethodCodeDto methodCodeDto) {
     this.methodCodeDto = changedValue(methodCodeDto);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>methodCodeDto</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance). For changing multiple values of a nested DTO,
-   * prefer the builder-consumer helper {@link #methodCodeDto(Consumer)}.
-   *
-   * <p>Generated from setter {@link ConstructorDto#setMethodCodeDto(MethodCodeDto)
-   * setMethodCodeDto(MethodCodeDto methodCodeDto)}
-   *
-   * @param methodCodeDtoUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>methodCodeDto</code> has not been set yet
-   */
-  public ConstructorDtoBuilder methodCodeDtoUpdate(
-      UnaryOperator<MethodCodeDto> methodCodeDtoUpdater) {
-    if (!this.methodCodeDto.isSet()) {
-      throw new IllegalStateException("Cannot update 'methodCodeDto' before it is set");
-    }
-    this.methodCodeDto = changedValue(methodCodeDtoUpdater.apply(this.methodCodeDto.value()));
     return this;
   }
 
@@ -553,38 +470,6 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
   }
 
   /**
-   * Updates the current value of <code>parameters</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple elements of a nested DTO, prefer the
-   * builder-consumer helper {@link #parameters(Consumer)}.
-   *
-   * <p>Generated from setter {@link ConstructorDto#setParameters(List)
-   * setParameters(List<MethodParameterDto> parameters)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.parameters(List.of(MethodParameterDtoBuilder.create().build()))
-   *     .parametersUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param parametersUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>parameters</code> has not been set yet
-   */
-  public ConstructorDtoBuilder parametersUpdate(
-      UnaryOperator<List<MethodParameterDto>> parametersUpdater) {
-    if (!this.parameters.isSet()) {
-      throw new IllegalStateException("Cannot update 'parameters' before it is set");
-    }
-    this.parameters = changedValue(parametersUpdater.apply(this.parameters.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>visibility</code> by invoking the provided supplier.
    *
    * <p>Generated from setter {@link ConstructorDto#setVisibility(AccessModifier)
@@ -609,29 +494,6 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
    */
   public ConstructorDtoBuilder visibility(AccessModifier visibility) {
     this.visibility = changedValue(visibility);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>visibility</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link ConstructorDto#setVisibility(AccessModifier)
-   * setVisibility(AccessModifier visibility)}
-   *
-   * @param visibilityUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>visibility</code> has not been set yet
-   */
-  public ConstructorDtoBuilder visibilityUpdate(UnaryOperator<AccessModifier> visibilityUpdater) {
-    if (!this.visibility.isSet()) {
-      throw new IllegalStateException("Cannot update 'visibility' before it is set");
-    }
-    this.visibility = changedValue(visibilityUpdater.apply(this.visibility.value()));
     return this;
   }
 

@@ -34,7 +34,6 @@ import java.util.Map.Entry;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
 import org.javahelpers.codegen.builders.HashMapBuilder;
@@ -57,7 +56,6 @@ import org.javahelpers.codegen.model.type.TypeName;
  *     .members(Map.of("example members", "example members"))
  *     .members(() -> Map.of("example members", "example members"))
  *     .members(Map.entry("key", "example members"))
- *     .membersUpdate(Map::copyOf)
  *     .build();
  * }</pre>
  */
@@ -148,29 +146,6 @@ public class AnnotationDtoBuilder implements IBuilderBase<AnnotationDto> {
    */
   public AnnotationDtoBuilder annotationType(String packageName, String className) {
     return annotationType(new TypeName(packageName, className));
-  }
-
-  /**
-   * Updates the current value of <code>annotationType</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link AnnotationDto#setAnnotationType(TypeName)
-   * setAnnotationType(TypeName annotationType)}
-   *
-   * @param annotationTypeUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>annotationType</code> has not been set yet
-   */
-  public AnnotationDtoBuilder annotationTypeUpdate(UnaryOperator<TypeName> annotationTypeUpdater) {
-    if (!this.annotationType.isSet()) {
-      throw new IllegalStateException("Cannot update 'annotationType' before it is set");
-    }
-    this.annotationType = changedValue(annotationTypeUpdater.apply(this.annotationType.value()));
-    return this;
   }
 
   /**
@@ -266,34 +241,6 @@ public class AnnotationDtoBuilder implements IBuilderBase<AnnotationDto> {
    */
   public AnnotationDtoBuilder members(Map<String, String> members) {
     this.members = changedValue(members);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>members</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link AnnotationDto#setMembers(Map) setMembers(Map<String, String>
-   * members)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.members(Map.of("example members", "example members")).membersUpdate(Map::copyOf);
-   * }</pre>
-   *
-   * @param membersUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>members</code> has not been set yet
-   */
-  public AnnotationDtoBuilder membersUpdate(UnaryOperator<Map<String, String>> membersUpdater) {
-    if (!this.members.isSet()) {
-      throw new IllegalStateException("Cannot update 'members' before it is set");
-    }
-    this.members = changedValue(membersUpdater.apply(this.members.value()));
     return this;
   }
 

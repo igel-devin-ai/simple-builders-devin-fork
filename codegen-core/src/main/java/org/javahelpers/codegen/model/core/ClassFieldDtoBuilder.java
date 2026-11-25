@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
 import org.javahelpers.codegen.builders.HashSetBuilder;
@@ -69,8 +68,6 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  *     .fieldName("Hello %s", "World")
  *     .fieldName(() -> "example fieldName")
  *     .fieldName(sb -> sb.append("text"))
- *     .fieldNameUpdate(String::trim)
- *     .fieldTypeImportsUpdate(TreeSet::new)
  *     .javadoc(new JavadocDto())
  *     .javadoc(JavadocDto::new)
  *     .javadoc(javadocDtoBuilder -> javadocDtoBuilder)
@@ -78,7 +75,6 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  *     .literalInitializer("Hello %s", "World")
  *     .literalInitializer(() -> "example literalInitializer")
  *     .literalInitializer(sb -> sb.append("text"))
- *     .literalInitializerUpdate(String::trim)
  *     .build();
  * }</pre>
  */
@@ -216,34 +212,6 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
    */
   public ClassFieldDtoBuilder fieldName(String fieldName) {
     this.fieldName = changedValue(fieldName);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>fieldName</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link ClassFieldDto#setFieldName(String) setFieldName(String
-   * fieldName)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.fieldName("example fieldName").fieldNameUpdate(String::trim);
-   * }</pre>
-   *
-   * @param fieldNameUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>fieldName</code> has not been set yet
-   */
-  public ClassFieldDtoBuilder fieldNameUpdate(UnaryOperator<String> fieldNameUpdater) {
-    if (!this.fieldName.isSet()) {
-      throw new IllegalStateException("Cannot update 'fieldName' before it is set");
-    }
-    this.fieldName = changedValue(fieldNameUpdater.apply(this.fieldName.value()));
     return this;
   }
 
@@ -403,28 +371,6 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>fieldType</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link ClassFieldDto#setFieldType(TypeName) setFieldType(TypeName
-   * fieldType)}
-   *
-   * @param fieldTypeUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>fieldType</code> has not been set yet
-   */
-  public ClassFieldDtoBuilder fieldTypeUpdate(UnaryOperator<TypeName> fieldTypeUpdater) {
-    if (!this.fieldType.isSet()) {
-      throw new IllegalStateException("Cannot update 'fieldType' before it is set");
-    }
-    this.fieldType = changedValue(fieldTypeUpdater.apply(this.fieldType.value()));
-    return this;
-  }
-
-  /**
    * Adds a single element to <code>fieldTypeImports</code>.
    *
    * <p>Generated from setter {@link ClassFieldDto#setFieldTypeImports(Set)
@@ -531,37 +477,6 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>fieldTypeImports</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link ClassFieldDto#setFieldTypeImports(Set)
-   * setFieldTypeImports(Set<ImportStatement> fieldTypeImports)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.fieldTypeImportsUpdate(TreeSet::new);
-   * }</pre>
-   *
-   * @param fieldTypeImportsUpdater operator applied to the current value; its result becomes the
-   *     new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>fieldTypeImports</code> has not been set yet
-   */
-  public ClassFieldDtoBuilder fieldTypeImportsUpdate(
-      UnaryOperator<Set<ImportStatement>> fieldTypeImportsUpdater) {
-    if (!this.fieldTypeImports.isSet()) {
-      throw new IllegalStateException("Cannot update 'fieldTypeImports' before it is set");
-    }
-    this.fieldTypeImports =
-        changedValue(fieldTypeImportsUpdater.apply(this.fieldTypeImports.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>javadoc</code> using a builder consumer that produces the value.
    *
    * <p>Generated from setter {@link ClassFieldDto#setJavadoc(JavadocDto) setJavadoc(JavadocDto
@@ -623,29 +538,6 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
    */
   public ClassFieldDtoBuilder javadoc(JavadocDto javadoc) {
     this.javadoc = changedValue(javadoc);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>javadoc</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple values of a nested DTO, prefer the
-   * builder-consumer helper {@link #javadoc(Consumer)}.
-   *
-   * <p>Generated from setter {@link ClassFieldDto#setJavadoc(JavadocDto) setJavadoc(JavadocDto
-   * javadoc)}
-   *
-   * @param javadocUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>javadoc</code> has not been set yet
-   */
-  public ClassFieldDtoBuilder javadocUpdate(UnaryOperator<JavadocDto> javadocUpdater) {
-    if (!this.javadoc.isSet()) {
-      throw new IllegalStateException("Cannot update 'javadoc' before it is set");
-    }
-    this.javadoc = changedValue(javadocUpdater.apply(this.javadoc.value()));
     return this;
   }
 
@@ -736,37 +628,6 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>literalInitializer</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link ClassFieldDto#setLiteralInitializer(String)
-   * setLiteralInitializer(String literalInitializer)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.literalInitializer("example literalInitializer").literalInitializerUpdate(String::trim);
-   * }</pre>
-   *
-   * @param literalInitializerUpdater operator applied to the current value; its result becomes the
-   *     new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>literalInitializer</code> has not been set yet
-   */
-  public ClassFieldDtoBuilder literalInitializerUpdate(
-      UnaryOperator<String> literalInitializerUpdater) {
-    if (!this.literalInitializer.isSet()) {
-      throw new IllegalStateException("Cannot update 'literalInitializer' before it is set");
-    }
-    this.literalInitializer =
-        changedValue(literalInitializerUpdater.apply(this.literalInitializer.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>visibility</code> by invoking the provided supplier.
    *
    * <p>Generated from setter {@link ClassFieldDto#setVisibility(AccessModifier)
@@ -791,29 +652,6 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
    */
   public ClassFieldDtoBuilder visibility(AccessModifier visibility) {
     this.visibility = changedValue(visibility);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>visibility</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link ClassFieldDto#setVisibility(AccessModifier)
-   * setVisibility(AccessModifier visibility)}
-   *
-   * @param visibilityUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>visibility</code> has not been set yet
-   */
-  public ClassFieldDtoBuilder visibilityUpdate(UnaryOperator<AccessModifier> visibilityUpdater) {
-    if (!this.visibility.isSet()) {
-      throw new IllegalStateException("Cannot update 'visibility' before it is set");
-    }
-    this.visibility = changedValue(visibilityUpdater.apply(this.visibility.value()));
     return this;
   }
 

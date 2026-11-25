@@ -31,7 +31,6 @@ import static org.javahelpers.simple.builders.core.util.TrackedValue.unsetValue;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.simple.builders.core.interfaces.IBuilderBase;
 import org.javahelpers.simple.builders.core.util.BuilderToStringStyle;
@@ -54,10 +53,8 @@ import org.javahelpers.simple.builders.core.util.TrackedValue;
  *     .getterName("Hello %s", "World")
  *     .getterName(() -> "example getterName")
  *     .getterName(sb -> sb.append("text"))
- *     .getterNameUpdate(String::trim)
  *     .deprecated(true)
  *     .deprecated(() -> true)
- *     .deprecatedUpdate(value -> !value)
  *     .build();
  * }</pre>
  */
@@ -143,35 +140,6 @@ public class GetterInfoDtoBuilder implements IBuilderBase<GetterInfoDto> {
   }
 
   /**
-   * Updates the current value of <code>deprecated</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from parameter in constructor {@link GetterInfoDto#GetterInfoDto(String, boolean)
-   * GetterInfoDto(String getterName, boolean deprecated)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.deprecated(true).deprecatedUpdate(value -> !value);
-   * }</pre>
-   *
-   * @param deprecatedUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>deprecated</code> has not been set yet
-   */
-  public GetterInfoDtoBuilder deprecatedUpdate(UnaryOperator<Boolean> deprecatedUpdater) {
-    if (!this.deprecated.isSet()) {
-      throw new IllegalStateException("Cannot update 'deprecated' before it is set");
-    }
-    this.deprecated = changedValue(deprecatedUpdater.apply(this.deprecated.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>getterName</code> by executing the provided consumer.
    *
    * <p>Generated from parameter in constructor {@link GetterInfoDto#GetterInfoDto(String, boolean)
@@ -252,35 +220,6 @@ public class GetterInfoDtoBuilder implements IBuilderBase<GetterInfoDto> {
    */
   public GetterInfoDtoBuilder getterName(String getterName) {
     this.getterName = changedValue(getterName);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>getterName</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from parameter in constructor {@link GetterInfoDto#GetterInfoDto(String, boolean)
-   * GetterInfoDto(String getterName, boolean deprecated)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.getterName("example getterName").getterNameUpdate(String::trim);
-   * }</pre>
-   *
-   * @param getterNameUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>getterName</code> has not been set yet
-   */
-  public GetterInfoDtoBuilder getterNameUpdate(UnaryOperator<String> getterNameUpdater) {
-    if (!this.getterName.isSet()) {
-      throw new IllegalStateException("Cannot update 'getterName' before it is set");
-    }
-    this.getterName = changedValue(getterNameUpdater.apply(this.getterName.value()));
     return this;
   }
 

@@ -163,12 +163,11 @@ class ProcessorDtoBuildersTest {
             .parameters(() -> List.of(param))
             .parameters(el -> el.parameterName("x"))
             .add2Parameters(param)
-            .parametersUpdate(list -> list.stream().limit(2).toList())
             .add2Annotations(anno)
             .add2GenericParameters(generic)
             .build();
 
-    assertEquals(2, dto.getParameters().size());
+    assertEquals(3, dto.getParameters().size());
     assertEquals(1, dto.getAnnotations().size());
     assertEquals(1, dto.getGenericParameters().size());
 
@@ -200,9 +199,8 @@ class ProcessorDtoBuildersTest {
             .annotations(el -> el.annotationType("java.lang", "Deprecated"))
             .add2Annotations(
                 AnnotationDtoBuilder.create().annotationType("java.lang", "Deprecated").build())
-            .annotationsUpdate(list -> list.stream().limit(1).toList())
             .build();
 
-    assertEquals(1, dto.getAnnotations().size());
+    assertEquals(2, dto.getAnnotations().size());
   }
 }

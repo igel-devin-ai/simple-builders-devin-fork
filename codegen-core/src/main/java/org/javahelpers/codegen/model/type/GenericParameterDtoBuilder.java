@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.builders.ArrayListBuilder;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
@@ -56,8 +55,6 @@ import org.javahelpers.codegen.builders.TrackedValue;
  *     .name("Hello %s", "World")
  *     .name(() -> "example name")
  *     .name(sb -> sb.append("text"))
- *     .nameUpdate(String::trim)
- *     .upperBoundsUpdate(list -> list.stream().sorted().toList())
  *     .build();
  * }</pre>
  */
@@ -179,33 +176,6 @@ public class GenericParameterDtoBuilder implements IBuilderBase<GenericParameter
    */
   public GenericParameterDtoBuilder name(String name) {
     this.name = changedValue(name);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>name</code> in place by applying the given operator, instead
-   * of reading it out, changing it and setting it again. Useful for adjustments relative to the
-   * current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination with
-   * the <code>With</code> copy-and-modify flow. The value must have been set before (directly or
-   * via an existing instance).
-   *
-   * <p>Generated from setter {@link GenericParameterDto#setName(String) setName(String name)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.name("example name").nameUpdate(String::trim);
-   * }</pre>
-   *
-   * @param nameUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>name</code> has not been set yet
-   */
-  public GenericParameterDtoBuilder nameUpdate(UnaryOperator<String> nameUpdater) {
-    if (!this.name.isSet()) {
-      throw new IllegalStateException("Cannot update 'name' before it is set");
-    }
-    this.name = changedValue(nameUpdater.apply(this.name.value()));
     return this;
   }
 
@@ -410,36 +380,6 @@ public class GenericParameterDtoBuilder implements IBuilderBase<GenericParameter
    */
   public GenericParameterDtoBuilder upperBounds(List<TypeName> upperBounds) {
     this.upperBounds = changedValue(upperBounds);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>upperBounds</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link GenericParameterDto#setUpperBounds(List)
-   * setUpperBounds(List<TypeName> upperBounds)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.upperBoundsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param upperBoundsUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>upperBounds</code> has not been set yet
-   */
-  public GenericParameterDtoBuilder upperBoundsUpdate(
-      UnaryOperator<List<TypeName>> upperBoundsUpdater) {
-    if (!this.upperBounds.isSet()) {
-      throw new IllegalStateException("Cannot update 'upperBounds' before it is set");
-    }
-    this.upperBounds = changedValue(upperBoundsUpdater.apply(this.upperBounds.value()));
     return this;
   }
 

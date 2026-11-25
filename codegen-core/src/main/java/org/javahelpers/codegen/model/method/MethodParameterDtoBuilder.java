@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
 import org.javahelpers.codegen.builders.IBuilderBase;
@@ -63,13 +62,11 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  *     .annotations(() -> List.of(AnnotationDtoBuilder.create().build()))
  *     .annotations(annotationDtoBuilder -> annotationDtoBuilder)
  *     .annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
- *     .annotationsUpdate(list -> list.stream().sorted().toList())
  *     .add2Annotations(AnnotationDtoBuilder.create().build())
  *     .parameterName("example parameterName")
  *     .parameterName("Hello %s", "World")
  *     .parameterName(() -> "example parameterName")
  *     .parameterName(sb -> sb.append("text"))
- *     .parameterNameUpdate(String::trim)
  *     .build();
  * }</pre>
  */
@@ -234,38 +231,6 @@ public class MethodParameterDtoBuilder implements IBuilderBase<MethodParameterDt
   }
 
   /**
-   * Updates the current value of <code>annotations</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple elements of a nested DTO, prefer the
-   * builder-consumer helper {@link #annotations(Consumer)}.
-   *
-   * <p>Generated from setter {@link MethodParameterDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(List.of(AnnotationDtoBuilder.create().build()))
-   *     .annotationsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param annotationsUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>annotations</code> has not been set yet
-   */
-  public MethodParameterDtoBuilder annotationsUpdate(
-      UnaryOperator<List<AnnotationDto>> annotationsUpdater) {
-    if (!this.annotations.isSet()) {
-      throw new IllegalStateException("Cannot update 'annotations' before it is set");
-    }
-    this.annotations = changedValue(annotationsUpdater.apply(this.annotations.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>parameterName</code> by executing the provided consumer.
    *
    * <p>Generated from setter {@link MethodParameterDto#setParameterName(String)
@@ -347,35 +312,6 @@ public class MethodParameterDtoBuilder implements IBuilderBase<MethodParameterDt
    */
   public MethodParameterDtoBuilder parameterName(String parameterName) {
     this.parameterName = changedValue(parameterName);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>parameterName</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link MethodParameterDto#setParameterName(String)
-   * setParameterName(String parameterName)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.parameterName("example parameterName").parameterNameUpdate(String::trim);
-   * }</pre>
-   *
-   * @param parameterNameUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>parameterName</code> has not been set yet
-   */
-  public MethodParameterDtoBuilder parameterNameUpdate(UnaryOperator<String> parameterNameUpdater) {
-    if (!this.parameterName.isSet()) {
-      throw new IllegalStateException("Cannot update 'parameterName' before it is set");
-    }
-    this.parameterName = changedValue(parameterNameUpdater.apply(this.parameterName.value()));
     return this;
   }
 
@@ -538,31 +474,6 @@ public class MethodParameterDtoBuilder implements IBuilderBase<MethodParameterDt
    */
   public MethodParameterDtoBuilder parameterTypeName(String packageName, String className) {
     return parameterTypeName(new TypeName(packageName, className));
-  }
-
-  /**
-   * Updates the current value of <code>parameterTypeName</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link MethodParameterDto#setParameterTypeName(TypeName)
-   * setParameterTypeName(TypeName parameterTypeName)}
-   *
-   * @param parameterTypeNameUpdater operator applied to the current value; its result becomes the
-   *     new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>parameterTypeName</code> has not been set yet
-   */
-  public MethodParameterDtoBuilder parameterTypeNameUpdate(
-      UnaryOperator<TypeName> parameterTypeNameUpdater) {
-    if (!this.parameterTypeName.isSet()) {
-      throw new IllegalStateException("Cannot update 'parameterTypeName' before it is set");
-    }
-    this.parameterTypeName =
-        changedValue(parameterTypeNameUpdater.apply(this.parameterTypeName.value()));
-    return this;
   }
 
   /**

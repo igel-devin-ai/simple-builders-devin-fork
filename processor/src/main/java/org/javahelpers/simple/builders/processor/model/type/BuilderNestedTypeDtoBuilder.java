@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
@@ -67,7 +66,6 @@ import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDtoBu
  *     .typeName("Hello %s", "World")
  *     .typeName(() -> "example typeName")
  *     .typeName(sb -> sb.append("text"))
- *     .typeNameUpdate(String::trim)
  *     .build();
  * }</pre>
  */
@@ -190,29 +188,6 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Updates the current value of <code>javadoc</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple values of a nested DTO, prefer the
-   * builder-consumer helper {@link #javadoc(Consumer)}.
-   *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setJavadoc(JavadocDto)
-   * setJavadoc(JavadocDto javadoc)}
-   *
-   * @param javadocUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>javadoc</code> has not been set yet
-   */
-  public BuilderNestedTypeDtoBuilder javadocUpdate(UnaryOperator<JavadocDto> javadocUpdater) {
-    if (!this.javadoc.isSet()) {
-      throw new IllegalStateException("Cannot update 'javadoc' before it is set");
-    }
-    this.javadoc = changedValue(javadocUpdater.apply(this.javadoc.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>kind</code> by invoking the provided supplier.
    *
    * <p>Generated from setter {@link BuilderNestedTypeDto#setKind(NestedTypeDto.NestedTypeKind)
@@ -237,29 +212,6 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
    */
   public BuilderNestedTypeDtoBuilder kind(NestedTypeDto.NestedTypeKind kind) {
     this.kind = changedValue(kind);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>kind</code> in place by applying the given operator, instead
-   * of reading it out, changing it and setting it again. Useful for adjustments relative to the
-   * current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination with
-   * the <code>With</code> copy-and-modify flow. The value must have been set before (directly or
-   * via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setKind(NestedTypeDto.NestedTypeKind)
-   * setKind(NestedTypeDto.NestedTypeKind kind)}
-   *
-   * @param kindUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>kind</code> has not been set yet
-   */
-  public BuilderNestedTypeDtoBuilder kindUpdate(
-      UnaryOperator<NestedTypeDto.NestedTypeKind> kindUpdater) {
-    if (!this.kind.isSet()) {
-      throw new IllegalStateException("Cannot update 'kind' before it is set");
-    }
-    this.kind = changedValue(kindUpdater.apply(this.kind.value()));
     return this;
   }
 
@@ -349,34 +301,6 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Updates the current value of <code>typeName</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setTypeName(String) setTypeName(String
-   * typeName)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.typeName("example typeName").typeNameUpdate(String::trim);
-   * }</pre>
-   *
-   * @param typeNameUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>typeName</code> has not been set yet
-   */
-  public BuilderNestedTypeDtoBuilder typeNameUpdate(UnaryOperator<String> typeNameUpdater) {
-    if (!this.typeName.isSet()) {
-      throw new IllegalStateException("Cannot update 'typeName' before it is set");
-    }
-    this.typeName = changedValue(typeNameUpdater.apply(this.typeName.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>visibility</code> by invoking the provided supplier.
    *
    * <p>Generated from setter {@link BuilderNestedTypeDto#setVisibility(AccessModifier)
@@ -401,30 +325,6 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
    */
   public BuilderNestedTypeDtoBuilder visibility(AccessModifier visibility) {
     this.visibility = changedValue(visibility);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>visibility</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setVisibility(AccessModifier)
-   * setVisibility(AccessModifier visibility)}
-   *
-   * @param visibilityUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>visibility</code> has not been set yet
-   */
-  public BuilderNestedTypeDtoBuilder visibilityUpdate(
-      UnaryOperator<AccessModifier> visibilityUpdater) {
-    if (!this.visibility.isSet()) {
-      throw new IllegalStateException("Cannot update 'visibility' before it is set");
-    }
-    this.visibility = changedValue(visibilityUpdater.apply(this.visibility.value()));
     return this;
   }
 
@@ -556,34 +456,6 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Updates the current value of <code>methods</code> in place by applying the given operator. The
-   * value must have been set before (directly or via an existing instance). For changing multiple
-   * elements of a nested DTO, prefer the builder-consumer helper {@link #methods(Consumer)}.
-   *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setMethods(List)
-   * setMethods(List<BuilderMethodDto> methods)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.methods(List.of(BuilderMethodDtoBuilder.create().build()))
-   *     .methodsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param methodsUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>methods</code> has not been set yet
-   */
-  public BuilderNestedTypeDtoBuilder methodsUpdate(
-      UnaryOperator<List<BuilderMethodDto>> methodsUpdater) {
-    if (!this.methods.isSet()) {
-      throw new IllegalStateException("Cannot update 'methods' before it is set");
-    }
-    this.methods = changedValue(methodsUpdater.apply(this.methods.value()));
-    return this;
-  }
-
-  /**
    * Adds a single element to <code>annotations</code>.
    *
    * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
@@ -698,36 +570,6 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
    */
   public BuilderNestedTypeDtoBuilder annotations(List<AnnotationDto> annotations) {
     this.annotations = changedValue(annotations);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>annotations</code> in place by applying the given operator.
-   * The value must have been set before (directly or via an existing instance). For changing
-   * multiple elements of a nested DTO, prefer the builder-consumer helper {@link
-   * #annotations(Consumer)}.
-   *
-   * <p>Generated from setter {@link BuilderNestedTypeDto#setAnnotations(List)
-   * setAnnotations(List<AnnotationDto> annotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.annotations(List.of(AnnotationDtoBuilder.create().build()))
-   *     .annotationsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param annotationsUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>annotations</code> has not been set yet
-   */
-  public BuilderNestedTypeDtoBuilder annotationsUpdate(
-      UnaryOperator<List<AnnotationDto>> annotationsUpdater) {
-    if (!this.annotations.isSet()) {
-      throw new IllegalStateException("Cannot update 'annotations' before it is set");
-    }
-    this.annotations = changedValue(annotationsUpdater.apply(this.annotations.value()));
     return this;
   }
 

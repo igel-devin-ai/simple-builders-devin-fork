@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
@@ -71,18 +70,15 @@ import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDtoBu
  *     .defaultValue("Hello %s", "World")
  *     .defaultValue(() -> "example defaultValue")
  *     .defaultValue(sb -> sb.append("text"))
- *     .defaultValueUpdate(String::trim)
  *     .fieldGenerics(List.of(GenericParameterDtoBuilder.create().build()))
  *     .fieldGenerics(() -> List.of(GenericParameterDtoBuilder.create().build()))
  *     .fieldGenerics(genericParameterDtoBuilder -> genericParameterDtoBuilder)
  *     .fieldGenerics(GenericParameterDtoBuilder.create().build(), GenericParameterDtoBuilder.create().build())
- *     .fieldGenericsUpdate(list -> list.stream().sorted().toList())
  *     .add2FieldGenerics(GenericParameterDtoBuilder.create().build())
  *     .fieldNameInBuilder("example fieldNameInBuilder")
  *     .fieldNameInBuilder("Hello %s", "World")
  *     .fieldNameInBuilder(() -> "example fieldNameInBuilder")
  *     .fieldNameInBuilder(sb -> sb.append("text"))
- *     .fieldNameInBuilderUpdate(String::trim)
  *     .getterInfo(GetterInfoDtoBuilder.create().build())
  *     .getterInfo(() -> GetterInfoDtoBuilder.create().build())
  *     .getterInfo(getterInfoDtoBuilder -> getterInfoDtoBuilder)
@@ -91,28 +87,23 @@ import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDtoBu
  *     .javaDoc(javadocDtoBuilder -> javadocDtoBuilder)
  *     .nonNullable(true)
  *     .nonNullable(() -> true)
- *     .nonNullableUpdate(value -> !value)
  *     .originalFieldName("example originalFieldName")
  *     .originalFieldName("Hello %s", "World")
  *     .originalFieldName(() -> "example originalFieldName")
  *     .originalFieldName(sb -> sb.append("text"))
- *     .originalFieldNameUpdate(String::trim)
  *     .originalJavaDocDescription("example originalJavaDocDescription")
  *     .originalJavaDocDescription("Hello %s", "World")
  *     .originalJavaDocDescription(() -> "example originalJavaDocDescription")
  *     .originalJavaDocDescription(sb -> sb.append("text"))
- *     .originalJavaDocDescriptionUpdate(String::trim)
  *     .parameterAnnotations(List.of(AnnotationDtoBuilder.create().build()))
  *     .parameterAnnotations(() -> List.of(AnnotationDtoBuilder.create().build()))
  *     .parameterAnnotations(annotationDtoBuilder -> annotationDtoBuilder)
  *     .parameterAnnotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
- *     .parameterAnnotationsUpdate(list -> list.stream().sorted().toList())
  *     .add2ParameterAnnotations(AnnotationDtoBuilder.create().build())
  *     .setterName("example setterName")
  *     .setterName("Hello %s", "World")
  *     .setterName(() -> "example setterName")
  *     .setterName(sb -> sb.append("text"))
- *     .setterNameUpdate(String::trim)
  *     .build();
  * }</pre>
  */
@@ -284,35 +275,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>defaultValue</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setDefaultValue(String) setDefaultValue(String
-   * defaultValue)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.defaultValue("example defaultValue").defaultValueUpdate(String::trim);
-   * }</pre>
-   *
-   * @param defaultValueUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>defaultValue</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder defaultValueUpdate(UnaryOperator<String> defaultValueUpdater) {
-    if (!this.defaultValue.isSet()) {
-      throw new IllegalStateException("Cannot update 'defaultValue' before it is set");
-    }
-    this.defaultValue = changedValue(defaultValueUpdater.apply(this.defaultValue.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>deprecationInfo</code> by invoking the provided supplier.
    *
    * <p>Generated from setter {@link BuilderFieldDto#setDeprecationInfo(DeprecationInfoDto)
@@ -338,30 +300,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    */
   public BuilderFieldDtoBuilder deprecationInfo(DeprecationInfoDto deprecationInfo) {
     this.deprecationInfo = changedValue(deprecationInfo);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>deprecationInfo</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setDeprecationInfo(DeprecationInfoDto)
-   * setDeprecationInfo(DeprecationInfoDto deprecationInfo)}
-   *
-   * @param deprecationInfoUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>deprecationInfo</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder deprecationInfoUpdate(
-      UnaryOperator<DeprecationInfoDto> deprecationInfoUpdater) {
-    if (!this.deprecationInfo.isSet()) {
-      throw new IllegalStateException("Cannot update 'deprecationInfo' before it is set");
-    }
-    this.deprecationInfo = changedValue(deprecationInfoUpdater.apply(this.deprecationInfo.value()));
     return this;
   }
 
@@ -462,38 +400,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>fieldGenerics</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance). For changing multiple elements of a nested DTO,
-   * prefer the builder-consumer helper {@link #fieldGenerics(Consumer)}.
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setFieldGenerics(List)
-   * setFieldGenerics(List<GenericParameterDto> fieldGenerics)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.fieldGenerics(List.of(GenericParameterDtoBuilder.create().build()))
-   *     .fieldGenericsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param fieldGenericsUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>fieldGenerics</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder fieldGenericsUpdate(
-      UnaryOperator<List<GenericParameterDto>> fieldGenericsUpdater) {
-    if (!this.fieldGenerics.isSet()) {
-      throw new IllegalStateException("Cannot update 'fieldGenerics' before it is set");
-    }
-    this.fieldGenerics = changedValue(fieldGenericsUpdater.apply(this.fieldGenerics.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>fieldNameInBuilder</code> by executing the provided consumer.
    *
    * <p>Generated from setter {@link BuilderFieldDto#setFieldNameInBuilder(String)
@@ -576,37 +482,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    */
   public BuilderFieldDtoBuilder fieldNameInBuilder(String fieldNameInBuilder) {
     this.fieldNameInBuilder = changedValue(fieldNameInBuilder);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>fieldNameInBuilder</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setFieldNameInBuilder(String)
-   * setFieldNameInBuilder(String fieldNameInBuilder)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.fieldNameInBuilder("example fieldNameInBuilder").fieldNameInBuilderUpdate(String::trim);
-   * }</pre>
-   *
-   * @param fieldNameInBuilderUpdater operator applied to the current value; its result becomes the
-   *     new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>fieldNameInBuilder</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder fieldNameInBuilderUpdate(
-      UnaryOperator<String> fieldNameInBuilderUpdater) {
-    if (!this.fieldNameInBuilder.isSet()) {
-      throw new IllegalStateException("Cannot update 'fieldNameInBuilder' before it is set");
-    }
-    this.fieldNameInBuilder =
-        changedValue(fieldNameInBuilderUpdater.apply(this.fieldNameInBuilder.value()));
     return this;
   }
 
@@ -768,28 +643,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>fieldType</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setFieldType(TypeName) setFieldType(TypeName
-   * fieldType)}
-   *
-   * @param fieldTypeUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>fieldType</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder fieldTypeUpdate(UnaryOperator<TypeName> fieldTypeUpdater) {
-    if (!this.fieldType.isSet()) {
-      throw new IllegalStateException("Cannot update 'fieldType' before it is set");
-    }
-    this.fieldType = changedValue(fieldTypeUpdater.apply(this.fieldType.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>getterInfo</code> using a builder consumer that produces the value.
    *
    * <p>Generated from setter {@link BuilderFieldDto#setGetterInfo(GetterInfoDto)
@@ -852,30 +705,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    */
   public BuilderFieldDtoBuilder getterInfo(GetterInfoDto getterInfo) {
     this.getterInfo = changedValue(getterInfo);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>getterInfo</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple values of a nested DTO, prefer the
-   * builder-consumer helper {@link #getterInfo(Consumer)}.
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setGetterInfo(GetterInfoDto)
-   * setGetterInfo(GetterInfoDto getterInfo)}
-   *
-   * @param getterInfoUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>getterInfo</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder getterInfoUpdate(UnaryOperator<GetterInfoDto> getterInfoUpdater) {
-    if (!this.getterInfo.isSet()) {
-      throw new IllegalStateException("Cannot update 'getterInfo' before it is set");
-    }
-    this.getterInfo = changedValue(getterInfoUpdater.apply(this.getterInfo.value()));
     return this;
   }
 
@@ -945,29 +774,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>javaDoc</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple values of a nested DTO, prefer the
-   * builder-consumer helper {@link #javaDoc(Consumer)}.
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setJavaDoc(JavadocDto) setJavaDoc(JavadocDto
-   * javaDoc)}
-   *
-   * @param javaDocUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>javaDoc</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder javaDocUpdate(UnaryOperator<JavadocDto> javaDocUpdater) {
-    if (!this.javaDoc.isSet()) {
-      throw new IllegalStateException("Cannot update 'javaDoc' before it is set");
-    }
-    this.javaDoc = changedValue(javaDocUpdater.apply(this.javaDoc.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>nonNullable</code> by invoking the provided supplier.
    *
    * <p>Generated from setter {@link BuilderFieldDto#setNonNullable(boolean) setNonNullable(boolean
@@ -1004,35 +810,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    */
   public BuilderFieldDtoBuilder nonNullable(boolean nonNullable) {
     this.nonNullable = changedValue(nonNullable);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>nonNullable</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setNonNullable(boolean) setNonNullable(boolean
-   * nonNullable)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.nonNullable(true).nonNullableUpdate(value -> !value);
-   * }</pre>
-   *
-   * @param nonNullableUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>nonNullable</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder nonNullableUpdate(UnaryOperator<Boolean> nonNullableUpdater) {
-    if (!this.nonNullable.isSet()) {
-      throw new IllegalStateException("Cannot update 'nonNullable' before it is set");
-    }
-    this.nonNullable = changedValue(nonNullableUpdater.apply(this.nonNullable.value()));
     return this;
   }
 
@@ -1123,37 +900,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>originalFieldName</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setOriginalFieldName(String)
-   * setOriginalFieldName(String originalFieldName)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.originalFieldName("example originalFieldName").originalFieldNameUpdate(String::trim);
-   * }</pre>
-   *
-   * @param originalFieldNameUpdater operator applied to the current value; its result becomes the
-   *     new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>originalFieldName</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder originalFieldNameUpdate(
-      UnaryOperator<String> originalFieldNameUpdater) {
-    if (!this.originalFieldName.isSet()) {
-      throw new IllegalStateException("Cannot update 'originalFieldName' before it is set");
-    }
-    this.originalFieldName =
-        changedValue(originalFieldNameUpdater.apply(this.originalFieldName.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>originalJavaDocDescription</code> by executing the provided consumer.
    *
    * <p>Generated from setter {@link BuilderFieldDto#setOriginalJavaDocDescription(String)
@@ -1237,40 +983,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    */
   public BuilderFieldDtoBuilder originalJavaDocDescription(String originalJavaDocDescription) {
     this.originalJavaDocDescription = changedValue(originalJavaDocDescription);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>originalJavaDocDescription</code> in place by applying the
-   * given operator, instead of reading it out, changing it and setting it again. Useful for
-   * adjustments relative to the current value, e.g. trimming, upper-casing, clamping or
-   * incrementing, and in combination with the <code>With</code> copy-and-modify flow. The value
-   * must have been set before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setOriginalJavaDocDescription(String)
-   * setOriginalJavaDocDescription(String originalJavaDocDescription)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.originalJavaDocDescription("example originalJavaDocDescription")
-   *     .originalJavaDocDescriptionUpdate(String::trim);
-   * }</pre>
-   *
-   * @param originalJavaDocDescriptionUpdater operator applied to the current value; its result
-   *     becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>originalJavaDocDescription</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder originalJavaDocDescriptionUpdate(
-      UnaryOperator<String> originalJavaDocDescriptionUpdater) {
-    if (!this.originalJavaDocDescription.isSet()) {
-      throw new IllegalStateException(
-          "Cannot update 'originalJavaDocDescription' before it is set");
-    }
-    this.originalJavaDocDescription =
-        changedValue(
-            originalJavaDocDescriptionUpdater.apply(this.originalJavaDocDescription.value()));
     return this;
   }
 
@@ -1394,39 +1106,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Updates the current value of <code>parameterAnnotations</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance). For changing multiple elements of a nested DTO,
-   * prefer the builder-consumer helper {@link #parameterAnnotations(Consumer)}.
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setParameterAnnotations(List)
-   * setParameterAnnotations(List<AnnotationDto> parameterAnnotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.parameterAnnotations(List.of(AnnotationDtoBuilder.create().build()))
-   *     .parameterAnnotationsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param parameterAnnotationsUpdater operator applied to the current value; its result becomes
-   *     the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>parameterAnnotations</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder parameterAnnotationsUpdate(
-      UnaryOperator<List<AnnotationDto>> parameterAnnotationsUpdater) {
-    if (!this.parameterAnnotations.isSet()) {
-      throw new IllegalStateException("Cannot update 'parameterAnnotations' before it is set");
-    }
-    this.parameterAnnotations =
-        changedValue(parameterAnnotationsUpdater.apply(this.parameterAnnotations.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>setterName</code> by executing the provided consumer.
    *
    * <p>Generated from setter {@link BuilderFieldDto#setSetterName(String) setSetterName(String
@@ -1508,35 +1187,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    */
   public BuilderFieldDtoBuilder setterName(String setterName) {
     this.setterName = changedValue(setterName);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>setterName</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setSetterName(String) setSetterName(String
-   * setterName)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.setterName("example setterName").setterNameUpdate(String::trim);
-   * }</pre>
-   *
-   * @param setterNameUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>setterName</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder setterNameUpdate(UnaryOperator<String> setterNameUpdater) {
-    if (!this.setterName.isSet()) {
-      throw new IllegalStateException("Cannot update 'setterName' before it is set");
-    }
-    this.setterName = changedValue(setterNameUpdater.apply(this.setterName.value()));
     return this;
   }
 
@@ -1663,34 +1313,6 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    */
   public BuilderFieldDtoBuilder methods(List<BuilderMethodDto> methods) {
     this.methods = changedValue(methods);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>methods</code> in place by applying the given operator. The
-   * value must have been set before (directly or via an existing instance). For changing multiple
-   * elements of a nested DTO, prefer the builder-consumer helper {@link #methods(Consumer)}.
-   *
-   * <p>Generated from setter {@link BuilderFieldDto#setMethods(List)
-   * setMethods(List<BuilderMethodDto> methods)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.methods(List.of(BuilderMethodDtoBuilder.create().build()))
-   *     .methodsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param methodsUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>methods</code> has not been set yet
-   */
-  public BuilderFieldDtoBuilder methodsUpdate(
-      UnaryOperator<List<BuilderMethodDto>> methodsUpdater) {
-    if (!this.methods.isSet()) {
-      throw new IllegalStateException("Cannot update 'methods' before it is set");
-    }
-    this.methods = changedValue(methodsUpdater.apply(this.methods.value()));
     return this;
   }
 

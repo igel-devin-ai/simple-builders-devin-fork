@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.builders.ArrayListBuilder;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
@@ -61,13 +60,10 @@ import org.javahelpers.codegen.model.type.TypeName;
  *
  * <pre>{@code
  * JavadocCodeBlockDto result = JavadocCodeBlockDtoBuilder.create()
- *     .codeArgumentsUpdate(list -> list.stream().sorted().toList())
- *     .codeBlockImportsUpdate(TreeSet::new)
  *     .codeFormat("example codeFormat")
  *     .codeFormat("Hello %s", "World")
  *     .codeFormat(() -> "example codeFormat")
  *     .codeFormat(sb -> sb.append("text"))
- *     .codeFormatUpdate(String::trim)
  *     .build();
  * }</pre>
  */
@@ -201,36 +197,6 @@ public class JavadocCodeBlockDtoBuilder implements IBuilderBase<JavadocCodeBlock
   }
 
   /**
-   * Updates the current value of <code>codeArguments</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link JavadocCodeBlockDto#setCodeArguments(List)
-   * setCodeArguments(List<MethodCodePlaceholder<?>> codeArguments)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.codeArgumentsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param codeArgumentsUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>codeArguments</code> has not been set yet
-   */
-  public JavadocCodeBlockDtoBuilder codeArgumentsUpdate(
-      UnaryOperator<List<MethodCodePlaceholder<?>>> codeArgumentsUpdater) {
-    if (!this.codeArguments.isSet()) {
-      throw new IllegalStateException("Cannot update 'codeArguments' before it is set");
-    }
-    this.codeArguments = changedValue(codeArgumentsUpdater.apply(this.codeArguments.value()));
-    return this;
-  }
-
-  /**
    * Adds a single element to <code>codeBlockImports</code>.
    *
    * <p>Generated from setter {@link JavadocCodeBlockDto#setCodeBlockImports(Set)
@@ -337,37 +303,6 @@ public class JavadocCodeBlockDtoBuilder implements IBuilderBase<JavadocCodeBlock
   }
 
   /**
-   * Updates the current value of <code>codeBlockImports</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link JavadocCodeBlockDto#setCodeBlockImports(Set)
-   * setCodeBlockImports(Set<ImportStatement> codeBlockImports)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.codeBlockImportsUpdate(TreeSet::new);
-   * }</pre>
-   *
-   * @param codeBlockImportsUpdater operator applied to the current value; its result becomes the
-   *     new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>codeBlockImports</code> has not been set yet
-   */
-  public JavadocCodeBlockDtoBuilder codeBlockImportsUpdate(
-      UnaryOperator<Set<ImportStatement>> codeBlockImportsUpdater) {
-    if (!this.codeBlockImports.isSet()) {
-      throw new IllegalStateException("Cannot update 'codeBlockImports' before it is set");
-    }
-    this.codeBlockImports =
-        changedValue(codeBlockImportsUpdater.apply(this.codeBlockImports.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>codeFormat</code> by executing the provided consumer.
    *
    * <p>Generated from setter {@link JavadocCodeBlockDto#setCodeFormat(String) setCodeFormat(String
@@ -449,35 +384,6 @@ public class JavadocCodeBlockDtoBuilder implements IBuilderBase<JavadocCodeBlock
    */
   public JavadocCodeBlockDtoBuilder codeFormat(String codeFormat) {
     this.codeFormat = changedValue(codeFormat);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>codeFormat</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link JavadocCodeBlockDto#setCodeFormat(String) setCodeFormat(String
-   * codeFormat)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.codeFormat("example codeFormat").codeFormatUpdate(String::trim);
-   * }</pre>
-   *
-   * @param codeFormatUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>codeFormat</code> has not been set yet
-   */
-  public JavadocCodeBlockDtoBuilder codeFormatUpdate(UnaryOperator<String> codeFormatUpdater) {
-    if (!this.codeFormat.isSet()) {
-      throw new IllegalStateException("Cannot update 'codeFormat' before it is set");
-    }
-    this.codeFormat = changedValue(codeFormatUpdater.apply(this.codeFormat.value()));
     return this;
   }
 

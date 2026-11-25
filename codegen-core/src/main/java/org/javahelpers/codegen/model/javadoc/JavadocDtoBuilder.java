@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.builders.ArrayListBuilder;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
@@ -57,11 +56,9 @@ import org.javahelpers.codegen.builders.TrackedValue;
  *     .format("Hello %s", "World")
  *     .format(() -> "example format")
  *     .format(sb -> sb.append("text"))
- *     .formatUpdate(String::trim)
  *     .exampleUsageCodeBlock(new JavadocCodeBlockDto())
  *     .exampleUsageCodeBlock(JavadocCodeBlockDto::new)
  *     .exampleUsageCodeBlock(javadocCodeBlockDtoBuilder -> javadocCodeBlockDtoBuilder)
- *     .tagsUpdate(list -> list.stream().sorted().toList())
  *     .build();
  * }</pre>
  */
@@ -175,28 +172,6 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
   }
 
   /**
-   * Updates the current value of <code>args</code> in place by applying the given operator, instead
-   * of reading it out, changing it and setting it again. Useful for adjustments relative to the
-   * current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination with
-   * the <code>With</code> copy-and-modify flow. The value must have been set before (directly or
-   * via an existing instance).
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
-   *
-   * @param argsUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>args</code> has not been set yet
-   */
-  public JavadocDtoBuilder argsUpdate(UnaryOperator<Object[]> argsUpdater) {
-    if (!this.args.isSet()) {
-      throw new IllegalStateException("Cannot update 'args' before it is set");
-    }
-    this.args = changedValue(argsUpdater.apply(this.args.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>exampleUsageCodeBlock</code> using a builder consumer that produces
    * the value.
    *
@@ -263,32 +238,6 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    */
   public JavadocDtoBuilder exampleUsageCodeBlock(JavadocCodeBlockDto exampleUsageCodeBlock) {
     this.exampleUsageCodeBlock = changedValue(exampleUsageCodeBlock);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>exampleUsageCodeBlock</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance). For changing multiple values of a nested DTO,
-   * prefer the builder-consumer helper {@link #exampleUsageCodeBlock(Consumer)}.
-   *
-   * <p>Generated from setter {@link JavadocDto#setExampleUsageCodeBlock(JavadocCodeBlockDto)
-   * setExampleUsageCodeBlock(JavadocCodeBlockDto exampleUsageCodeBlock)}
-   *
-   * @param exampleUsageCodeBlockUpdater operator applied to the current value; its result becomes
-   *     the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>exampleUsageCodeBlock</code> has not been set yet
-   */
-  public JavadocDtoBuilder exampleUsageCodeBlockUpdate(
-      UnaryOperator<JavadocCodeBlockDto> exampleUsageCodeBlockUpdater) {
-    if (!this.exampleUsageCodeBlock.isSet()) {
-      throw new IllegalStateException("Cannot update 'exampleUsageCodeBlock' before it is set");
-    }
-    this.exampleUsageCodeBlock =
-        changedValue(exampleUsageCodeBlockUpdater.apply(this.exampleUsageCodeBlock.value()));
     return this;
   }
 
@@ -377,34 +326,6 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
   }
 
   /**
-   * Updates the current value of <code>format</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.format("example format").formatUpdate(String::trim);
-   * }</pre>
-   *
-   * @param formatUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>format</code> has not been set yet
-   */
-  public JavadocDtoBuilder formatUpdate(UnaryOperator<String> formatUpdater) {
-    if (!this.format.isSet()) {
-      throw new IllegalStateException("Cannot update 'format' before it is set");
-    }
-    this.format = changedValue(formatUpdater.apply(this.format.value()));
-    return this;
-  }
-
-  /**
    * Adds a single element to <code>tags</code>.
    *
    * <p>Generated from setter {@link JavadocDto#setTags(List) setTags(List<JavadocTagDto> tags)}
@@ -479,33 +400,6 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    */
   public JavadocDtoBuilder tags(List<JavadocTagDto> tags) {
     this.tags = changedValue(tags);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>tags</code> in place by applying the given operator, instead
-   * of reading it out, changing it and setting it again. Useful for adjustments relative to the
-   * current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination with
-   * the <code>With</code> copy-and-modify flow. The value must have been set before (directly or
-   * via an existing instance).
-   *
-   * <p>Generated from setter {@link JavadocDto#setTags(List) setTags(List<JavadocTagDto> tags)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.tagsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param tagsUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>tags</code> has not been set yet
-   */
-  public JavadocDtoBuilder tagsUpdate(UnaryOperator<List<JavadocTagDto>> tagsUpdater) {
-    if (!this.tags.isSet()) {
-      throw new IllegalStateException("Cannot update 'tags' before it is set");
-    }
-    this.tags = changedValue(tagsUpdater.apply(this.tags.value()));
     return this;
   }
 

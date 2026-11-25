@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.builders.BuilderToStringStyle;
 import org.javahelpers.codegen.builders.HashSetBuilder;
@@ -83,13 +82,11 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  *     .classAnnotations(() -> Set.of(AnnotationDtoBuilder.create().build()))
  *     .classAnnotations(annotationDtoBuilder -> annotationDtoBuilder)
  *     .classAnnotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
- *     .classAnnotationsUpdate(TreeSet::new)
  *     .add2ClassAnnotations(AnnotationDtoBuilder.create().build())
  *     .classFields(List.of(ClassFieldDtoBuilder.create().build()))
  *     .classFields(() -> List.of(ClassFieldDtoBuilder.create().build()))
  *     .classFields(classFieldDtoBuilder -> classFieldDtoBuilder)
  *     .classFields(ClassFieldDtoBuilder.create().build(), ClassFieldDtoBuilder.create().build())
- *     .classFieldsUpdate(list -> list.stream().sorted().toList())
  *     .add2ClassFields(ClassFieldDtoBuilder.create().build())
  *     .classJavadoc(new JavadocDto())
  *     .classJavadoc(JavadocDto::new)
@@ -98,27 +95,21 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  *     .constructors(() -> List.of(ConstructorDtoBuilder.create().build()))
  *     .constructors(constructorDtoBuilder -> constructorDtoBuilder)
  *     .constructors(ConstructorDtoBuilder.create().build(), ConstructorDtoBuilder.create().build())
- *     .constructorsUpdate(list -> list.stream().sorted().toList())
  *     .add2Constructors(ConstructorDtoBuilder.create().build())
  *     .generics(List.of(GenericParameterDtoBuilder.create().build()))
  *     .generics(() -> List.of(GenericParameterDtoBuilder.create().build()))
  *     .generics(genericParameterDtoBuilder -> genericParameterDtoBuilder)
  *     .generics(GenericParameterDtoBuilder.create().build(), GenericParameterDtoBuilder.create().build())
- *     .genericsUpdate(list -> list.stream().sorted().toList())
  *     .add2Generics(GenericParameterDtoBuilder.create().build())
- *     .importsUpdate(TreeSet::new)
- *     .interfacesUpdate(TreeSet::new)
  *     .methods(List.of(MethodDtoBuilder.create().build()))
  *     .methods(() -> List.of(MethodDtoBuilder.create().build()))
  *     .methods(methodDtoBuilder -> methodDtoBuilder)
  *     .methods(MethodDtoBuilder.create().build(), MethodDtoBuilder.create().build())
- *     .methodsUpdate(list -> list.stream().sorted().toList())
  *     .add2Methods(MethodDtoBuilder.create().build())
  *     .nestedTypes(List.of(NestedTypeDtoBuilder.create().build()))
  *     .nestedTypes(() -> List.of(NestedTypeDtoBuilder.create().build()))
  *     .nestedTypes(nestedTypeDtoBuilder -> nestedTypeDtoBuilder)
  *     .nestedTypes(NestedTypeDtoBuilder.create().build(), NestedTypeDtoBuilder.create().build())
- *     .nestedTypesUpdate(list -> list.stream().sorted().toList())
  *     .add2NestedTypes(NestedTypeDtoBuilder.create().build())
  *     .build();
  * }</pre>
@@ -236,31 +227,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    */
   public GenerationTargetClassDtoBuilder classAccessModifier(AccessModifier classAccessModifier) {
     this.classAccessModifier = changedValue(classAccessModifier);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>classAccessModifier</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setClassAccessModifier(AccessModifier)
-   * setClassAccessModifier(AccessModifier classAccessModifier)}
-   *
-   * @param classAccessModifierUpdater operator applied to the current value; its result becomes the
-   *     new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>classAccessModifier</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder classAccessModifierUpdate(
-      UnaryOperator<AccessModifier> classAccessModifierUpdater) {
-    if (!this.classAccessModifier.isSet()) {
-      throw new IllegalStateException("Cannot update 'classAccessModifier' before it is set");
-    }
-    this.classAccessModifier =
-        changedValue(classAccessModifierUpdater.apply(this.classAccessModifier.value()));
     return this;
   }
 
@@ -385,38 +351,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Updates the current value of <code>classAnnotations</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance). For changing multiple elements of a nested DTO,
-   * prefer the builder-consumer helper {@link #classAnnotations(Consumer)}.
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setClassAnnotations(Set)
-   * setClassAnnotations(Set<AnnotationDto> classAnnotations)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.classAnnotations(Set.of(AnnotationDtoBuilder.create().build())).classAnnotationsUpdate(TreeSet::new);
-   * }</pre>
-   *
-   * @param classAnnotationsUpdater operator applied to the current value; its result becomes the
-   *     new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>classAnnotations</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder classAnnotationsUpdate(
-      UnaryOperator<Set<AnnotationDto>> classAnnotationsUpdater) {
-    if (!this.classAnnotations.isSet()) {
-      throw new IllegalStateException("Cannot update 'classAnnotations' before it is set");
-    }
-    this.classAnnotations =
-        changedValue(classAnnotationsUpdater.apply(this.classAnnotations.value()));
-    return this;
-  }
-
-  /**
    * Adds a single element to <code>classFields</code>.
    *
    * <p>Generated from setter {@link GenerationTargetClassDto#setClassFields(List)
@@ -513,38 +447,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Updates the current value of <code>classFields</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple elements of a nested DTO, prefer the
-   * builder-consumer helper {@link #classFields(Consumer)}.
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setClassFields(List)
-   * setClassFields(List<ClassFieldDto> classFields)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.classFields(List.of(ClassFieldDtoBuilder.create().build()))
-   *     .classFieldsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param classFieldsUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>classFields</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder classFieldsUpdate(
-      UnaryOperator<List<ClassFieldDto>> classFieldsUpdater) {
-    if (!this.classFields.isSet()) {
-      throw new IllegalStateException("Cannot update 'classFields' before it is set");
-    }
-    this.classFields = changedValue(classFieldsUpdater.apply(this.classFields.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>classJavadoc</code> using a builder consumer that produces the value.
    *
    * <p>Generated from setter {@link GenerationTargetClassDto#setClassJavadoc(JavadocDto)
@@ -608,31 +510,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    */
   public GenerationTargetClassDtoBuilder classJavadoc(JavadocDto classJavadoc) {
     this.classJavadoc = changedValue(classJavadoc);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>classJavadoc</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple values of a nested DTO, prefer the
-   * builder-consumer helper {@link #classJavadoc(Consumer)}.
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setClassJavadoc(JavadocDto)
-   * setClassJavadoc(JavadocDto classJavadoc)}
-   *
-   * @param classJavadocUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>classJavadoc</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder classJavadocUpdate(
-      UnaryOperator<JavadocDto> classJavadocUpdater) {
-    if (!this.classJavadoc.isSet()) {
-      throw new IllegalStateException("Cannot update 'classJavadoc' before it is set");
-    }
-    this.classJavadoc = changedValue(classJavadocUpdater.apply(this.classJavadoc.value()));
     return this;
   }
 
@@ -733,38 +610,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Updates the current value of <code>constructors</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple elements of a nested DTO, prefer the
-   * builder-consumer helper {@link #constructors(Consumer)}.
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setConstructors(List)
-   * setConstructors(List<ConstructorDto> constructors)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.constructors(List.of(ConstructorDtoBuilder.create().build()))
-   *     .constructorsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param constructorsUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>constructors</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder constructorsUpdate(
-      UnaryOperator<List<ConstructorDto>> constructorsUpdater) {
-    if (!this.constructors.isSet()) {
-      throw new IllegalStateException("Cannot update 'constructors' before it is set");
-    }
-    this.constructors = changedValue(constructorsUpdater.apply(this.constructors.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>formattingMode</code> by invoking the provided supplier.
    *
    * <p>Generated from setter {@link GenerationTargetClassDto#setFormattingMode(FormattingMode)
@@ -791,30 +636,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    */
   public GenerationTargetClassDtoBuilder formattingMode(FormattingMode formattingMode) {
     this.formattingMode = changedValue(formattingMode);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>formattingMode</code> in place by applying the given
-   * operator, instead of reading it out, changing it and setting it again. Useful for adjustments
-   * relative to the current value, e.g. trimming, upper-casing, clamping or incrementing, and in
-   * combination with the <code>With</code> copy-and-modify flow. The value must have been set
-   * before (directly or via an existing instance).
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setFormattingMode(FormattingMode)
-   * setFormattingMode(FormattingMode formattingMode)}
-   *
-   * @param formattingModeUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>formattingMode</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder formattingModeUpdate(
-      UnaryOperator<FormattingMode> formattingModeUpdater) {
-    if (!this.formattingMode.isSet()) {
-      throw new IllegalStateException("Cannot update 'formattingMode' before it is set");
-    }
-    this.formattingMode = changedValue(formattingModeUpdater.apply(this.formattingMode.value()));
     return this;
   }
 
@@ -911,37 +732,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    */
   public GenerationTargetClassDtoBuilder generics(List<GenericParameterDto> generics) {
     this.generics = changedValue(generics);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>generics</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple elements of a nested DTO, prefer the
-   * builder-consumer helper {@link #generics(Consumer)}.
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setGenerics(List)
-   * setGenerics(List<GenericParameterDto> generics)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.generics(List.of(GenericParameterDtoBuilder.create().build()))
-   *     .genericsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param genericsUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>generics</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder genericsUpdate(
-      UnaryOperator<List<GenericParameterDto>> genericsUpdater) {
-    if (!this.generics.isSet()) {
-      throw new IllegalStateException("Cannot update 'generics' before it is set");
-    }
-    this.generics = changedValue(genericsUpdater.apply(this.generics.value()));
     return this;
   }
 
@@ -1050,35 +840,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Updates the current value of <code>imports</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setImports(Set)
-   * setImports(Set<ImportStatement> imports)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.importsUpdate(TreeSet::new);
-   * }</pre>
-   *
-   * @param importsUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>imports</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder importsUpdate(
-      UnaryOperator<Set<ImportStatement>> importsUpdater) {
-    if (!this.imports.isSet()) {
-      throw new IllegalStateException("Cannot update 'imports' before it is set");
-    }
-    this.imports = changedValue(importsUpdater.apply(this.imports.value()));
-    return this;
-  }
-
-  /**
    * Adds a single element to <code>interfaces</code>.
    *
    * <p>Generated from setter {@link GenerationTargetClassDto#setInterfaces(Set)
@@ -1160,36 +921,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    */
   public GenerationTargetClassDtoBuilder interfaces(Set<InterfaceName> interfaces) {
     this.interfaces = changedValue(interfaces);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>interfaces</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setInterfaces(Set)
-   * setInterfaces(Set<InterfaceName> interfaces)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.interfacesUpdate(TreeSet::new);
-   * }</pre>
-   *
-   * @param interfacesUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>interfaces</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder interfacesUpdate(
-      UnaryOperator<Set<InterfaceName>> interfacesUpdater) {
-    if (!this.interfaces.isSet()) {
-      throw new IllegalStateException("Cannot update 'interfaces' before it is set");
-    }
-    this.interfaces = changedValue(interfacesUpdater.apply(this.interfaces.value()));
     return this;
   }
 
@@ -1288,36 +1019,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Updates the current value of <code>methods</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple elements of a nested DTO, prefer the
-   * builder-consumer helper {@link #methods(Consumer)}.
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setMethods(List)
-   * setMethods(List<MethodDto> methods)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.methods(List.of(MethodDtoBuilder.create().build())).methodsUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param methodsUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>methods</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder methodsUpdate(
-      UnaryOperator<List<MethodDto>> methodsUpdater) {
-    if (!this.methods.isSet()) {
-      throw new IllegalStateException("Cannot update 'methods' before it is set");
-    }
-    this.methods = changedValue(methodsUpdater.apply(this.methods.value()));
-    return this;
-  }
-
-  /**
    * Adds a single element to <code>nestedTypes</code>.
    *
    * <p>Generated from setter {@link GenerationTargetClassDto#setNestedTypes(List)
@@ -1410,38 +1111,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    */
   public GenerationTargetClassDtoBuilder nestedTypes(List<NestedTypeDto> nestedTypes) {
     this.nestedTypes = changedValue(nestedTypes);
-    return this;
-  }
-
-  /**
-   * Updates the current value of <code>nestedTypes</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance). For changing multiple elements of a nested DTO, prefer the
-   * builder-consumer helper {@link #nestedTypes(Consumer)}.
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setNestedTypes(List)
-   * setNestedTypes(List<NestedTypeDto> nestedTypes)}
-   *
-   * <h4>Example:</h4>
-   *
-   * <pre>{@code
-   * builder.nestedTypes(List.of(NestedTypeDtoBuilder.create().build()))
-   *     .nestedTypesUpdate(list -> list.stream().sorted().toList());
-   * }</pre>
-   *
-   * @param nestedTypesUpdater operator applied to the current value; its result becomes the new
-   *     value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>nestedTypes</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder nestedTypesUpdate(
-      UnaryOperator<List<NestedTypeDto>> nestedTypesUpdater) {
-    if (!this.nestedTypes.isSet()) {
-      throw new IllegalStateException("Cannot update 'nestedTypes' before it is set");
-    }
-    this.nestedTypes = changedValue(nestedTypesUpdater.apply(this.nestedTypes.value()));
     return this;
   }
 
@@ -1603,28 +1272,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Updates the current value of <code>superType</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setSuperType(TypeName)
-   * setSuperType(TypeName superType)}
-   *
-   * @param superTypeUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>superType</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder superTypeUpdate(UnaryOperator<TypeName> superTypeUpdater) {
-    if (!this.superType.isSet()) {
-      throw new IllegalStateException("Cannot update 'superType' before it is set");
-    }
-    this.superType = changedValue(superTypeUpdater.apply(this.superType.value()));
-    return this;
-  }
-
-  /**
    * Sets the value for <code>typeName</code> by invoking the provided supplier.
    *
    * <p>Generated from setter {@link GenerationTargetClassDto#setTypeName(TypeName)
@@ -1671,28 +1318,6 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    */
   public GenerationTargetClassDtoBuilder typeName(String packageName, String className) {
     return typeName(new TypeName(packageName, className));
-  }
-
-  /**
-   * Updates the current value of <code>typeName</code> in place by applying the given operator,
-   * instead of reading it out, changing it and setting it again. Useful for adjustments relative to
-   * the current value, e.g. trimming, upper-casing, clamping or incrementing, and in combination
-   * with the <code>With</code> copy-and-modify flow. The value must have been set before (directly
-   * or via an existing instance).
-   *
-   * <p>Generated from setter {@link GenerationTargetClassDto#setTypeName(TypeName)
-   * setTypeName(TypeName typeName)}
-   *
-   * @param typeNameUpdater operator applied to the current value; its result becomes the new value
-   * @return current instance of builder
-   * @throws IllegalStateException if <code>typeName</code> has not been set yet
-   */
-  public GenerationTargetClassDtoBuilder typeNameUpdate(UnaryOperator<TypeName> typeNameUpdater) {
-    if (!this.typeName.isSet()) {
-      throw new IllegalStateException("Cannot update 'typeName' before it is set");
-    }
-    this.typeName = changedValue(typeNameUpdater.apply(this.typeName.value()));
-    return this;
   }
 
   /**
