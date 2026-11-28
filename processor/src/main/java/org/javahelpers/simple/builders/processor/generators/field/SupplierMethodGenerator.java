@@ -154,7 +154,7 @@ public class SupplierMethodGenerator implements MethodGenerator {
 
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format(
+            .description(
                 "Sets the value for <code>%s</code> by invoking the provided supplier.", fieldName)
             .add2Tags(
                 new JavadocTagDto(

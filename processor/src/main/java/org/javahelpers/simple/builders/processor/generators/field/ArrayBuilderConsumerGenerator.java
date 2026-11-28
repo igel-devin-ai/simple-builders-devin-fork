@@ -176,7 +176,7 @@ public class ArrayBuilderConsumerGenerator implements MethodGenerator {
     methodDto.setPriority(BuilderMethodDto.PRIORITY_MEDIUM);
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format(
+            .description(
                 "Sets the value for <code>%s</code> using the fluent builder consumer.", fieldName)
             .add2Tags(
                 new JavadocTagDto(

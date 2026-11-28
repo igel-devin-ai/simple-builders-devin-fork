@@ -212,7 +212,7 @@ public class CoreMethodsEnhancer implements BuilderEnhancer {
     String targetSimpleName = builderDto.getBuildingTargetTypeName().getClassName();
     method.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Builds the configured DTO instance.")
+            .description("Builds the configured DTO instance.")
             .exampleUsageCodeBlock(
                 e -> e.codeFormat("%s result = builder.build();".formatted(targetSimpleName)))
             .build());
@@ -253,7 +253,7 @@ public class CoreMethodsEnhancer implements BuilderEnhancer {
     // Add example to create() method
     method.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Creating a new builder for {@code %s}.", targetFullName)
+            .description("Creating a new builder for {@code %s}.", targetFullName)
             .add2Tags(
                 new JavadocTagDto("return", "builder for {@code %s}".formatted(targetFullName)))
             .exampleUsageCodeBlock(
@@ -297,7 +297,7 @@ public class CoreMethodsEnhancer implements BuilderEnhancer {
 
     method.setJavadoc(
         JavadocDtoBuilder.create()
-            .format(
+            .description(
                 "Returns a string representation of this builder, including only fields that have been set.")
             .add2Tags(new JavadocTagDto("return", "string representation of the builder"))
             .build());

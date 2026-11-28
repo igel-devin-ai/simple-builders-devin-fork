@@ -193,7 +193,7 @@ public class AddToCollectionGenerator implements MethodGenerator {
 
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Adds a single element to <code>%s</code>.", originalFieldName)
+            .description("Adds a single element to <code>%s</code>.", originalFieldName)
             .add2Tags(new JavadocTagDto("param", "element the element to add"))
             .add2Tags(new JavadocTagDto("return", JavadocConstants.RETURN_BUILDER_INSTANCE))
             .build());

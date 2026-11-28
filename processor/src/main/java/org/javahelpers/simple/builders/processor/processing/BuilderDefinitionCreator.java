@@ -976,8 +976,9 @@ public class BuilderDefinitionCreator {
     // just-built field, so it is applied after build)
     field.setJavaDoc(
         JavadocDtoBuilder.create()
-            .format("Tracked value for <code>%s</code>: %s.")
-            .args(fieldNameInBuilder, field.getJavaDocDescriptionOrFieldName())
+            .description(
+                "Tracked value for <code>%s</code>: %s.",
+                fieldNameInBuilder, field.getJavaDocDescriptionOrFieldName())
             .build());
 
     // Find matching getter on the DTO type using the builder field name

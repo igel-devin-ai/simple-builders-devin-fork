@@ -148,7 +148,7 @@ public class ArrayConversionGenerator implements MethodGenerator {
     String fieldJavadocDesc = field.getJavaDocDescriptionOrFieldName();
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Sets the value for <code>%s</code>.", fieldName)
+            .description("Sets the value for <code>%s</code>.", fieldName)
             .add2Tags(
                 new JavadocTagDto("param", parameter.getParameterName() + " " + fieldJavadocDesc))
             .add2Tags(new JavadocTagDto("return", JavadocConstants.RETURN_BUILDER_INSTANCE))

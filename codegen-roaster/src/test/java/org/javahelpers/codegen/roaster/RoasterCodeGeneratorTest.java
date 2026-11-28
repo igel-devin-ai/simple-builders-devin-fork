@@ -320,7 +320,7 @@ class RoasterCodeGeneratorTest {
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
             .classJavadoc(
-                JavadocDtoBuilder.create().format("Builder for {@link Person}.").args().build())
+                JavadocDtoBuilder.create().description("Builder for {@link Person}.").build())
             .superType(new TypeName("test", "AbstractBuilder"))
             .add2ClassAnnotations(
                 a ->
@@ -421,8 +421,7 @@ class RoasterCodeGeneratorTest {
                         .javadoc(
                             javadoc ->
                                 javadoc
-                                    .format("Applies the values.")
-                                    .args()
+                                    .description("Applies the values.")
                                     .add2Tags(JavadocTagDto.withoutValue("since"))
                                     .exampleUsageCodeBlock(
                                         JavadocCodeBlockDtoBuilder.create()
@@ -522,7 +521,7 @@ class RoasterCodeGeneratorTest {
                     n.typeName("Helper")
                         .kind(NestedTypeDto.NestedTypeKind.CLASS)
                         .visibility(AccessModifier.PUBLIC)
-                        .javadoc(javadoc -> javadoc.format("Nested helper.").args())
+                        .javadoc(javadoc -> javadoc.description("Nested helper."))
                         .add2Methods(
                             m ->
                                 m.methodName("assist")
@@ -561,8 +560,7 @@ class RoasterCodeGeneratorTest {
                         .javadoc(
                             javadoc ->
                                 javadoc
-                                    .format("Adds items.")
-                                    .args()
+                                    .description("Adds items.")
                                     .add2Tags(new JavadocTagDto("param", "values items to add"))
                                     .add2Tags(new JavadocTagDto("return", "this builder")))
                         .code("return null;")

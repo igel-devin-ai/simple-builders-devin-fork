@@ -103,7 +103,7 @@ class GenerationTargetClassDtoBuilderTest {
     GenerationTargetClassDto dto =
         GenerationTargetClassDtoBuilder.create()
             .typeName("test", "EmptyBuilder")
-            .classJavadoc(javadoc -> javadoc.format("Builder for {@link %s}.", "Person"))
+            .classJavadoc(javadoc -> javadoc.description("Builder for {@link %s}.", "Person"))
             .build();
 
     assertEquals("Builder for {@link Person}.", dto.getClassJavadoc().getDescription());

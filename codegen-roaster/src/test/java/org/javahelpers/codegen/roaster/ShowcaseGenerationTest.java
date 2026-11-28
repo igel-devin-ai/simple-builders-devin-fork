@@ -44,7 +44,7 @@ class ShowcaseGenerationTest {
             .typeName("example.profile", "UserProfile")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .classJavadoc(javadoc -> javadoc.format("A user's display name and tags.").args())
+            .classJavadoc(javadoc -> javadoc.description("A user's display name and tags."))
             .add2ClassAnnotations(
                 annotation ->
                     annotation
@@ -89,8 +89,7 @@ class ShowcaseGenerationTest {
                         .javadoc(
                             javadoc ->
                                 javadoc
-                                    .format("Returns the display name.")
-                                    .args()
+                                    .description("Returns the display name.")
                                     .add2Tags(new JavadocTagDto("return", "the display name")))
                         .code("return name;"))
             .add2Imports(List.class)

@@ -75,7 +75,7 @@ public class ConstructorEnhancer implements BuilderEnhancer {
     String targetFullName = builderDto.getBuildingTargetTypeName().getFullQualifiedName();
     return ConstructorDtoBuilder.create()
         .visibility(builderDto.getConfiguration().getBuilderConstructorAccess())
-        .javadoc(j -> j.format("Empty constructor of builder for {@code %s}.", targetFullName))
+        .javadoc(j -> j.description("Empty constructor of builder for {@code %s}.", targetFullName))
         .build();
   }
 
@@ -129,7 +129,7 @@ public class ConstructorEnhancer implements BuilderEnhancer {
     String targetFullName = builderDto.getBuildingTargetTypeName().getFullQualifiedName();
     constructor.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Initialisation of builder for {@code %s} by a instance.", targetFullName)
+            .description("Initialisation of builder for {@code %s} by a instance.", targetFullName)
             .add2Tags(new JavadocTagDto("param", "instance object instance for initialisiation"))
             .build());
 

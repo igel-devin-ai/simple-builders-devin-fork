@@ -29,7 +29,6 @@ import static org.javahelpers.codegen.builders.TrackedValue.initialValue;
 import static org.javahelpers.codegen.builders.TrackedValue.unsetValue;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -52,10 +51,10 @@ import org.javahelpers.codegen.builders.TrackedValue;
  *
  * <pre>{@code
  * JavadocDto result = JavadocDtoBuilder.create()
- *     .format("example format")
- *     .format("Hello %s", "World")
- *     .format(() -> "example format")
- *     .format(sb -> sb.append("text"))
+ *     .description("Rate 100%")
+ *     .description("Hello %s", "World")
+ *     .description(() -> "example description")
+ *     .description(sb -> sb.append("text"))
  *     .exampleUsageCodeBlock(new JavadocCodeBlockDto())
  *     .exampleUsageCodeBlock(JavadocCodeBlockDto::new)
  *     .exampleUsageCodeBlock(javadocCodeBlockDtoBuilder -> javadocCodeBlockDtoBuilder)
@@ -64,11 +63,8 @@ import org.javahelpers.codegen.builders.TrackedValue;
  */
 public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
 
-  /** Tracked value for <code>format</code>: format. */
-  private TrackedValue<String> format = unsetValue();
-
-  /** Tracked value for <code>args</code>: args. */
-  private TrackedValue<Object[]> args = unsetValue();
+  /** Tracked value for <code>description</code>: the main description text. */
+  private TrackedValue<String> description = unsetValue();
 
   /**
    * Tracked value for <code>exampleUsageCodeBlock</code>: the usage-example code block, or {@code
@@ -89,10 +85,7 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    * @param instance object instance for initialisiation
    */
   public JavadocDtoBuilder(JavadocDto instance) {
-    if (instance.getDescription() != null) {
-      this.format = initialValue(instance.getDescription().replace("%", "%%"));
-    }
-    this.args = initialValue(new Object[0]);
+    this.description = initialValue(instance.getDescription());
     this.exampleUsageCodeBlock = initialValue(instance.getExampleUsageCodeBlock());
     this.tags = initialValue(instance.getTags());
   }
@@ -110,69 +103,6 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    */
   public static JavadocDtoBuilder create() {
     return new JavadocDtoBuilder();
-  }
-
-  /**
-   * Sets the value for <code>args</code>.
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
-   *
-   * @param args args
-   * @return current instance of builder
-   */
-  public JavadocDtoBuilder args(List<Object> args) {
-    this.args = changedValue(args.toArray(new Object[0]));
-    return this;
-  }
-
-  /**
-   * Sets the value for <code>args</code> using the fluent builder consumer.
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
-   *
-   * @param argsBuilderConsumer consumer for args
-   * @return current instance of builder
-   */
-  public JavadocDtoBuilder args(Consumer<ArrayListBuilder<Object>> argsBuilderConsumer) {
-    ArrayListBuilder<Object> builder;
-    if (this.args.isSet()) {
-      builder = new ArrayListBuilder<Object>(Arrays.asList(this.args.value()));
-    } else {
-      builder = new ArrayListBuilder<Object>(Arrays.asList());
-    }
-    argsBuilderConsumer.accept(builder);
-    this.args = changedValue(builder.build().toArray(new Object[0]));
-    return this;
-  }
-
-  /**
-   * Sets the value for <code>args</code> by invoking the provided supplier.
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
-   *
-   * @param argsSupplier supplier for args
-   * @return current instance of builder
-   */
-  public JavadocDtoBuilder args(Supplier<Object[]> argsSupplier) {
-    this.args = changedValue(argsSupplier.get());
-    return this;
-  }
-
-  /**
-   * Sets the value for <code>args</code>.
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
-   *
-   * @param args args
-   * @return current instance of builder
-   */
-  public JavadocDtoBuilder args(Object... args) {
-    this.args = changedValue(args);
-    return this;
   }
 
   /**
@@ -246,102 +176,80 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
   }
 
   /**
-   * Sets the value for <code>format</code> by executing the provided consumer.
+   * Sets the literal <code>description</code> by executing the provided consumer.
    *
-   * <p>The text is passed through {@link String#format(String, Object...)} at {@link #build()}.
-   * Write a literal percent sign as {@code %%}, e.g. {@code format("100%%").args()} builds {@code
-   * "100%"}.
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
+   * <p>Uses {@link JavadocDto#setDescription(String)} without formatting the result.
    *
    * <h4>Example:</h4>
    *
    * <pre>{@code
-   * builder.format(sb -> sb.append("text"));
+   * builder.description(sb -> sb.append("text"));
    * }</pre>
    *
-   * @param formatStringBuilderConsumer consumer providing an instance of format
+   * @param descriptionStringBuilderConsumer consumer composing the description
    * @return current instance of builder
    */
-  public JavadocDtoBuilder format(Consumer<StringBuilder> formatStringBuilderConsumer) {
+  public JavadocDtoBuilder description(Consumer<StringBuilder> descriptionStringBuilderConsumer) {
     StringBuilder builder = new StringBuilder();
-    formatStringBuilderConsumer.accept(builder);
-    this.format = changedValue(builder.toString());
+    descriptionStringBuilderConsumer.accept(builder);
+    this.description = changedValue(builder.toString());
     return this;
   }
 
   /**
-   * Sets the value for <code>format</code> by invoking the provided supplier.
+   * Sets the literal <code>description</code> by invoking the provided supplier.
    *
-   * <p>The text is passed through {@link String#format(String, Object...)} at {@link #build()}.
-   * Write a literal percent sign as {@code %%}, e.g. {@code format("100%%").args()} builds {@code
-   * "100%"}.
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
+   * <p>Uses {@link JavadocDto#setDescription(String)} without formatting the result.
    *
    * <h4>Example:</h4>
    *
    * <pre>{@code
-   * builder.format(() -> "example format");
+   * builder.description(() -> "Rate 100%");
    * }</pre>
    *
-   * @param formatSupplier supplier for format
+   * @param descriptionSupplier supplier for the description
    * @return current instance of builder
    */
-  public JavadocDtoBuilder format(Supplier<String> formatSupplier) {
-    this.format = changedValue(formatSupplier.get());
+  public JavadocDtoBuilder description(Supplier<String> descriptionSupplier) {
+    this.description = changedValue(descriptionSupplier.get());
     return this;
   }
 
   /**
-   * Sets the String value for <code>format</code> by using String.format(format, args). See {@link
-   * String#format(String, Object...)} for details.
-   *
-   * <p>The resulting text is passed through {@link String#format(String, Object...)} again at
-   * {@link #build()}. Escape literal percent signs for both formatting passes, e.g. {@code
-   * format("%s %d%%%%", "Rate", 100).args()} builds {@code "Rate 100%"}.
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
+   * Sets the <code>description</code> by applying {@link String#format(String, Object...)} once.
+   * The result is not formatted again at {@link #build()}.
    *
    * <h4>Example:</h4>
    *
    * <pre>{@code
-   * builder.format("Hello %s", "World");
+   * builder.description("%s done", "100%");
    * }</pre>
    *
    * @param format A format string
    * @param args Arguments referenced by the format specifiers in the format string.
    * @return current instance of builder
    */
-  public JavadocDtoBuilder format(String format, Object... args) {
-    this.format = changedValue(String.format(format, args));
+  public JavadocDtoBuilder description(String format, Object... args) {
+    this.description = changedValue(String.format(format, args));
     return this;
   }
 
   /**
-   * Sets the value for <code>format</code>.
+   * Sets the literal <code>description</code>, without interpreting format specifiers.
    *
-   * <p>The text is passed through {@link String#format(String, Object...)} at {@link #build()}.
-   * Write a literal percent sign as {@code %%}, e.g. {@code format("100%%").args()} builds {@code
-   * "100%"}.
-   *
-   * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
-   * JavadocDto(String format, Object args)}
+   * <p>Uses {@link JavadocDto#setDescription(String)}.
    *
    * <h4>Example:</h4>
    *
    * <pre>{@code
-   * builder.format("example format");
+   * builder.description("Rate 100%");
    * }</pre>
    *
-   * @param format format
+   * @param description the main description text (may be null)
    * @return current instance of builder
    */
-  public JavadocDtoBuilder format(String format) {
-    this.format = changedValue(format);
+  public JavadocDtoBuilder description(String description) {
+    this.description = changedValue(description);
     return this;
   }
 
@@ -466,7 +374,8 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    */
   @Override
   public JavadocDto build() {
-    JavadocDto result = new JavadocDto(this.format.value(), this.args.value());
+    JavadocDto result = new JavadocDto();
+    this.description.ifSet(result::setDescription);
     this.exampleUsageCodeBlock.ifSet(result::setExampleUsageCodeBlock);
     this.tags.ifSet(result::setTags);
     return result;
@@ -480,8 +389,7 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
   @Override
   public String toString() {
     return new ToStringBuilder(this, BuilderToStringStyle.INSTANCE)
-        .append("format", this.format)
-        .append("args", this.args)
+        .append("description", this.description)
         .append("exampleUsageCodeBlock", this.exampleUsageCodeBlock)
         .append("tags", this.tags)
         .toString();

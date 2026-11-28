@@ -218,7 +218,7 @@ public final class MethodGeneratorUtil {
     String fieldJavadocDesc = field.getJavaDocDescriptionOrFieldName();
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Sets the value for <code>%s</code>.", field.getOriginalFieldName())
+            .description("Sets the value for <code>%s</code>.", field.getOriginalFieldName())
             .add2Tags(
                 new JavadocTagDto("param", parameter.getParameterName() + " " + fieldJavadocDesc))
             .add2Tags(new JavadocTagDto("return", JavadocConstants.RETURN_BUILDER_INSTANCE))
@@ -289,7 +289,7 @@ public final class MethodGeneratorUtil {
     String fieldJavadocDesc = field.getJavaDocDescriptionOrFieldName();
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format(
+            .description(
                 "Sets the value for <code>%s</code> using a builder consumer that produces the value.",
                 field.getFieldNameInBuilder())
             .add2Tags(
@@ -460,7 +460,7 @@ public final class MethodGeneratorUtil {
     String fieldJavadocDesc = field.getJavaDocDescriptionOrFieldName();
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format(
+            .description(
                 "Sets the value for <code>%s</code> by executing the provided consumer.",
                 field.getOriginalFieldName())
             .add2Tags(

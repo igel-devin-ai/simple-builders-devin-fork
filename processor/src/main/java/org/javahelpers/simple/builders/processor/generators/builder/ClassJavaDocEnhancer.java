@@ -132,7 +132,7 @@ public class ClassJavaDocEnhancer implements BuilderEnhancer {
   private JavadocDto createClassJavadoc(TypeName targetType) {
     String qualifiedClassName = targetType.getFullQualifiedName();
     return JavadocDtoBuilder.create()
-        .format(
+        .description(
             """
             Builder for {@code %s}.
             <p>

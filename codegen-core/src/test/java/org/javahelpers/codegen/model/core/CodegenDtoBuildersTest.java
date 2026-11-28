@@ -156,15 +156,14 @@ class CodegenDtoBuildersTest {
   @Test
   void buildsJavadoc() {
     JavadocTagDto tag = new JavadocTagDto("return", "a value");
-    JavadocDto dto =
-        JavadocDtoBuilder.create().format("Summary").args(new Object[0]).add2Tags(tag).build();
+    JavadocDto dto = JavadocDtoBuilder.create().description("Summary").add2Tags(tag).build();
     assertEquals("Summary", dto.getDescription());
     assertEquals(List.of(tag), dto.getTags());
   }
 
   @TestFactory
   Stream<DynamicTest> copiesJavadocDescriptionAndTags() {
-    return Stream.of("Summary", "Rate 100%", "Placeholder %s", "100%%", "")
+    return Stream.of("Summary", "Rate 100%", "Placeholder %s", "")
         .map(
             description ->
                 DynamicTest.dynamicTest(
@@ -202,12 +201,15 @@ class CodegenDtoBuildersTest {
     original.setTags(List.of(tag));
 
     JavadocDtoBuilder copy = assertDoesNotThrow(() -> new JavadocDtoBuilder(original));
-    assertThrows(NullPointerException.class, copy::build);
-    assertThrows(NullPointerException.class, () -> JavadocDtoBuilder.create().build());
-    assertEquals(List.of(tag), copy.format("100%%").build().getTags());
-    assertEquals("100%", copy.build().getDescription());
+    JavadocDto copied = copy.build();
+    assertNull(copied.getDescription());
+    assertEquals(List.of(tag), copied.getTags());
+    assertNull(JavadocDtoBuilder.create().build().getDescription());
 
-    JavadocDto modified = original.with(b -> b.format("Summary"));
+    JavadocDto modified = original.with(b -> b.add2Tags(new JavadocTagDto("return", "a value")));
+    assertNull(modified.getDescription());
+    assertEquals(List.of(tag, new JavadocTagDto("return", "a value")), modified.getTags());
+    modified = original.with(b -> b.description("Summary"));
     assertEquals("Summary", modified.getDescription());
     assertEquals(List.of(tag), modified.getTags());
     assertNull(original.getDescription());
@@ -215,31 +217,30 @@ class CodegenDtoBuildersTest {
   }
 
   @Test
-  void javadocFormatKeepsStringFormatSemantics() {
+  void javadocDescriptionIsLiteralUnlessExplicitlyFormatted() {
     assertEquals(
-        "100%", JavadocDtoBuilder.create().format("100%%").args().build().getDescription());
+        "Rate 100%", JavadocDtoBuilder.create().description("Rate 100%").build().getDescription());
     assertEquals(
-        "100%", JavadocDtoBuilder.create().format(() -> "100%%").args().build().getDescription());
+        "100%", JavadocDtoBuilder.create().description(() -> "100%").build().getDescription());
     assertEquals(
         "100%",
-        JavadocDtoBuilder.create()
-            .format(sb -> sb.append("100%%"))
-            .args()
-            .build()
-            .getDescription());
+        JavadocDtoBuilder.create().description(sb -> sb.append("100%")).build().getDescription());
     assertEquals(
-        "Rate 100%",
-        JavadocDtoBuilder.create()
-            .format("%s %d%%%%", "Rate", 100)
-            .args()
-            .build()
-            .getDescription());
-    assertEquals(
-        "Hello World",
-        JavadocDtoBuilder.create().format("Hello %s", "World").args().build().getDescription());
+        "100% done",
+        JavadocDtoBuilder.create().description("%s done", "100%").build().getDescription());
     assertThrows(
-        UnknownFormatConversionException.class,
-        () -> JavadocDtoBuilder.create().format("100%").args().build());
+        MissingFormatArgumentException.class,
+        () -> JavadocDtoBuilder.create().description("%s %s", "one argument"));
+    assertNull(JavadocDtoBuilder.create().description((String) null).build().getDescription());
+  }
+
+  @Test
+  void setsJavadocDescriptionLiterally() {
+    JavadocDto dto = new JavadocDto();
+    dto.setDescription("Rate 100% with %s unchanged");
+    assertEquals("Rate 100% with %s unchanged", dto.getDescription());
+    dto.setDescription(null);
+    assertNull(dto.getDescription());
   }
 
   @Test

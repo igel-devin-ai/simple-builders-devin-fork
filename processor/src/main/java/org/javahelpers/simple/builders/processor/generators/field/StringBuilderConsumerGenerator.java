@@ -162,7 +162,7 @@ public class StringBuilderConsumerGenerator implements MethodGenerator {
     methodDto.setPriority(BuilderMethodDto.PRIORITY_LOW);
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format(
+            .description(
                 "Sets the value for <code>%s</code> by executing the provided consumer.", fieldName)
             .add2Tags(
                 new JavadocTagDto(

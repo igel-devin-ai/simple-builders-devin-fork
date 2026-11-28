@@ -111,6 +111,15 @@ public class JavadocDto implements JavadocDtoBuilder.With {
   }
 
   /**
+   * Sets the main description text without formatting.
+   *
+   * @param description the main description text
+   */
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  /**
    * Gets the list of Javadoc tags.
    *
    * @return the list of tags

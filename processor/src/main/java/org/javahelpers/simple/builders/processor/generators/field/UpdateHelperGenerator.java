@@ -191,7 +191,7 @@ public class UpdateHelperGenerator implements MethodGenerator {
     description += builderConsumerGuidance(field, context);
     methodDto.setJavadoc(
         JavadocDtoBuilder.create()
-            .format(description)
+            .description(description)
             .add2Tags(
                 new JavadocTagDto(
                     "param",

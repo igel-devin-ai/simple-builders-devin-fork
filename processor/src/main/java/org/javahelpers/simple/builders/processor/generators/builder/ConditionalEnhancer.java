@@ -143,7 +143,8 @@ public class ConditionalEnhancer implements BuilderEnhancer {
 
     method.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Conditionally applies builder modifications based on a condition evaluation.")
+            .description(
+                "Conditionally applies builder modifications based on a condition evaluation.")
             .add2Tags(new JavadocTagDto("param", "condition the condition to evaluate"))
             .add2Tags(
                 new JavadocTagDto("param", "trueCase the consumer to apply if condition is true"))
@@ -175,7 +176,7 @@ public class ConditionalEnhancer implements BuilderEnhancer {
 
     method.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Conditionally applies builder modifications if the condition is true.")
+            .description("Conditionally applies builder modifications if the condition is true.")
             .add2Tags(new JavadocTagDto("param", "condition the condition to evaluate"))
             .add2Tags(
                 new JavadocTagDto(

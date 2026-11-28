@@ -121,7 +121,7 @@ public class WithInterfaceEnhancer implements BuilderEnhancer {
         .visibility(AccessModifier.PUBLIC)
         .javadoc(
             j ->
-                j.format(
+                j.description(
                     "Interface that can be implemented by the DTO to provide fluent modification methods."))
         // First method: DtoType with(Consumer<BuilderType> b)
         // Second method: BuilderType with()
@@ -169,7 +169,7 @@ public class WithInterfaceEnhancer implements BuilderEnhancer {
 
     method.setJavadoc(
         JavadocDtoBuilder.create()
-            .format(
+            .description(
                 "Initializes a builder from an instance of this class, using methods of this builder to change values and returns the new built object.")
             .add2Tags(new JavadocTagDto("param", "b the consumer to apply modifications"))
             .add2Tags(new JavadocTagDto("return", "the modified instance"))
@@ -209,7 +209,7 @@ public class WithInterfaceEnhancer implements BuilderEnhancer {
 
     method.setJavadoc(
         JavadocDtoBuilder.create()
-            .format("Creates a builder initialized from this instance.")
+            .description("Creates a builder initialized from this instance.")
             .add2Tags(
                 new JavadocTagDto("return", "a builder initialized with this instance's values"))
             .build());
