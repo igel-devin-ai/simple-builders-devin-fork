@@ -72,8 +72,8 @@ import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDtoBu
  *     .defaultValue(sb -> sb.append("text"))
  *     .fieldGenerics(List.of(GenericParameterDtoBuilder.create().build()))
  *     .fieldGenerics(() -> List.of(GenericParameterDtoBuilder.create().build()))
- *     .fieldGenerics(genericParameterDtoBuilder -> genericParameterDtoBuilder)
- *     .fieldGenerics(GenericParameterDtoBuilder.create().build(), GenericParameterDtoBuilder.create().build())
+ *     .add2FieldGenerics(element -> {})
+ *     .add2FieldGenerics(first -> {}, second -> {})
  *     .add2FieldGenerics(GenericParameterDtoBuilder.create().build())
  *     .fieldNameInBuilder("example fieldNameInBuilder")
  *     .fieldNameInBuilder("Hello %s", "World")
@@ -97,8 +97,8 @@ import org.javahelpers.simple.builders.processor.model.method.BuilderMethodDtoBu
  *     .originalJavaDocDescription(sb -> sb.append("text"))
  *     .parameterAnnotations(List.of(AnnotationDtoBuilder.create().build()))
  *     .parameterAnnotations(() -> List.of(AnnotationDtoBuilder.create().build()))
- *     .parameterAnnotations(annotationDtoBuilder -> annotationDtoBuilder)
- *     .parameterAnnotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
+ *     .add2ParameterAnnotations(element -> {})
+ *     .add2ParameterAnnotations(first -> {}, second -> {})
  *     .add2ParameterAnnotations(AnnotationDtoBuilder.create().build())
  *     .setterName("example setterName")
  *     .setterName("Hello %s", "World")
@@ -331,12 +331,12 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Adds one element to <code>fieldGenerics</code>, configured through its builder.
+   * Appends one element to <code>fieldGenerics</code>, configured through its builder.
    *
    * @param fieldGenericBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public BuilderFieldDtoBuilder fieldGenerics(
+  public BuilderFieldDtoBuilder add2FieldGenerics(
       Consumer<GenericParameterDtoBuilder> fieldGenericBuilderConsumer) {
     GenericParameterDtoBuilder elementBuilder = new GenericParameterDtoBuilder();
     fieldGenericBuilderConsumer.accept(elementBuilder);
@@ -344,16 +344,16 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Adds elements to <code>fieldGenerics</code>, each configured through its builder.
+   * Appends elements to <code>fieldGenerics</code>, each configured through its builder.
    *
    * @param fieldGenericBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final BuilderFieldDtoBuilder fieldGenerics(
+  public final BuilderFieldDtoBuilder add2FieldGenerics(
       Consumer<GenericParameterDtoBuilder>... fieldGenericBuilderConsumers) {
     for (Consumer<GenericParameterDtoBuilder> consumer : fieldGenericBuilderConsumers) {
-      fieldGenerics(consumer);
+      add2FieldGenerics(consumer);
     }
     return this;
   }
@@ -1037,12 +1037,12 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Adds one element to <code>parameterAnnotations</code>, configured through its builder.
+   * Appends one element to <code>parameterAnnotations</code>, configured through its builder.
    *
    * @param parameterAnnotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public BuilderFieldDtoBuilder parameterAnnotations(
+  public BuilderFieldDtoBuilder add2ParameterAnnotations(
       Consumer<AnnotationDtoBuilder> parameterAnnotationBuilderConsumer) {
     AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
     parameterAnnotationBuilderConsumer.accept(elementBuilder);
@@ -1050,16 +1050,16 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Adds elements to <code>parameterAnnotations</code>, each configured through its builder.
+   * Appends elements to <code>parameterAnnotations</code>, each configured through its builder.
    *
    * @param parameterAnnotationBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final BuilderFieldDtoBuilder parameterAnnotations(
+  public final BuilderFieldDtoBuilder add2ParameterAnnotations(
       Consumer<AnnotationDtoBuilder>... parameterAnnotationBuilderConsumers) {
     for (Consumer<AnnotationDtoBuilder> consumer : parameterAnnotationBuilderConsumers) {
-      parameterAnnotations(consumer);
+      add2ParameterAnnotations(consumer);
     }
     return this;
   }
@@ -1250,28 +1250,29 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Adds one element to <code>methods</code>, configured through its builder.
+   * Appends one element to <code>methods</code>, configured through its builder.
    *
    * @param methodBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public BuilderFieldDtoBuilder methods(Consumer<BuilderMethodDtoBuilder> methodBuilderConsumer) {
+  public BuilderFieldDtoBuilder add2Methods(
+      Consumer<BuilderMethodDtoBuilder> methodBuilderConsumer) {
     BuilderMethodDtoBuilder elementBuilder = BuilderMethodDtoBuilder.create();
     methodBuilderConsumer.accept(elementBuilder);
     return add2Methods(elementBuilder.build());
   }
 
   /**
-   * Adds elements to <code>methods</code>, each configured through its builder.
+   * Appends elements to <code>methods</code>, each configured through its builder.
    *
    * @param methodBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final BuilderFieldDtoBuilder methods(
+  public final BuilderFieldDtoBuilder add2Methods(
       Consumer<BuilderMethodDtoBuilder>... methodBuilderConsumers) {
     for (Consumer<BuilderMethodDtoBuilder> consumer : methodBuilderConsumers) {
-      methods(consumer);
+      add2Methods(consumer);
     }
     return this;
   }

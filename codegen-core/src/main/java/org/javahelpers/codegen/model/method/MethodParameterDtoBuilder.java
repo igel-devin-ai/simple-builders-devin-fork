@@ -60,8 +60,8 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  * MethodParameterDto result = MethodParameterDtoBuilder.create()
  *     .annotations(List.of(AnnotationDtoBuilder.create().build()))
  *     .annotations(() -> List.of(AnnotationDtoBuilder.create().build()))
- *     .annotations(annotationDtoBuilder -> annotationDtoBuilder)
- *     .annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
+ *     .add2Annotations(element -> {})
+ *     .add2Annotations(first -> {}, second -> {})
  *     .add2Annotations(AnnotationDtoBuilder.create().build())
  *     .parameterName("example parameterName")
  *     .parameterName("Hello %s", "World")
@@ -163,12 +163,12 @@ public class MethodParameterDtoBuilder implements IBuilderBase<MethodParameterDt
   }
 
   /**
-   * Adds one element to <code>annotations</code>, configured through its builder.
+   * Appends one element to <code>annotations</code>, configured through its builder.
    *
    * @param annotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public MethodParameterDtoBuilder annotations(
+  public MethodParameterDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder> annotationBuilderConsumer) {
     AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
     annotationBuilderConsumer.accept(elementBuilder);
@@ -176,16 +176,16 @@ public class MethodParameterDtoBuilder implements IBuilderBase<MethodParameterDt
   }
 
   /**
-   * Adds elements to <code>annotations</code>, each configured through its builder.
+   * Appends elements to <code>annotations</code>, each configured through its builder.
    *
    * @param annotationBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final MethodParameterDtoBuilder annotations(
+  public final MethodParameterDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder>... annotationBuilderConsumers) {
     for (Consumer<AnnotationDtoBuilder> consumer : annotationBuilderConsumers) {
-      annotations(consumer);
+      add2Annotations(consumer);
     }
     return this;
   }

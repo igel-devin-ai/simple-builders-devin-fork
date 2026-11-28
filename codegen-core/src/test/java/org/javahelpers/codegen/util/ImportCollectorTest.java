@@ -98,7 +98,7 @@ class ImportCollectorTest {
     GenerationTargetClassDto classDef =
         GenerationTargetClassDtoBuilder.create()
             .typeName("com.example", "Dto")
-            .classFields(
+            .add2ClassFields(
                 f -> f.fieldName("samePackage").fieldType("com.example", "Sibling"),
                 f -> f.fieldName("langType").fieldType("java.lang", "String"),
                 f -> f.fieldName("needed").fieldType("java.util", "Optional"))
@@ -112,7 +112,7 @@ class ImportCollectorTest {
     GenerationTargetClassDto classDef =
         GenerationTargetClassDtoBuilder.create()
             .typeName("com.example", "Dto")
-            .classFields(
+            .add2ClassFields(
                 f -> f.fieldName("z").fieldType("java.util", "TreeSet"),
                 f -> f.fieldName("a").fieldType("java.util", "ArrayDeque"),
                 f -> f.fieldName("m").fieldType("java.time", "Instant"))
@@ -127,7 +127,7 @@ class ImportCollectorTest {
     GenerationTargetClassDto classDef =
         GenerationTargetClassDtoBuilder.create()
             .typeName("com.example", "Dto")
-            .classFields(f -> f.fieldName("needed").fieldType("java.util", "Optional"))
+            .add2ClassFields(f -> f.fieldName("needed").fieldType("java.util", "Optional"))
             .build();
     classDef.addImport((ImportStatement) null);
 
@@ -139,12 +139,13 @@ class ImportCollectorTest {
     GenerationTargetClassDto classDef =
         GenerationTargetClassDtoBuilder.create()
             .typeName("com.example", "Dto")
-            .classFields(f -> f.fieldName("mapping").fieldType("com.example", "StringIntegerMap"))
-            .methods(
+            .add2ClassFields(
+                f -> f.fieldName("mapping").fieldType("com.example", "StringIntegerMap"))
+            .add2Methods(
                 m ->
                     m.methodName("values")
                         .returnType("java.util", "Collection")
-                        .parameters(
+                        .add2Parameters(
                             p -> p.parameterName("key").parameterTypeName("com.other", "KeyDto")))
             .build();
 

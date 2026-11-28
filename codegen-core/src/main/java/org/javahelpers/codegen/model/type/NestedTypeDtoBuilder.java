@@ -59,16 +59,16 @@ import org.javahelpers.codegen.model.method.MethodDtoBuilder;
  * NestedTypeDto result = NestedTypeDtoBuilder.create()
  *     .annotations(List.of(AnnotationDtoBuilder.create().build()))
  *     .annotations(() -> List.of(AnnotationDtoBuilder.create().build()))
- *     .annotations(annotationDtoBuilder -> annotationDtoBuilder)
- *     .annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
+ *     .add2Annotations(element -> {})
+ *     .add2Annotations(first -> {}, second -> {})
  *     .add2Annotations(AnnotationDtoBuilder.create().build())
  *     .javadoc(new JavadocDto())
  *     .javadoc(JavadocDto::new)
  *     .javadoc(javadocDtoBuilder -> javadocDtoBuilder)
  *     .methods(List.of(MethodDtoBuilder.create().build()))
  *     .methods(() -> List.of(MethodDtoBuilder.create().build()))
- *     .methods(methodDtoBuilder -> methodDtoBuilder)
- *     .methods(MethodDtoBuilder.create().build(), MethodDtoBuilder.create().build())
+ *     .add2Methods(element -> {})
+ *     .add2Methods(first -> {}, second -> {})
  *     .add2Methods(MethodDtoBuilder.create().build())
  *     .typeName("example typeName")
  *     .typeName("Hello %s", "World")
@@ -181,12 +181,12 @@ public class NestedTypeDtoBuilder implements IBuilderBase<NestedTypeDto> {
   }
 
   /**
-   * Adds one element to <code>annotations</code>, configured through its builder.
+   * Appends one element to <code>annotations</code>, configured through its builder.
    *
    * @param annotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public NestedTypeDtoBuilder annotations(
+  public NestedTypeDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder> annotationBuilderConsumer) {
     AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
     annotationBuilderConsumer.accept(elementBuilder);
@@ -194,16 +194,16 @@ public class NestedTypeDtoBuilder implements IBuilderBase<NestedTypeDto> {
   }
 
   /**
-   * Adds elements to <code>annotations</code>, each configured through its builder.
+   * Appends elements to <code>annotations</code>, each configured through its builder.
    *
    * @param annotationBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final NestedTypeDtoBuilder annotations(
+  public final NestedTypeDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder>... annotationBuilderConsumers) {
     for (Consumer<AnnotationDtoBuilder> consumer : annotationBuilderConsumers) {
-      annotations(consumer);
+      add2Annotations(consumer);
     }
     return this;
   }
@@ -371,27 +371,28 @@ public class NestedTypeDtoBuilder implements IBuilderBase<NestedTypeDto> {
   }
 
   /**
-   * Adds one element to <code>methods</code>, configured through its builder.
+   * Appends one element to <code>methods</code>, configured through its builder.
    *
    * @param methodBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public NestedTypeDtoBuilder methods(Consumer<MethodDtoBuilder> methodBuilderConsumer) {
+  public NestedTypeDtoBuilder add2Methods(Consumer<MethodDtoBuilder> methodBuilderConsumer) {
     MethodDtoBuilder elementBuilder = MethodDtoBuilder.create();
     methodBuilderConsumer.accept(elementBuilder);
     return add2Methods(elementBuilder.build());
   }
 
   /**
-   * Adds elements to <code>methods</code>, each configured through its builder.
+   * Appends elements to <code>methods</code>, each configured through its builder.
    *
    * @param methodBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final NestedTypeDtoBuilder methods(Consumer<MethodDtoBuilder>... methodBuilderConsumers) {
+  public final NestedTypeDtoBuilder add2Methods(
+      Consumer<MethodDtoBuilder>... methodBuilderConsumers) {
     for (Consumer<MethodDtoBuilder> consumer : methodBuilderConsumers) {
-      methods(consumer);
+      add2Methods(consumer);
     }
     return this;
   }

@@ -162,7 +162,7 @@ public class UpdateHelperGenerator implements MethodGenerator {
         BuilderMethodDtoBuilder.create()
             .methodName(generateBuilderMethodName(originalFieldName, context) + "Update")
             .returnType(builderType)
-            .parameters(el -> el.parameterName(parameterName).parameterTypeName(updaterType))
+            .add2Parameters(el -> el.parameterName(parameterName).parameterTypeName(updaterType))
             .modifier(getMethodAccessModifier(context))
             .build();
     methodDto.setCode(

@@ -196,7 +196,7 @@ public class JacksonModuleGenerator {
         .typeName(entry.dtoType().getClassName() + "Mixin")
         .kind(NestedTypeDto.NestedTypeKind.INTERFACE)
         .visibility(AccessModifier.PRIVATE)
-        .annotations(
+        .add2Annotations(
             el ->
                 el.annotationType(JSON_DESERIALIZE_TYPE)
                     .members(

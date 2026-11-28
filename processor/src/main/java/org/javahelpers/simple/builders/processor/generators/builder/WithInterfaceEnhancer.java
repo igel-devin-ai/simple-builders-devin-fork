@@ -146,7 +146,7 @@ public class WithInterfaceEnhancer implements BuilderEnhancer {
             .methodName("with")
             .returnType(dtoType)
             // Parameter: Consumer<BuilderType> b
-            .parameters(el -> el.parameterName("b").parameterTypeName(consumerType))
+            .add2Parameters(el -> el.parameterName("b").parameterTypeName(consumerType))
             .build();
 
     // Add implementation with validation to catch wrong implementations

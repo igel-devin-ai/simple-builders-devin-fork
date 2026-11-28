@@ -60,7 +60,7 @@ class RoasterCodeGeneratorTest {
   void preservesLeadingFieldTypeAnnotation() throws Exception {
     GenerationTargetClassDto classDef =
         annotatedClassDefinition()
-            .classFields(
+            .add2ClassFields(
                 f ->
                     f.fieldName("value")
                         .fieldType(stringTypeNullableAnnotated())
@@ -83,13 +83,13 @@ class RoasterCodeGeneratorTest {
   void preservesLeadingReturnTypeAnnotation() throws Exception {
     GenerationTargetClassDto classDef =
         annotatedClassDefinition()
-            .methods(
+            .add2Methods(
                 m ->
                     m.methodName("value")
                         .returnType(stringTypeNullableAnnotated())
                         .modifier(AccessModifier.PUBLIC)
                         .code("return null;")
-                        .annotations(a -> a.annotationType(Deprecated.class)))
+                        .add2Annotations(a -> a.annotationType(Deprecated.class)))
             .build();
 
     assertAnnotatedSource(
@@ -115,18 +115,18 @@ class RoasterCodeGeneratorTest {
         new TypeNameGeneric(TypeName.of(List.class), listOfStringsAnnotated);
     GenerationTargetClassDto classDef =
         annotatedClassDefinition()
-            .methods(
+            .add2Methods(
                 m ->
                     m.methodName("values")
                         .returnType(listOfStringsAnnotated)
                         .modifier(AccessModifier.PUBLIC)
                         .code("return null;"))
-            .nestedTypes(
+            .add2NestedTypes(
                 n ->
                     n.typeName("Nested")
                         .kind(NestedTypeDto.NestedTypeKind.INTERFACE)
                         .visibility(AccessModifier.PUBLIC)
-                        .methods(
+                        .add2Methods(
                             m ->
                                 m.methodName("values")
                                     .returnType(listOfListsAnnotated)
@@ -192,7 +192,7 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "DateBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .classFields(
+            .add2ClassFields(
                 f -> f.fieldName("utilDate").fieldType("java.util", "Date"),
                 f -> f.fieldName("sqlDate").fieldType("java.sql", "Date"))
             .build();
@@ -215,7 +215,7 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "ListBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .classFields(
+            .add2ClassFields(
                 f ->
                     f.fieldName("utilList")
                         .fieldType(new TypeNameGeneric(java.util.List.class, String.class)),
@@ -242,19 +242,19 @@ class RoasterCodeGeneratorTest {
             .formattingMode(FormattingMode.NONE)
             // Two distinct NonNull annotations on different declaration sites: the one that wins
             // the import renders simple, the other stays qualified.
-            .classAnnotations(a -> a.annotationType("org.a", "NonNull"))
-            .methods(
+            .add2ClassAnnotations(a -> a.annotationType("org.a", "NonNull"))
+            .add2Methods(
                 m ->
                     m.methodName("x")
                         .returnType(String.class)
                         .modifier(AccessModifier.PUBLIC)
                         .code("return null;")
-                        .annotations(a -> a.annotationType("org.b", "NonNull"))
-                        .parameters(
+                        .add2Annotations(a -> a.annotationType("org.b", "NonNull"))
+                        .add2Parameters(
                             p ->
                                 p.parameterName("in")
                                     .parameterTypeName(String.class)
-                                    .annotations(a -> a.annotationType("org.a", "NonNull"))))
+                                    .add2Annotations(a -> a.annotationType("org.a", "NonNull"))))
             // Two distinct interfaces sharing a simple name.
             .interfaces(
                 new InterfaceName("org.a", "Cloneable"), new InterfaceName("org.b", "Cloneable"))
@@ -287,14 +287,14 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "AmbiguousBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .methods(
+            .add2Methods(
                 m ->
                     m.methodName("x")
                         .returnType(String.class)
                         .modifier(AccessModifier.PUBLIC)
                         .code("return null;")
-                        .annotations(a -> a.annotationType("org.a", "Nullable")))
-            .classFields(f -> f.fieldName("value").fieldType(fieldType))
+                        .add2Annotations(a -> a.annotationType("org.a", "Nullable")))
+            .add2ClassFields(f -> f.fieldName("value").fieldType(fieldType))
             .build();
 
     assertGeneratedSource(
@@ -322,7 +322,7 @@ class RoasterCodeGeneratorTest {
             .classJavadoc(
                 JavadocDtoBuilder.create().format("Builder for {@link Person}.").args().build())
             .superType(new TypeName("test", "AbstractBuilder"))
-            .classAnnotations(
+            .add2ClassAnnotations(
                 a ->
                     a.annotationType("javax.annotation", "Generated")
                         .members(Map.of("value", "\"simple-builders\"")))
@@ -350,16 +350,16 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "GenericBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .generics(g -> g.name("T").add2UpperBounds(Number.class))
-            .methods(
+            .add2Generics(g -> g.name("T").add2UpperBounds(Number.class))
+            .add2Methods(
                 m ->
                     m.methodName("of")
                         .returnType(new TypeNameVariable("T"))
                         .modifier(AccessModifier.PUBLIC)
                         .isStatic(true)
                         .code("return null;")
-                        .genericParameters(g -> g.name("R").add2UpperBounds(Number.class))
-                        .parameters(
+                        .add2GenericParameters(g -> g.name("R").add2UpperBounds(Number.class))
+                        .add2Parameters(
                             p ->
                                 p.parameterName("input")
                                     .parameterTypeName(new TypeNameVariable("R"))))
@@ -383,13 +383,13 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "MiscBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .methods(
+            .add2Methods(
                 m ->
                     m.methodName("close")
                         .modifier(AccessModifier.PACKAGE_PRIVATE)
-                        .parameters(
+                        .add2Parameters(
                             p -> p.parameterName("items").parameterTypeNameArray(String.class))
-                        .annotations(
+                        .add2Annotations(
                             a ->
                                 a.annotationType(SuppressWarnings.class)
                                     .members(Map.of("value", "\"unchecked\""))))
@@ -413,7 +413,7 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "DocBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .methods(
+            .add2Methods(
                 m ->
                     m.methodName("apply")
                         .returnType(TypeNamePrimitive.VOID)
@@ -454,11 +454,12 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "NestedBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .nestedTypes(
+            .add2NestedTypes(
                 n ->
                     n.typeName("Callback")
                         .kind(NestedTypeDto.NestedTypeKind.INTERFACE)
-                        .methods(m -> m.methodName("onDone").returnType(TypeNamePrimitive.VOID)))
+                        .add2Methods(
+                            m -> m.methodName("onDone").returnType(TypeNamePrimitive.VOID)))
             .build();
 
     assertGeneratedSource(
@@ -480,20 +481,21 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "CtorBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .classFields(
+            .add2ClassFields(
                 f ->
                     f.fieldName("DEFAULT_SIZE")
                         .fieldType(TypeNamePrimitive.INT)
                         .visibility(AccessModifier.PRIVATE)
                         .literalInitializer("42"))
-            .constructors(
+            .add2Constructors(
                 c ->
                     c.visibility(AccessModifier.PROTECTED)
-                        .parameters(
+                        .add2Parameters(
                             p ->
                                 p.parameterName("capacity")
                                     .parameterTypeName(TypeNamePrimitive.INT)
-                                    .annotations(a -> a.annotationType("test.anno", "NonNull"))))
+                                    .add2Annotations(
+                                        a -> a.annotationType("test.anno", "NonNull"))))
             .build();
 
     assertGeneratedSource(
@@ -515,13 +517,13 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "OuterBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .nestedTypes(
+            .add2NestedTypes(
                 n ->
                     n.typeName("Helper")
                         .kind(NestedTypeDto.NestedTypeKind.CLASS)
                         .visibility(AccessModifier.PUBLIC)
                         .javadoc(javadoc -> javadoc.format("Nested helper.").args())
-                        .methods(
+                        .add2Methods(
                             m ->
                                 m.methodName("assist")
                                     .returnType(TypeNamePrimitive.VOID)
@@ -551,7 +553,7 @@ class RoasterCodeGeneratorTest {
             .typeName("test", "RichBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
             .formattingMode(FormattingMode.NONE)
-            .methods(
+            .add2Methods(
                 m ->
                     m.methodName("items")
                         .returnTypeGeneric(List.class, String.class)
@@ -564,8 +566,8 @@ class RoasterCodeGeneratorTest {
                                     .add2Tags(new JavadocTagDto("param", "values items to add"))
                                     .add2Tags(new JavadocTagDto("return", "this builder")))
                         .code("return null;")
-                        .annotations(a -> a.annotationType(Override.class))
-                        .parameters(
+                        .add2Annotations(a -> a.annotationType(Override.class))
+                        .add2Parameters(
                             p ->
                                 p.parameterName("values")
                                     .parameterTypeNameGeneric(List.class, String.class)))
@@ -601,7 +603,7 @@ class RoasterCodeGeneratorTest {
   }
 
   /** Generates {@code classDef} and compares the emitted source against {@code expected}. */
-  private static void assertGeneratedSource(String expected, GenerationTargetClassDto classDef)
+  static void assertGeneratedSource(String expected, GenerationTargetClassDto classDef)
       throws Exception {
     assertNormalizedEquals(
         expected,
@@ -618,13 +620,13 @@ class RoasterCodeGeneratorTest {
         .typeName(builderType)
         .classAccessModifier(AccessModifier.PUBLIC)
         .formattingMode(FormattingMode.NONE)
-        .classFields(
+        .add2ClassFields(
             f ->
                 f.fieldName("target")
                     .fieldType(personType)
                     .visibility(AccessModifier.PRIVATE)
                     .literalInitializer("new Person()"))
-        .methods(
+        .add2Methods(
             m ->
                 m.methodName("name")
                     .returnType(builderType)
@@ -633,7 +635,7 @@ class RoasterCodeGeneratorTest {
                         """
                         target.setName(name);
                         return this;""")
-                    .parameters(p -> p.parameterName("name").parameterTypeName(String.class)),
+                    .add2Parameters(p -> p.parameterName("name").parameterTypeName(String.class)),
             m ->
                 m.methodName("build")
                     .returnType(personType)

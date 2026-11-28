@@ -69,7 +69,7 @@ class RoasterCodeGeneratorResilienceTest {
         GenerationTargetClassDtoBuilder.create()
             .typeName("com.example", "FailingBuilder")
             .classAccessModifier(AccessModifier.PUBLIC)
-            .constructors(
+            .add2Constructors(
                 c ->
                     c.visibility(AccessModifier.PUBLIC)
                         .methodCodeDto(
@@ -126,7 +126,7 @@ class RoasterCodeGeneratorResilienceTest {
         .returnType(new TypeName("com.example", "DuplicateSignatureBuilder"))
         .modifier(AccessModifier.PUBLIC)
         .code("return this; // " + marker)
-        .parameters(p -> p.parameterName("value").parameterTypeName(String.class))
+        .add2Parameters(p -> p.parameterName("value").parameterTypeName(String.class))
         .build();
   }
 }

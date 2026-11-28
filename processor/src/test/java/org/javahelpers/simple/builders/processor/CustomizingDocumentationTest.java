@@ -227,7 +227,7 @@ class CustomizingDocumentationTest {
                         BuilderMethodDtoBuilder.create()
                             .methodName(methodName)
                             .returnType(builderType)
-                            .parameters(
+                            .add2Parameters(
                                 el -> el.parameterName("value")
                                         .parameterTypeName(new TypeName("java.lang", "String")))
                             .build();
@@ -444,7 +444,7 @@ class CustomizingDocumentationTest {
                         BuilderMethodDtoBuilder.create()
                             .methodName(methodName)
                             .returnType(builderType)
-                            .parameters(
+                            .add2Parameters(
                                 el -> el.parameterName(parameterName)
                                         .parameterTypeName(new TypeName("java.lang", "String")))
                             .build();
@@ -636,7 +636,7 @@ class CustomizingDocumentationTest {
                         BuilderMethodDtoBuilder.create()
                             .methodName(methodName)
                             .returnType(builderType)
-                            .parameters(
+                            .add2Parameters(
                                 el -> el.parameterName(parameterName)
                                         .parameterTypeName(new TypeName("java.lang", "String")))
                             .build();
@@ -701,7 +701,7 @@ class CustomizingDocumentationTest {
                             .methodName("from")
                             .returnType(builderType)
                             .isStatic(true)
-                            .parameters(
+                            .add2Parameters(
                                 el -> el.parameterName("template")
                                         .parameterTypeName(builderType))
                             .build();

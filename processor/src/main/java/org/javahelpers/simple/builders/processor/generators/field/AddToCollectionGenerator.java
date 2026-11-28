@@ -153,7 +153,7 @@ public class AddToCollectionGenerator implements MethodGenerator {
         BuilderMethodDtoBuilder.create()
             .methodName(methodName)
             .returnType(builderType)
-            .parameters(el -> el.parameterName("element").parameterTypeName(elementType))
+            .add2Parameters(el -> el.parameterName("element").parameterTypeName(elementType))
             .modifier(getMethodAccessModifier(context))
             .build();
 

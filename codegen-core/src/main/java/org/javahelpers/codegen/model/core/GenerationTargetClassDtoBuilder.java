@@ -80,36 +80,36 @@ import org.javahelpers.codegen.model.type.TypeNameSet;
  * GenerationTargetClassDto result = GenerationTargetClassDtoBuilder.create()
  *     .classAnnotations(Set.of(AnnotationDtoBuilder.create().build()))
  *     .classAnnotations(() -> Set.of(AnnotationDtoBuilder.create().build()))
- *     .classAnnotations(annotationDtoBuilder -> annotationDtoBuilder)
- *     .classAnnotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
+ *     .add2ClassAnnotations(element -> {})
+ *     .add2ClassAnnotations(first -> {}, second -> {})
  *     .add2ClassAnnotations(AnnotationDtoBuilder.create().build())
  *     .classFields(List.of(ClassFieldDtoBuilder.create().build()))
  *     .classFields(() -> List.of(ClassFieldDtoBuilder.create().build()))
- *     .classFields(classFieldDtoBuilder -> classFieldDtoBuilder)
- *     .classFields(ClassFieldDtoBuilder.create().build(), ClassFieldDtoBuilder.create().build())
+ *     .add2ClassFields(element -> {})
+ *     .add2ClassFields(first -> {}, second -> {})
  *     .add2ClassFields(ClassFieldDtoBuilder.create().build())
  *     .classJavadoc(new JavadocDto())
  *     .classJavadoc(JavadocDto::new)
  *     .classJavadoc(javadocDtoBuilder -> javadocDtoBuilder)
  *     .constructors(List.of(ConstructorDtoBuilder.create().build()))
  *     .constructors(() -> List.of(ConstructorDtoBuilder.create().build()))
- *     .constructors(constructorDtoBuilder -> constructorDtoBuilder)
- *     .constructors(ConstructorDtoBuilder.create().build(), ConstructorDtoBuilder.create().build())
+ *     .add2Constructors(element -> {})
+ *     .add2Constructors(first -> {}, second -> {})
  *     .add2Constructors(ConstructorDtoBuilder.create().build())
  *     .generics(List.of(GenericParameterDtoBuilder.create().build()))
  *     .generics(() -> List.of(GenericParameterDtoBuilder.create().build()))
- *     .generics(genericParameterDtoBuilder -> genericParameterDtoBuilder)
- *     .generics(GenericParameterDtoBuilder.create().build(), GenericParameterDtoBuilder.create().build())
+ *     .add2Generics(element -> {})
+ *     .add2Generics(first -> {}, second -> {})
  *     .add2Generics(GenericParameterDtoBuilder.create().build())
  *     .methods(List.of(MethodDtoBuilder.create().build()))
  *     .methods(() -> List.of(MethodDtoBuilder.create().build()))
- *     .methods(methodDtoBuilder -> methodDtoBuilder)
- *     .methods(MethodDtoBuilder.create().build(), MethodDtoBuilder.create().build())
+ *     .add2Methods(element -> {})
+ *     .add2Methods(first -> {}, second -> {})
  *     .add2Methods(MethodDtoBuilder.create().build())
  *     .nestedTypes(List.of(NestedTypeDtoBuilder.create().build()))
  *     .nestedTypes(() -> List.of(NestedTypeDtoBuilder.create().build()))
- *     .nestedTypes(nestedTypeDtoBuilder -> nestedTypeDtoBuilder)
- *     .nestedTypes(NestedTypeDtoBuilder.create().build(), NestedTypeDtoBuilder.create().build())
+ *     .add2NestedTypes(element -> {})
+ *     .add2NestedTypes(first -> {}, second -> {})
  *     .add2NestedTypes(NestedTypeDtoBuilder.create().build())
  *     .build();
  * }</pre>
@@ -282,12 +282,12 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds one element to <code>classAnnotations</code>, configured through its builder.
+   * Appends one element to <code>classAnnotations</code>, configured through its builder.
    *
    * @param classAnnotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public GenerationTargetClassDtoBuilder classAnnotations(
+  public GenerationTargetClassDtoBuilder add2ClassAnnotations(
       Consumer<AnnotationDtoBuilder> classAnnotationBuilderConsumer) {
     AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
     classAnnotationBuilderConsumer.accept(elementBuilder);
@@ -295,16 +295,16 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds elements to <code>classAnnotations</code>, each configured through its builder.
+   * Appends elements to <code>classAnnotations</code>, each configured through its builder.
    *
    * @param classAnnotationBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final GenerationTargetClassDtoBuilder classAnnotations(
+  public final GenerationTargetClassDtoBuilder add2ClassAnnotations(
       Consumer<AnnotationDtoBuilder>... classAnnotationBuilderConsumers) {
     for (Consumer<AnnotationDtoBuilder> consumer : classAnnotationBuilderConsumers) {
-      classAnnotations(consumer);
+      add2ClassAnnotations(consumer);
     }
     return this;
   }
@@ -378,12 +378,12 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds one element to <code>classFields</code>, configured through its builder.
+   * Appends one element to <code>classFields</code>, configured through its builder.
    *
    * @param classFieldBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public GenerationTargetClassDtoBuilder classFields(
+  public GenerationTargetClassDtoBuilder add2ClassFields(
       Consumer<ClassFieldDtoBuilder> classFieldBuilderConsumer) {
     ClassFieldDtoBuilder elementBuilder = ClassFieldDtoBuilder.create();
     classFieldBuilderConsumer.accept(elementBuilder);
@@ -391,16 +391,16 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds elements to <code>classFields</code>, each configured through its builder.
+   * Appends elements to <code>classFields</code>, each configured through its builder.
    *
    * @param classFieldBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final GenerationTargetClassDtoBuilder classFields(
+  public final GenerationTargetClassDtoBuilder add2ClassFields(
       Consumer<ClassFieldDtoBuilder>... classFieldBuilderConsumers) {
     for (Consumer<ClassFieldDtoBuilder> consumer : classFieldBuilderConsumers) {
-      classFields(consumer);
+      add2ClassFields(consumer);
     }
     return this;
   }
@@ -541,12 +541,12 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds one element to <code>constructors</code>, configured through its builder.
+   * Appends one element to <code>constructors</code>, configured through its builder.
    *
    * @param constructorBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public GenerationTargetClassDtoBuilder constructors(
+  public GenerationTargetClassDtoBuilder add2Constructors(
       Consumer<ConstructorDtoBuilder> constructorBuilderConsumer) {
     ConstructorDtoBuilder elementBuilder = ConstructorDtoBuilder.create();
     constructorBuilderConsumer.accept(elementBuilder);
@@ -554,16 +554,16 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds elements to <code>constructors</code>, each configured through its builder.
+   * Appends elements to <code>constructors</code>, each configured through its builder.
    *
    * @param constructorBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final GenerationTargetClassDtoBuilder constructors(
+  public final GenerationTargetClassDtoBuilder add2Constructors(
       Consumer<ConstructorDtoBuilder>... constructorBuilderConsumers) {
     for (Consumer<ConstructorDtoBuilder> consumer : constructorBuilderConsumers) {
-      constructors(consumer);
+      add2Constructors(consumer);
     }
     return this;
   }
@@ -667,12 +667,12 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds one element to <code>generics</code>, configured through its builder.
+   * Appends one element to <code>generics</code>, configured through its builder.
    *
    * @param genericBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public GenerationTargetClassDtoBuilder generics(
+  public GenerationTargetClassDtoBuilder add2Generics(
       Consumer<GenericParameterDtoBuilder> genericBuilderConsumer) {
     GenericParameterDtoBuilder elementBuilder = GenericParameterDtoBuilder.create();
     genericBuilderConsumer.accept(elementBuilder);
@@ -680,16 +680,16 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds elements to <code>generics</code>, each configured through its builder.
+   * Appends elements to <code>generics</code>, each configured through its builder.
    *
    * @param genericBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final GenerationTargetClassDtoBuilder generics(
+  public final GenerationTargetClassDtoBuilder add2Generics(
       Consumer<GenericParameterDtoBuilder>... genericBuilderConsumers) {
     for (Consumer<GenericParameterDtoBuilder> consumer : genericBuilderConsumers) {
-      generics(consumer);
+      add2Generics(consumer);
     }
     return this;
   }
@@ -952,28 +952,29 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds one element to <code>methods</code>, configured through its builder.
+   * Appends one element to <code>methods</code>, configured through its builder.
    *
    * @param methodBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public GenerationTargetClassDtoBuilder methods(Consumer<MethodDtoBuilder> methodBuilderConsumer) {
+  public GenerationTargetClassDtoBuilder add2Methods(
+      Consumer<MethodDtoBuilder> methodBuilderConsumer) {
     MethodDtoBuilder elementBuilder = MethodDtoBuilder.create();
     methodBuilderConsumer.accept(elementBuilder);
     return add2Methods(elementBuilder.build());
   }
 
   /**
-   * Adds elements to <code>methods</code>, each configured through its builder.
+   * Appends elements to <code>methods</code>, each configured through its builder.
    *
    * @param methodBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final GenerationTargetClassDtoBuilder methods(
+  public final GenerationTargetClassDtoBuilder add2Methods(
       Consumer<MethodDtoBuilder>... methodBuilderConsumers) {
     for (Consumer<MethodDtoBuilder> consumer : methodBuilderConsumers) {
-      methods(consumer);
+      add2Methods(consumer);
     }
     return this;
   }
@@ -1046,12 +1047,12 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds one element to <code>nestedTypes</code>, configured through its builder.
+   * Appends one element to <code>nestedTypes</code>, configured through its builder.
    *
    * @param nestedTypeBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public GenerationTargetClassDtoBuilder nestedTypes(
+  public GenerationTargetClassDtoBuilder add2NestedTypes(
       Consumer<NestedTypeDtoBuilder> nestedTypeBuilderConsumer) {
     NestedTypeDtoBuilder elementBuilder = NestedTypeDtoBuilder.create();
     nestedTypeBuilderConsumer.accept(elementBuilder);
@@ -1059,16 +1060,16 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds elements to <code>nestedTypes</code>, each configured through its builder.
+   * Appends elements to <code>nestedTypes</code>, each configured through its builder.
    *
    * @param nestedTypeBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final GenerationTargetClassDtoBuilder nestedTypes(
+  public final GenerationTargetClassDtoBuilder add2NestedTypes(
       Consumer<NestedTypeDtoBuilder>... nestedTypeBuilderConsumers) {
     for (Consumer<NestedTypeDtoBuilder> consumer : nestedTypeBuilderConsumers) {
-      nestedTypes(consumer);
+      add2NestedTypes(consumer);
     }
     return this;
   }

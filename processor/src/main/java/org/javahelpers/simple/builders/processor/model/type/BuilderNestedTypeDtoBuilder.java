@@ -388,12 +388,12 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Adds one element to <code>methods</code>, configured through its builder.
+   * Appends one element to <code>methods</code>, configured through its builder.
    *
    * @param methodBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public BuilderNestedTypeDtoBuilder methods(
+  public BuilderNestedTypeDtoBuilder add2Methods(
       Consumer<BuilderMethodDtoBuilder> methodBuilderConsumer) {
     BuilderMethodDtoBuilder elementBuilder = BuilderMethodDtoBuilder.create();
     methodBuilderConsumer.accept(elementBuilder);
@@ -401,16 +401,16 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Adds elements to <code>methods</code>, each configured through its builder.
+   * Appends elements to <code>methods</code>, each configured through its builder.
    *
    * @param methodBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final BuilderNestedTypeDtoBuilder methods(
+  public final BuilderNestedTypeDtoBuilder add2Methods(
       Consumer<BuilderMethodDtoBuilder>... methodBuilderConsumers) {
     for (Consumer<BuilderMethodDtoBuilder> consumer : methodBuilderConsumers) {
-      methods(consumer);
+      add2Methods(consumer);
     }
     return this;
   }
@@ -505,12 +505,12 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Adds one element to <code>annotations</code>, configured through its builder.
+   * Appends one element to <code>annotations</code>, configured through its builder.
    *
    * @param annotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public BuilderNestedTypeDtoBuilder annotations(
+  public BuilderNestedTypeDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder> annotationBuilderConsumer) {
     AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
     annotationBuilderConsumer.accept(elementBuilder);
@@ -518,16 +518,16 @@ public class BuilderNestedTypeDtoBuilder implements IBuilderBase<BuilderNestedTy
   }
 
   /**
-   * Adds elements to <code>annotations</code>, each configured through its builder.
+   * Appends elements to <code>annotations</code>, each configured through its builder.
    *
    * @param annotationBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final BuilderNestedTypeDtoBuilder annotations(
+  public final BuilderNestedTypeDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder>... annotationBuilderConsumers) {
     for (Consumer<AnnotationDtoBuilder> consumer : annotationBuilderConsumers) {
-      annotations(consumer);
+      add2Annotations(consumer);
     }
     return this;
   }

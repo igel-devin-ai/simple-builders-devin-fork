@@ -1073,12 +1073,12 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
-   * Adds one element to <code>parameters</code>, configured through its builder.
+   * Appends one element to <code>parameters</code>, configured through its builder.
    *
    * @param parameterBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public BuilderMethodDtoBuilder parameters(
+  public BuilderMethodDtoBuilder add2Parameters(
       Consumer<MethodParameterDtoBuilder> parameterBuilderConsumer) {
     MethodParameterDtoBuilder elementBuilder = new MethodParameterDtoBuilder();
     parameterBuilderConsumer.accept(elementBuilder);
@@ -1086,16 +1086,16 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
-   * Adds elements to <code>parameters</code>, each configured through its builder.
+   * Appends elements to <code>parameters</code>, each configured through its builder.
    *
    * @param parameterBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final BuilderMethodDtoBuilder parameters(
+  public final BuilderMethodDtoBuilder add2Parameters(
       Consumer<MethodParameterDtoBuilder>... parameterBuilderConsumers) {
     for (Consumer<MethodParameterDtoBuilder> consumer : parameterBuilderConsumers) {
-      parameters(consumer);
+      add2Parameters(consumer);
     }
     return this;
   }
@@ -1168,12 +1168,12 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
-   * Adds one element to <code>genericParameters</code>, configured through its builder.
+   * Appends one element to <code>genericParameters</code>, configured through its builder.
    *
    * @param genericParameterBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public BuilderMethodDtoBuilder genericParameters(
+  public BuilderMethodDtoBuilder add2GenericParameters(
       Consumer<GenericParameterDtoBuilder> genericParameterBuilderConsumer) {
     GenericParameterDtoBuilder elementBuilder = new GenericParameterDtoBuilder();
     genericParameterBuilderConsumer.accept(elementBuilder);
@@ -1181,16 +1181,16 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
-   * Adds elements to <code>genericParameters</code>, each configured through its builder.
+   * Appends elements to <code>genericParameters</code>, each configured through its builder.
    *
    * @param genericParameterBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final BuilderMethodDtoBuilder genericParameters(
+  public final BuilderMethodDtoBuilder add2GenericParameters(
       Consumer<GenericParameterDtoBuilder>... genericParameterBuilderConsumers) {
     for (Consumer<GenericParameterDtoBuilder> consumer : genericParameterBuilderConsumers) {
-      genericParameters(consumer);
+      add2GenericParameters(consumer);
     }
     return this;
   }
@@ -1286,12 +1286,12 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
-   * Adds one element to <code>annotations</code>, configured through its builder.
+   * Appends one element to <code>annotations</code>, configured through its builder.
    *
    * @param annotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public BuilderMethodDtoBuilder annotations(
+  public BuilderMethodDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder> annotationBuilderConsumer) {
     AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
     annotationBuilderConsumer.accept(elementBuilder);
@@ -1299,16 +1299,16 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
   }
 
   /**
-   * Adds elements to <code>annotations</code>, each configured through its builder.
+   * Appends elements to <code>annotations</code>, each configured through its builder.
    *
    * @param annotationBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final BuilderMethodDtoBuilder annotations(
+  public final BuilderMethodDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder>... annotationBuilderConsumers) {
     for (Consumer<AnnotationDtoBuilder> consumer : annotationBuilderConsumers) {
-      annotations(consumer);
+      add2Annotations(consumer);
     }
     return this;
   }

@@ -25,9 +25,11 @@ package org.javahelpers.simple.builders.processor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.function.Consumer;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
@@ -52,6 +54,39 @@ import org.junit.jupiter.api.Test;
 class ProcessorDtoBuildersTest {
 
   @Test
+  void collectionConsumersAppendWhileCollectionsAndSuppliersReplace() {
+    BuilderMethodDtoBuilder builder = BuilderMethodDtoBuilder.create().methodName("example");
+    Consumer<MethodParameterDtoBuilder> first = parameter -> parameter.parameterName("first");
+    builder
+        .add2Parameters(first)
+        .add2Parameters(parameter -> parameter.parameterName("second"))
+        .add2Parameters(
+            parameter -> parameter.parameterName("third"),
+            parameter -> parameter.parameterName("fourth"))
+        .add2Parameters();
+    assertEquals(
+        List.of("first", "second", "third", "fourth"),
+        builder.build().getParameters().stream()
+            .map(MethodParameterDto::getParameterName)
+            .toList());
+
+    Consumer<MethodParameterDtoBuilder> missing = null;
+    assertThrows(NullPointerException.class, () -> builder.add2Parameters(missing));
+    assertEquals(4, builder.build().getParameters().size());
+
+    MethodParameterDto replacement =
+        MethodParameterDtoBuilder.create().parameterName("replacement").build();
+    builder.parameters(List.of(replacement));
+    assertEquals(List.of(replacement), builder.build().getParameters());
+    builder.parameters(List::of);
+    assertTrue(builder.build().getParameters().isEmpty());
+    builder.parameters(() -> List.of(replacement));
+    assertEquals(List.of(replacement), builder.build().getParameters());
+    builder.parameters(List.of());
+    assertTrue(builder.build().getParameters().isEmpty());
+  }
+
+  @Test
   void builderFieldDtoBuilderCoversAllProperties() {
     BuilderFieldDto dto =
         BuilderFieldDtoBuilder.create()
@@ -60,8 +95,8 @@ class ProcessorDtoBuildersTest {
             .setterName("setPersons")
             .fieldType(String.class)
             .nonNullable(true)
-            .fieldGenerics(g -> g.name("T"))
-            .parameterAnnotations(a -> a.annotationType("java.lang", "Deprecated"))
+            .add2FieldGenerics(g -> g.name("T"))
+            .add2ParameterAnnotations(a -> a.annotationType("java.lang", "Deprecated"))
             .defaultValue("\"none\"")
             .build();
 
@@ -106,7 +141,8 @@ class ProcessorDtoBuildersTest {
             .isStatic(true)
             .modifier(AccessModifier.PRIVATE)
             .sourceFieldName("persons")
-            .parameters(el -> el.parameterName("value").parameterTypeName("java.lang", "String"))
+            .add2Parameters(
+                el -> el.parameterName("value").parameterTypeName("java.lang", "String"))
             .build();
 
     assertEquals("persons", dto.getMethodName());
@@ -131,7 +167,7 @@ class ProcessorDtoBuildersTest {
             .typeName("Factory")
             .kind(NestedTypeDto.NestedTypeKind.CLASS)
             .visibility(AccessModifier.PROTECTED)
-            .methods(el -> el.methodName("create"))
+            .add2Methods(el -> el.methodName("create"))
             .build();
 
     assertEquals("Factory", dto.getTypeName());
@@ -161,7 +197,7 @@ class ProcessorDtoBuildersTest {
             .methodName("m")
             .parameters(List.of(param))
             .parameters(() -> List.of(param))
-            .parameters(el -> el.parameterName("x"))
+            .add2Parameters(el -> el.parameterName("x"))
             .add2Parameters(param)
             .add2Annotations(anno)
             .add2GenericParameters(generic)
@@ -183,7 +219,7 @@ class ProcessorDtoBuildersTest {
         BuilderFieldDtoBuilder.create()
             .fieldType("java.lang", "String")
             .fieldTypeList(String.class)
-            .methods(el -> el.methodName("setter"))
+            .add2Methods(el -> el.methodName("setter"))
             .add2Methods(BuilderMethodDtoBuilder.create().methodName("other").build())
             .build();
 
@@ -196,7 +232,7 @@ class ProcessorDtoBuildersTest {
     BuilderNestedTypeDto dto =
         BuilderNestedTypeDtoBuilder.create()
             .typeName("Inner")
-            .annotations(el -> el.annotationType("java.lang", "Deprecated"))
+            .add2Annotations(el -> el.annotationType("java.lang", "Deprecated"))
             .add2Annotations(
                 AnnotationDtoBuilder.create().annotationType("java.lang", "Deprecated").build())
             .build();

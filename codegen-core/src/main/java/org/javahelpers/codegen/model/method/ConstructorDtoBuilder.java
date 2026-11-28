@@ -57,8 +57,8 @@ import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
  * ConstructorDto result = ConstructorDtoBuilder.create()
  *     .annotations(List.of(AnnotationDtoBuilder.create().build()))
  *     .annotations(() -> List.of(AnnotationDtoBuilder.create().build()))
- *     .annotations(annotationDtoBuilder -> annotationDtoBuilder)
- *     .annotations(AnnotationDtoBuilder.create().build(), AnnotationDtoBuilder.create().build())
+ *     .add2Annotations(element -> {})
+ *     .add2Annotations(first -> {}, second -> {})
  *     .add2Annotations(AnnotationDtoBuilder.create().build())
  *     .javadoc(new JavadocDto())
  *     .javadoc(JavadocDto::new)
@@ -68,8 +68,8 @@ import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
  *     .methodCodeDto(methodCodeDtoBuilder -> methodCodeDtoBuilder)
  *     .parameters(List.of(MethodParameterDtoBuilder.create().build()))
  *     .parameters(() -> List.of(MethodParameterDtoBuilder.create().build()))
- *     .parameters(methodParameterDtoBuilder -> methodParameterDtoBuilder)
- *     .parameters(MethodParameterDtoBuilder.create().build(), MethodParameterDtoBuilder.create().build())
+ *     .add2Parameters(element -> {})
+ *     .add2Parameters(first -> {}, second -> {})
  *     .add2Parameters(MethodParameterDtoBuilder.create().build())
  *     .build();
  * }</pre>
@@ -175,12 +175,12 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
   }
 
   /**
-   * Adds one element to <code>annotations</code>, configured through its builder.
+   * Appends one element to <code>annotations</code>, configured through its builder.
    *
    * @param annotationBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public ConstructorDtoBuilder annotations(
+  public ConstructorDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder> annotationBuilderConsumer) {
     AnnotationDtoBuilder elementBuilder = AnnotationDtoBuilder.create();
     annotationBuilderConsumer.accept(elementBuilder);
@@ -188,16 +188,16 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
   }
 
   /**
-   * Adds elements to <code>annotations</code>, each configured through its builder.
+   * Appends elements to <code>annotations</code>, each configured through its builder.
    *
    * @param annotationBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final ConstructorDtoBuilder annotations(
+  public final ConstructorDtoBuilder add2Annotations(
       Consumer<AnnotationDtoBuilder>... annotationBuilderConsumers) {
     for (Consumer<AnnotationDtoBuilder> consumer : annotationBuilderConsumers) {
-      annotations(consumer);
+      add2Annotations(consumer);
     }
     return this;
   }
@@ -402,12 +402,12 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
   }
 
   /**
-   * Adds one element to <code>parameters</code>, configured through its builder.
+   * Appends one element to <code>parameters</code>, configured through its builder.
    *
    * @param parameterBuilderConsumer consumer configuring the new element (not null)
    * @return current instance of builder
    */
-  public ConstructorDtoBuilder parameters(
+  public ConstructorDtoBuilder add2Parameters(
       Consumer<MethodParameterDtoBuilder> parameterBuilderConsumer) {
     MethodParameterDtoBuilder elementBuilder = MethodParameterDtoBuilder.create();
     parameterBuilderConsumer.accept(elementBuilder);
@@ -415,16 +415,16 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
   }
 
   /**
-   * Adds elements to <code>parameters</code>, each configured through its builder.
+   * Appends elements to <code>parameters</code>, each configured through its builder.
    *
    * @param parameterBuilderConsumers consumers configuring the new elements (not null)
    * @return current instance of builder
    */
   @SafeVarargs
-  public final ConstructorDtoBuilder parameters(
+  public final ConstructorDtoBuilder add2Parameters(
       Consumer<MethodParameterDtoBuilder>... parameterBuilderConsumers) {
     for (Consumer<MethodParameterDtoBuilder> consumer : parameterBuilderConsumers) {
-      parameters(consumer);
+      add2Parameters(consumer);
     }
     return this;
   }

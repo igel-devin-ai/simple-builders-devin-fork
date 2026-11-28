@@ -26,12 +26,14 @@ package org.javahelpers.codegen.model.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.enums.FormattingMode;
 import org.javahelpers.codegen.model.annotation.InterfaceName;
@@ -48,6 +50,34 @@ import org.junit.jupiter.api.Test;
 
 /** Tests for the generated {@link GenerationTargetClassDtoBuilder}. */
 class GenerationTargetClassDtoBuilderTest {
+
+  @Test
+  void collectionConsumersAppendWhileCollectionsAndSuppliersReplace() {
+    GenerationTargetClassDtoBuilder builder = GenerationTargetClassDtoBuilder.create();
+    Consumer<ClassFieldDtoBuilder> first = field -> field.fieldName("first");
+    builder
+        .add2ClassFields(first)
+        .add2ClassFields(field -> field.fieldName("second"))
+        .add2ClassFields(field -> field.fieldName("third"), field -> field.fieldName("fourth"))
+        .add2ClassFields();
+    assertEquals(
+        List.of("first", "second", "third", "fourth"),
+        builder.build().getClassFields().stream().map(ClassFieldDto::getFieldName).toList());
+
+    Consumer<ClassFieldDtoBuilder> missing = null;
+    assertThrows(NullPointerException.class, () -> builder.add2ClassFields(missing));
+    assertEquals(4, builder.build().getClassFields().size());
+
+    ClassFieldDto replacement = ClassFieldDtoBuilder.create().fieldName("replacement").build();
+    builder.classFields(List.of(replacement));
+    assertEquals(List.of(replacement), builder.build().getClassFields());
+    builder.classFields(List::of);
+    assertTrue(builder.build().getClassFields().isEmpty());
+    builder.classFields(() -> List.of(replacement));
+    assertEquals(List.of(replacement), builder.build().getClassFields());
+    builder.classFields(List.of());
+    assertTrue(builder.build().getClassFields().isEmpty());
+  }
 
   @Test
   void buildsEquivalentDtoAsSetterSequence() {
@@ -116,34 +146,35 @@ class GenerationTargetClassDtoBuilderTest {
         GenerationTargetClassDtoBuilder.create()
             .typeName("example", "Target")
             .superType(Number.class)
-            .classFields(field -> field.fieldName("value").fieldTypeList(String.class))
-            .constructors(
+            .add2ClassFields(field -> field.fieldName("value").fieldTypeList(String.class))
+            .add2Constructors(
                 constructor ->
-                    constructor.parameters(
+                    constructor.add2Parameters(
                         parameter ->
                             parameter.parameterName("arg").parameterTypeNameArray(String.class)))
-            .methods(
+            .add2Methods(
                 method ->
                     method
                         .methodName("apply")
                         .returnTypeGeneric(Optional.class, String.class)
-                        .parameters(
+                        .add2Parameters(
                             parameter ->
                                 parameter
                                     .parameterName("v")
                                     .parameterTypeNameMap(String.class, Integer.class))
-                        .genericParameters(
+                        .add2GenericParameters(
                             generic ->
                                 generic
                                     .name("T")
                                     .add2UpperBounds(Number.class)
                                     .add2UpperBoundsSet(TypeName.of(Number.class)))
-                        .annotations(annotation -> annotation.annotationType(Deprecated.class)))
-            .generics(generic -> generic.name("E"))
+                        .add2Annotations(annotation -> annotation.annotationType(Deprecated.class)))
+            .add2Generics(generic -> generic.name("E"))
             .interfaces(new InterfaceName("java.lang", "Runnable"))
-            .nestedTypes(
-                nested -> nested.typeName("Factory").methods(method -> method.methodName("create")))
-            .classAnnotations(
+            .add2NestedTypes(
+                nested ->
+                    nested.typeName("Factory").add2Methods(method -> method.methodName("create")))
+            .add2ClassAnnotations(
                 annotation ->
                     annotation
                         .annotationType("java.lang", "Deprecated")

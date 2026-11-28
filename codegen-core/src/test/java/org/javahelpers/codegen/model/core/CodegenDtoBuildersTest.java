@@ -193,12 +193,12 @@ class CodegenDtoBuildersTest {
     GenerationTargetClassDto dto =
         GenerationTargetClassDtoBuilder.create()
             .typeName("example", "Target")
-            .classFields(f -> f.fieldName("value"))
-            .methods(m -> m.methodName("apply"))
-            .constructors(c -> {})
-            .generics(g -> g.name("T").upperBounds(List.of(TypeName.of(Number.class))))
+            .add2ClassFields(f -> f.fieldName("value"))
+            .add2Methods(m -> m.methodName("apply"))
+            .add2Constructors(c -> {})
+            .add2Generics(g -> g.name("T").upperBounds(List.of(TypeName.of(Number.class))))
             .interfaces(Set.of(contract))
-            .nestedTypes(n -> n.typeName("Factory"))
+            .add2NestedTypes(n -> n.typeName("Factory"))
             .add2ClassAnnotations(ANNOTATION)
             .add2Imports(List.class)
             .build();

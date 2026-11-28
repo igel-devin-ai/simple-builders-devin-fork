@@ -275,7 +275,7 @@ public class CoreMethodsEnhancer implements BuilderEnhancer {
             .ordering(ORDERING_TO_STRING)
             .priority(BuilderMethodDto.PRIORITY_HIGHEST)
             .modifier(AccessModifier.PUBLIC)
-            .annotations(el -> el.annotationType(JavaLangMapper.map2TypeName(Override.class)))
+            .add2Annotations(el -> el.annotationType(JavaLangMapper.map2TypeName(Override.class)))
             .build();
 
     // Create method implementation
