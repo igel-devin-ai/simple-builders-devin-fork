@@ -32,7 +32,6 @@ import org.javahelpers.codegen.enums.FormattingMode;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDto;
 import org.javahelpers.codegen.model.core.GenerationTargetClassDtoBuilder;
 import org.javahelpers.codegen.model.javadoc.JavadocTagDto;
-import org.javahelpers.codegen.model.method.MethodCodeStringPlaceholder;
 import org.junit.jupiter.api.Test;
 
 class ShowcaseGenerationTest {
@@ -77,9 +76,8 @@ class ShowcaseGenerationTest {
                                         this.$name:N = $name:N;
                                         this.$tags:N = $tags:N;
                                         """)
-                                    .codeArguments(
-                                        new MethodCodeStringPlaceholder("name", "name"),
-                                        new MethodCodeStringPlaceholder("tags", "tags"))))
+                                    .add2CodeArguments("name", "name")
+                                    .add2CodeArguments("tags", "tags")))
             .add2Methods(
                 method ->
                     method

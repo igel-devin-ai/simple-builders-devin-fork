@@ -35,8 +35,6 @@ import org.javahelpers.codegen.model.annotation.InterfaceName;
 import org.javahelpers.codegen.model.method.CodeTemplateDto;
 import org.javahelpers.codegen.model.method.CodeTemplateDtoBuilder;
 import org.javahelpers.codegen.model.method.MethodCodePlaceholder;
-import org.javahelpers.codegen.model.method.MethodCodeStringPlaceholder;
-import org.javahelpers.codegen.model.method.MethodCodeTypePlaceholder;
 import org.javahelpers.codegen.model.type.TypeName;
 import org.javahelpers.codegen.model.type.TypeNameArray;
 import org.javahelpers.codegen.model.type.TypeNameGeneric;
@@ -161,9 +159,11 @@ class RoasterMapperTest {
   @Test
   void mapAnnotation_rendersValueMemberBareAndOthersNamed() {
     AnnotationDto annotation =
-        AnnotationDtoBuilder.create().annotationType(new TypeName("test.anno", "Meta")).build();
-    annotation.addMember("value", "\"x\"");
-    annotation.addMember("order", "3");
+        AnnotationDtoBuilder.create()
+            .annotationType(new TypeName("test.anno", "Meta"))
+            .add2Members("value", "\"x\"")
+            .add2Members("order", "3")
+            .build();
     assertEquals("@Meta(\"x\", order = 3)", RoasterMapper.mapAnnotation(annotation, Set.of()));
   }
 
@@ -222,11 +222,11 @@ class RoasterMapperTest {
     CodeTemplateDto code =
         CodeTemplateDtoBuilder.create()
             .codeFormat("return $name:S, $type:T, $boxed:B, $raw:N;")
+            .add2CodeArguments("name", "val")
+            .add2CodeArguments("type", TypeNamePrimitive.INT)
+            .add2CodeArguments("boxed", TypeNamePrimitive.INT)
+            .add2CodeArguments("raw", "literal")
             .build();
-    code.addCodeArgument(new MethodCodeStringPlaceholder("name", "val"));
-    code.addCodeArgument(new MethodCodeTypePlaceholder("type", TypeNamePrimitive.INT));
-    code.addCodeArgument(new MethodCodeTypePlaceholder("boxed", TypeNamePrimitive.INT));
-    code.addCodeArgument(new MethodCodeStringPlaceholder("raw", "literal"));
 
     assertEquals(
         "return \"val\", int, Integer, literal;",

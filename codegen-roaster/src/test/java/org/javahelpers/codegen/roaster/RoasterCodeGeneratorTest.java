@@ -326,7 +326,7 @@ class RoasterCodeGeneratorTest {
                 a ->
                     a.annotationType("javax.annotation", "Generated")
                         .members(Map.of("value", "\"simple-builders\"")))
-            .interfaces(interfaces -> interfaces.add(new InterfaceName("java.io", "Serializable")))
+            .add2Interfaces("java.io", "Serializable")
             .build();
 
     assertGeneratedSource(

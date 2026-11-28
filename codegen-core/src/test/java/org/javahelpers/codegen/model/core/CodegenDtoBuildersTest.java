@@ -217,7 +217,7 @@ class CodegenDtoBuildersTest {
     assertEquals(List.of(tag), copied.getTags());
     assertNull(JavadocDtoBuilder.create().build().getDescription());
 
-    JavadocDto modified = original.with(b -> b.add2Tags(new JavadocTagDto("return", "a value")));
+    JavadocDto modified = original.with(b -> b.add2Tags("return", "a value"));
     assertNull(modified.getDescription());
     assertEquals(List.of(tag, new JavadocTagDto("return", "a value")), modified.getTags());
     modified = original.with(b -> b.description("Summary"));
