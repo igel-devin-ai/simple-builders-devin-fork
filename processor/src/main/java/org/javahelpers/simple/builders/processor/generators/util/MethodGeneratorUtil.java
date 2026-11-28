@@ -32,6 +32,7 @@ import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 import org.javahelpers.codegen.analysis.JavaLangMapper;
 import org.javahelpers.codegen.enums.AccessModifier;
+import org.javahelpers.codegen.model.javadoc.JavadocConstants;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.method.MethodParameterDto;
 import org.javahelpers.codegen.model.type.GenericParameterDto;
