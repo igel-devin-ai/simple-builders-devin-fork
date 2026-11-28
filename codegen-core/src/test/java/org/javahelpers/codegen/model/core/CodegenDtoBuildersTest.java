@@ -162,6 +162,67 @@ class CodegenDtoBuildersTest {
     assertEquals(List.of(tag), dto.getTags());
   }
 
+  @TestFactory
+  Stream<DynamicTest> copiesJavadocDescriptionAndTags() {
+    return Stream.of("Summary", "Rate 100%", "Placeholder %s", "100%%", "")
+        .map(
+            description ->
+                DynamicTest.dynamicTest(
+                    "copies description: " + description,
+                    () -> {
+                      JavadocTagDto originalTag = new JavadocTagDto("since", "1.0");
+                      JavadocTagDto additionalTag = new JavadocTagDto("return", "a value");
+                      JavadocDto original = new JavadocDto(description, List.of(originalTag));
+                      var example =
+                          JavadocCodeBlockDtoBuilder.create().codeFormat("example();").build();
+                      original.setExampleUsageCodeBlock(example);
+
+                      assertAll(
+                          () -> {
+                            JavadocDto copy = new JavadocDtoBuilder(original).build();
+                            assertEquals(description, copy.getDescription());
+                            assertEquals(List.of(originalTag), copy.getTags());
+                            assertSame(example, copy.getExampleUsageCodeBlock());
+                          },
+                          () -> {
+                            JavadocDto modified = original.with(b -> b.add2Tags(additionalTag));
+                            assertEquals(description, modified.getDescription());
+                            assertEquals(List.of(originalTag, additionalTag), modified.getTags());
+                            assertSame(example, modified.getExampleUsageCodeBlock());
+                          });
+                      assertEquals(description, original.getDescription());
+                      assertEquals(List.of(originalTag), original.getTags());
+                    }));
+  }
+
+  @Test
+  void javadocFormatKeepsStringFormatSemantics() {
+    assertEquals(
+        "100%", JavadocDtoBuilder.create().format("100%%").args().build().getDescription());
+    assertEquals(
+        "100%", JavadocDtoBuilder.create().format(() -> "100%%").args().build().getDescription());
+    assertEquals(
+        "100%",
+        JavadocDtoBuilder.create()
+            .format(sb -> sb.append("100%%"))
+            .args()
+            .build()
+            .getDescription());
+    assertEquals(
+        "Rate 100%",
+        JavadocDtoBuilder.create()
+            .format("%s %d%%%%", "Rate", 100)
+            .args()
+            .build()
+            .getDescription());
+    assertEquals(
+        "Hello World",
+        JavadocDtoBuilder.create().format("Hello %s", "World").args().build().getDescription());
+    assertThrows(
+        UnknownFormatConversionException.class,
+        () -> JavadocDtoBuilder.create().format("100%").args().build());
+  }
+
   @Test
   void buildsCodeTemplate() {
     assertCode(

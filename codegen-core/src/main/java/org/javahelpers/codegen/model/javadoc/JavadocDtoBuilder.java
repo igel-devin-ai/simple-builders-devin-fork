@@ -89,6 +89,8 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    * @param instance object instance for initialisiation
    */
   public JavadocDtoBuilder(JavadocDto instance) {
+    this.format = initialValue(instance.getDescription().replace("%", "%%"));
+    this.args = initialValue(new Object[0]);
     this.exampleUsageCodeBlock = initialValue(instance.getExampleUsageCodeBlock());
     this.tags = initialValue(instance.getTags());
   }
@@ -244,6 +246,10 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
   /**
    * Sets the value for <code>format</code> by executing the provided consumer.
    *
+   * <p>The text is passed through {@link String#format(String, Object...)} at {@link #build()}.
+   * Write a literal percent sign as {@code %%}, e.g. {@code format("100%%").args()} builds {@code
+   * "100%"}.
+   *
    * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
    * JavadocDto(String format, Object args)}
    *
@@ -266,6 +272,10 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
   /**
    * Sets the value for <code>format</code> by invoking the provided supplier.
    *
+   * <p>The text is passed through {@link String#format(String, Object...)} at {@link #build()}.
+   * Write a literal percent sign as {@code %%}, e.g. {@code format("100%%").args()} builds {@code
+   * "100%"}.
+   *
    * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
    * JavadocDto(String format, Object args)}
    *
@@ -287,6 +297,10 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    * Sets the String value for <code>format</code> by using String.format(format, args). See {@link
    * String#format(String, Object...)} for details.
    *
+   * <p>The resulting text is passed through {@link String#format(String, Object...)} again at
+   * {@link #build()}. Escape literal percent signs for both formatting passes, e.g. {@code
+   * format("%s %d%%%%", "Rate", 100).args()} builds {@code "Rate 100%"}.
+   *
    * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
    * JavadocDto(String format, Object args)}
    *
@@ -307,6 +321,10 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
 
   /**
    * Sets the value for <code>format</code>.
+   *
+   * <p>The text is passed through {@link String#format(String, Object...)} at {@link #build()}.
+   * Write a literal percent sign as {@code %%}, e.g. {@code format("100%%").args()} builds {@code
+   * "100%"}.
    *
    * <p>Generated from parameter in constructor {@link JavadocDto#JavadocDto(String, Object)
    * JavadocDto(String format, Object args)}
