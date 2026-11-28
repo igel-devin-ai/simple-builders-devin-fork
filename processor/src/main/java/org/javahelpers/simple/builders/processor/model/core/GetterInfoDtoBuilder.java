@@ -274,8 +274,7 @@ public class GetterInfoDtoBuilder implements IBuilderBase<GetterInfoDto> {
       throw new IllegalStateException(
           "Field 'deprecated' is marked as non-null but null value was provided");
     }
-    GetterInfoDto result = new GetterInfoDto(this.getterName.value(), this.deprecated.value());
-    return result;
+    return new GetterInfoDto(this.getterName.value(), this.deprecated.value());
   }
 
   /**

@@ -63,12 +63,9 @@ class ProcessorDtoBuildersTest {
       assertEquals(value, method.getOrdering());
       assertEquals(value, method.getPriority());
     }
-    assertThrows(
-        NullPointerException.class,
-        () -> BuilderMethodDtoBuilder.create().ordering((IntSupplier) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> BuilderMethodDtoBuilder.create().priority((IntSupplier) null));
+    BuilderMethodDtoBuilder builder = BuilderMethodDtoBuilder.create();
+    assertThrows(NullPointerException.class, () -> builder.ordering((IntSupplier) null));
+    assertThrows(NullPointerException.class, () -> builder.priority((IntSupplier) null));
   }
 
   @Test
@@ -89,18 +86,16 @@ class ProcessorDtoBuildersTest {
       assertEquals(value, method.isConstructorField());
       assertEquals(value, method.isStatic());
     }
+    BuilderFieldDtoBuilder fieldBuilder = BuilderFieldDtoBuilder.create();
+    GetterInfoDtoBuilder getterBuilder = GetterInfoDtoBuilder.create();
+    BuilderMethodDtoBuilder methodBuilder = BuilderMethodDtoBuilder.create();
     assertThrows(
-        NullPointerException.class,
-        () -> BuilderFieldDtoBuilder.create().nonNullable((BooleanSupplier) null));
+        NullPointerException.class, () -> fieldBuilder.nonNullable((BooleanSupplier) null));
     assertThrows(
-        NullPointerException.class,
-        () -> GetterInfoDtoBuilder.create().deprecated((BooleanSupplier) null));
+        NullPointerException.class, () -> getterBuilder.deprecated((BooleanSupplier) null));
     assertThrows(
-        NullPointerException.class,
-        () -> BuilderMethodDtoBuilder.create().constructorField((BooleanSupplier) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> BuilderMethodDtoBuilder.create().isStatic((BooleanSupplier) null));
+        NullPointerException.class, () -> methodBuilder.constructorField((BooleanSupplier) null));
+    assertThrows(NullPointerException.class, () -> methodBuilder.isStatic((BooleanSupplier) null));
   }
 
   @Test

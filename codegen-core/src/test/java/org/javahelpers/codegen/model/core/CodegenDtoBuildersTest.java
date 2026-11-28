@@ -67,9 +67,8 @@ class CodegenDtoBuildersTest {
       BooleanSupplier supplier = () -> value;
       assertEquals(value, MethodDtoBuilder.create().isStatic(supplier).build().isStatic());
     }
-    assertThrows(
-        NullPointerException.class,
-        () -> MethodDtoBuilder.create().isStatic((BooleanSupplier) null));
+    MethodDtoBuilder builder = MethodDtoBuilder.create();
+    assertThrows(NullPointerException.class, () -> builder.isStatic((BooleanSupplier) null));
   }
 
   @Test
