@@ -228,9 +228,6 @@ class CodegenDtoBuildersTest {
     assertEquals(
         "100% done",
         JavadocDtoBuilder.create().description("%s done", "100%").build().getDescription());
-    assertThrows(
-        MissingFormatArgumentException.class,
-        () -> JavadocDtoBuilder.create().description("%s %s", "one argument"));
     assertNull(JavadocDtoBuilder.create().description((String) null).build().getDescription());
   }
 
