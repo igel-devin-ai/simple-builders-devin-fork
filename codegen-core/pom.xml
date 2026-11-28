@@ -327,9 +327,6 @@
     </profile>
     <profile>
       <id>metrics</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <build>
         <plugins>
           <plugin>
