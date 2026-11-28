@@ -1014,7 +1014,7 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Adds one annotation of the given type to <code>2ParameterAnnotations</code>.
+   * Adds one annotation of the given type to <code>parameterAnnotations</code>.
    *
    * @param annotationType the annotation type (not null)
    * @return current instance of builder
@@ -1025,7 +1025,7 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
   }
 
   /**
-   * Adds one annotation of the given type to <code>2ParameterAnnotations</code>.
+   * Adds one annotation of the given type to <code>parameterAnnotations</code>.
    *
    * @param packageName package of the annotation type
    * @param className simple name of the annotation type

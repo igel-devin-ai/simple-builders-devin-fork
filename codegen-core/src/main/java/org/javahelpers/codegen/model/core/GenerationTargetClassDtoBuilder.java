@@ -258,7 +258,7 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds one annotation of the given type to <code>2ClassAnnotations</code>.
+   * Adds one annotation of the given type to <code>classAnnotations</code>.
    *
    * @param annotationType the annotation type (not null)
    * @return current instance of builder
@@ -269,7 +269,7 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
   }
 
   /**
-   * Adds one annotation of the given type to <code>2ClassAnnotations</code>.
+   * Adds one annotation of the given type to <code>classAnnotations</code>.
    *
    * @param packageName package of the annotation type
    * @param className simple name of the annotation type

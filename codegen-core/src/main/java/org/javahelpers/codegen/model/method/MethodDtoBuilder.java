@@ -194,7 +194,7 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
   }
 
   /**
-   * Adds one annotation of the given type to <code>2Annotations</code>.
+   * Adds one annotation of the given type to <code>annotations</code>.
    *
    * @param annotationType the annotation type (not null)
    * @return current instance of builder
@@ -204,7 +204,7 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
   }
 
   /**
-   * Adds one annotation of the given type to <code>2Annotations</code>.
+   * Adds one annotation of the given type to <code>annotations</code>.
    *
    * @param packageName package of the annotation type
    * @param className simple name of the annotation type
