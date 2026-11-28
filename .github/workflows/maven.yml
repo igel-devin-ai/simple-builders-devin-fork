@@ -123,11 +123,14 @@ jobs:
         cp -a codegen-testing/target/classes sonar-analysis-data/codegen-testing-classes 2>/dev/null || true
         cp -a processor/target/classes sonar-analysis-data/processor-classes 2>/dev/null || true
         cp -a core/target/test-classes sonar-analysis-data/core-test-classes 2>/dev/null || true
+        cp -a codegen-core/target/test-classes sonar-analysis-data/codegen-core-test-classes 2>/dev/null || true
         cp -a codegen-roaster/target/test-classes sonar-analysis-data/codegen-roaster-test-classes 2>/dev/null || true
         cp -a codegen-testing/target/test-classes sonar-analysis-data/codegen-testing-test-classes 2>/dev/null || true
         cp -a processor/target/test-classes sonar-analysis-data/processor-test-classes 2>/dev/null || true
         cp -a processor/target/site/jacoco-aggregate/jacoco.xml sonar-analysis-data/jacoco-aggregate.xml 2>/dev/null || true
         cp -a processor/target/site/jacoco/jacoco.xml sonar-analysis-data/processor-jacoco.xml 2>/dev/null || true
+        cp -a codegen-core/target/site/jacoco/jacoco.xml sonar-analysis-data/codegen-core-jacoco.xml 2>/dev/null || true
+        cp -a codegen-roaster/target/site/jacoco-aggregate/jacoco.xml sonar-analysis-data/codegen-roaster-jacoco-aggregate.xml 2>/dev/null || true
         cp -a codegen-roaster/target/site/jacoco/jacoco.xml sonar-analysis-data/codegen-roaster-jacoco.xml 2>/dev/null || true
         cp -a codegen-testing/target/site/jacoco/jacoco.xml sonar-analysis-data/codegen-testing-jacoco.xml 2>/dev/null || true
         {
