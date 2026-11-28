@@ -785,11 +785,11 @@ public class BuilderFieldDtoBuilder implements IBuilderBase<BuilderFieldDto> {
    * builder.nonNullable(() -> true);
    * }</pre>
    *
-   * @param nonNullableSupplier supplier for nonNullable
+   * @param nonNullableSupplier boolean supplier for nonNullable
    * @return current instance of builder
    */
-  public BuilderFieldDtoBuilder nonNullable(Supplier<Boolean> nonNullableSupplier) {
-    this.nonNullable = changedValue(nonNullableSupplier.get());
+  public BuilderFieldDtoBuilder nonNullable(BooleanSupplier nonNullableSupplier) {
+    this.nonNullable = changedValue(nonNullableSupplier.getAsBoolean());
     return this;
   }
 

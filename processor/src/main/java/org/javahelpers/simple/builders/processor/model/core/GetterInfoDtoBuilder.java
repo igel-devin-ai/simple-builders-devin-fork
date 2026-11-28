@@ -111,11 +111,11 @@ public class GetterInfoDtoBuilder implements IBuilderBase<GetterInfoDto> {
    * builder.deprecated(() -> true);
    * }</pre>
    *
-   * @param deprecatedSupplier supplier for deprecated
+   * @param deprecatedSupplier boolean supplier for deprecated
    * @return current instance of builder
    */
-  public GetterInfoDtoBuilder deprecated(Supplier<Boolean> deprecatedSupplier) {
-    this.deprecated = changedValue(deprecatedSupplier.get());
+  public GetterInfoDtoBuilder deprecated(BooleanSupplier deprecatedSupplier) {
+    this.deprecated = changedValue(deprecatedSupplier.getAsBoolean());
     return this;
   }
 

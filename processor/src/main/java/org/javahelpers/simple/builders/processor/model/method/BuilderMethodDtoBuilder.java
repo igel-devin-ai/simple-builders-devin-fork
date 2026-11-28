@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.javahelpers.codegen.enums.AccessModifier;
@@ -276,11 +277,11 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
    * builder.constructorField(() -> true);
    * }</pre>
    *
-   * @param constructorFieldSupplier supplier for constructorField
+   * @param constructorFieldSupplier boolean supplier for constructorField
    * @return current instance of builder
    */
-  public BuilderMethodDtoBuilder constructorField(Supplier<Boolean> constructorFieldSupplier) {
-    this.constructorField = changedValue(constructorFieldSupplier.get());
+  public BuilderMethodDtoBuilder constructorField(BooleanSupplier constructorFieldSupplier) {
+    this.constructorField = changedValue(constructorFieldSupplier.getAsBoolean());
     return this;
   }
 
@@ -403,11 +404,11 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
    * builder.isStatic(() -> true);
    * }</pre>
    *
-   * @param isStaticSupplier supplier for isStatic
+   * @param isStaticSupplier boolean supplier for isStatic
    * @return current instance of builder
    */
-  public BuilderMethodDtoBuilder isStatic(Supplier<Boolean> isStaticSupplier) {
-    this.isStatic = changedValue(isStaticSupplier.get());
+  public BuilderMethodDtoBuilder isStatic(BooleanSupplier isStaticSupplier) {
+    this.isStatic = changedValue(isStaticSupplier.getAsBoolean());
     return this;
   }
 
@@ -620,11 +621,11 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
    * builder.ordering(() -> 42);
    * }</pre>
    *
-   * @param orderingSupplier supplier for ordering
+   * @param orderingSupplier int supplier for ordering
    * @return current instance of builder
    */
-  public BuilderMethodDtoBuilder ordering(Supplier<Integer> orderingSupplier) {
-    this.ordering = changedValue(orderingSupplier.get());
+  public BuilderMethodDtoBuilder ordering(IntSupplier orderingSupplier) {
+    this.ordering = changedValue(orderingSupplier.getAsInt());
     return this;
   }
 
@@ -658,11 +659,11 @@ public class BuilderMethodDtoBuilder implements IBuilderBase<BuilderMethodDto> {
    * builder.priority(() -> 42);
    * }</pre>
    *
-   * @param prioritySupplier supplier for priority
+   * @param prioritySupplier int supplier for priority
    * @return current instance of builder
    */
-  public BuilderMethodDtoBuilder priority(Supplier<Integer> prioritySupplier) {
-    this.priority = changedValue(prioritySupplier.get());
+  public BuilderMethodDtoBuilder priority(IntSupplier prioritySupplier) {
+    this.priority = changedValue(prioritySupplier.getAsInt());
     return this;
   }
 

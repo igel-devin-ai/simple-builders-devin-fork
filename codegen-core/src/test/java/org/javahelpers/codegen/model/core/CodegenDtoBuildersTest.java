@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
@@ -59,6 +60,17 @@ class CodegenDtoBuildersTest {
   private static final ImportStatement IMPORT = new RegularImport(TypeName.of(List.class));
   private static final MethodCodePlaceholder<?> ARGUMENT =
       new MethodCodeStringPlaceholder("value", "message");
+
+  @Test
+  void staticFlagAcceptsBooleanSupplier() {
+    for (boolean value : List.of(true, false)) {
+      BooleanSupplier supplier = () -> value;
+      assertEquals(value, MethodDtoBuilder.create().isStatic(supplier).build().isStatic());
+    }
+    assertThrows(
+        NullPointerException.class,
+        () -> MethodDtoBuilder.create().isStatic((BooleanSupplier) null));
+  }
 
   @Test
   void buildsAnnotation() {

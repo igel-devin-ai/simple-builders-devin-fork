@@ -49,7 +49,6 @@ class ImportCollectorTest {
 
   @Test
   void convenienceImportMethodsTraverseWildcardBounds() {
-    TypeNameWildcard wildcard = TypeNameWildcard.extendsBound(TypeName.of(Instant.class));
     GenerationTargetClassDto target =
         GenerationTargetClassDtoBuilder.create()
             .typeName("test", "Target")

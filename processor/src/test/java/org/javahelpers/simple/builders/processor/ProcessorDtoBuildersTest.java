@@ -29,7 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.IntSupplier;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
@@ -52,6 +54,54 @@ import org.junit.jupiter.api.Test;
 
 /** Covers the committed builders of the processor-internal DTOs. */
 class ProcessorDtoBuildersTest {
+  @Test
+  void integerPropertiesAcceptIntSuppliers() {
+    for (int value : List.of(-1, 0, 42)) {
+      IntSupplier supplier = () -> value;
+      BuilderMethodDto method =
+          BuilderMethodDtoBuilder.create().ordering(supplier).priority(supplier).build();
+      assertEquals(value, method.getOrdering());
+      assertEquals(value, method.getPriority());
+    }
+    assertThrows(
+        NullPointerException.class,
+        () -> BuilderMethodDtoBuilder.create().ordering((IntSupplier) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> BuilderMethodDtoBuilder.create().priority((IntSupplier) null));
+  }
+
+  @Test
+  void booleanPropertiesAcceptBooleanSuppliers() {
+    for (boolean value : List.of(true, false)) {
+      BooleanSupplier supplier = () -> value;
+      assertEquals(
+          value, BuilderFieldDtoBuilder.create().nonNullable(supplier).build().isNonNullable());
+      assertEquals(
+          value,
+          GetterInfoDtoBuilder.create()
+              .getterName("getValue")
+              .deprecated(supplier)
+              .build()
+              .deprecated());
+      BuilderMethodDto method =
+          BuilderMethodDtoBuilder.create().constructorField(supplier).isStatic(supplier).build();
+      assertEquals(value, method.isConstructorField());
+      assertEquals(value, method.isStatic());
+    }
+    assertThrows(
+        NullPointerException.class,
+        () -> BuilderFieldDtoBuilder.create().nonNullable((BooleanSupplier) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> GetterInfoDtoBuilder.create().deprecated((BooleanSupplier) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> BuilderMethodDtoBuilder.create().constructorField((BooleanSupplier) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> BuilderMethodDtoBuilder.create().isStatic((BooleanSupplier) null));
+  }
 
   @Test
   void collectionConsumersAppendWhileCollectionsAndSuppliersReplace() {

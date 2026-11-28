@@ -470,11 +470,12 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
    * builder.isStatic(() -> true);
    * }</pre>
    *
-   * @param isStaticSupplier supplier for true if the method should be static, false otherwise
+   * @param isStaticSupplier boolean supplier for true if the method should be static, false
+   *     otherwise
    * @return current instance of builder
    */
-  public MethodDtoBuilder isStatic(Supplier<Boolean> isStaticSupplier) {
-    this.isStatic = changedValue(isStaticSupplier.get());
+  public MethodDtoBuilder isStatic(BooleanSupplier isStaticSupplier) {
+    this.isStatic = changedValue(isStaticSupplier.getAsBoolean());
     return this;
   }
 

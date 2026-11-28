@@ -220,8 +220,12 @@ public final class MethodGeneratorUtil {
         JavadocDtoBuilder.create()
             .description("Sets the value for <code>%s</code>.", field.getOriginalFieldName())
             .add2Tags(
-                new JavadocTagDto("param", parameter.getParameterName() + " " + fieldJavadocDesc))
-            .add2Tags(new JavadocTagDto("return", JavadocConstants.RETURN_BUILDER_INSTANCE))
+                new JavadocTagDto(
+                    JavadocConstants.PARAM_TAG,
+                    parameter.getParameterName() + " " + fieldJavadocDesc))
+            .add2Tags(
+                new JavadocTagDto(
+                    JavadocConstants.RETURN_TAG, JavadocConstants.RETURN_BUILDER_INSTANCE))
             .build());
 
     return methodDto;
@@ -294,12 +298,14 @@ public final class MethodGeneratorUtil {
                 field.getFieldNameInBuilder())
             .add2Tags(
                 new JavadocTagDto(
-                    "param",
+                    JavadocConstants.PARAM_TAG,
                     parameter.getParameterName()
                         + " "
                         + "consumer providing an instance of a builder for %s"
                             .formatted(fieldJavadocDesc)))
-            .add2Tags(new JavadocTagDto("return", JavadocConstants.RETURN_BUILDER_INSTANCE))
+            .add2Tags(
+                new JavadocTagDto(
+                    JavadocConstants.RETURN_TAG, JavadocConstants.RETURN_BUILDER_INSTANCE))
             .build());
 
     return methodDto;
@@ -465,11 +471,13 @@ public final class MethodGeneratorUtil {
                 field.getOriginalFieldName())
             .add2Tags(
                 new JavadocTagDto(
-                    "param",
+                    JavadocConstants.PARAM_TAG,
                     parameter.getParameterName()
                         + " "
                         + "consumer providing an instance of %s".formatted(fieldJavadocDesc)))
-            .add2Tags(new JavadocTagDto("return", JavadocConstants.RETURN_BUILDER_INSTANCE))
+            .add2Tags(
+                new JavadocTagDto(
+                    JavadocConstants.RETURN_TAG, JavadocConstants.RETURN_BUILDER_INSTANCE))
             .build());
 
     return methodDto;
