@@ -1034,6 +1034,52 @@ public class MethodDtoBuilder implements IBuilderBase<MethodDto> {
    * MethodDto result = builder.build();
    * }</pre>
    */
+  /**
+   * Adds a parameter with the given type and name.
+   *
+   * @param type the parameter type
+   * @param name the parameter name
+   * @return current instance of builder
+   */
+  public MethodDtoBuilder add2Parameters(Class<?> type, String name) {
+    return add2Parameters(
+        MethodParameterDtoBuilder.create().parameterTypeName(type).parameterName(name).build());
+  }
+
+  /**
+   * Adds a parameter with the given type and name.
+   *
+   * @param type the parameter type
+   * @param name the parameter name
+   * @return current instance of builder
+   */
+  public MethodDtoBuilder add2Parameters(TypeName type, String name) {
+    return add2Parameters(
+        MethodParameterDtoBuilder.create().parameterTypeName(type).parameterName(name).build());
+  }
+
+  /**
+   * Adds an unbounded generic parameter with the given name.
+   *
+   * @param name the name of the generic parameter
+   * @return current instance of builder
+   */
+  public MethodDtoBuilder add2GenericParameters(String name) {
+    return add2GenericParameters(GenericParameterDtoBuilder.create().name(name).build());
+  }
+
+  /**
+   * Adds a generic parameter with the given name and upper bounds.
+   *
+   * @param name the name of the generic parameter
+   * @param upperBounds the upper bounds of the generic parameter
+   * @return current instance of builder
+   */
+  public MethodDtoBuilder add2GenericParameters(String name, TypeName... upperBounds) {
+    return add2GenericParameters(
+        GenericParameterDtoBuilder.create().name(name).upperBounds(upperBounds).build());
+  }
+
   @Override
   public MethodDto build() {
     if (this.isStatic.isSet() && this.isStatic.value() == null) {

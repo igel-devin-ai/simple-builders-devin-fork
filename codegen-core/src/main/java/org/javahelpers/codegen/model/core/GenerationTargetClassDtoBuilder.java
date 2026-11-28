@@ -49,6 +49,7 @@ import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.annotation.InterfaceName;
 import org.javahelpers.codegen.model.imports.ImportStatement;
 import org.javahelpers.codegen.model.imports.RegularImport;
+import org.javahelpers.codegen.model.imports.StaticImport;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
 import org.javahelpers.codegen.model.method.ConstructorDto;
@@ -1362,6 +1363,73 @@ public class GenerationTargetClassDtoBuilder implements IBuilderBase<GenerationT
    * GenerationTargetClassDto result = builder.build();
    * }</pre>
    */
+  /**
+   * Adds a static import for a method/field used in the generated class (shortcut mirroring {@link
+   * GenerationTargetClassDto#addStaticImport(Class, String)}).
+   *
+   * @param clazz the class containing the static member
+   * @param memberName the name of the static member
+   * @return current instance of builder
+   */
+  public GenerationTargetClassDtoBuilder add2StaticImports(Class<?> clazz, String memberName) {
+    return add2Imports(new StaticImport(TypeName.of(clazz), memberName));
+  }
+
+  /**
+   * Adds a static import for a method/field used in the generated class (shortcut mirroring {@link
+   * GenerationTargetClassDto#addStaticImport(TypeName, String)}).
+   *
+   * @param type the type containing the static member
+   * @param memberName the name of the static member
+   * @return current instance of builder
+   */
+  public GenerationTargetClassDtoBuilder add2StaticImports(TypeName type, String memberName) {
+    return add2Imports(new StaticImport(type, memberName));
+  }
+
+  /**
+   * Adds an interface to be implemented by the generated class.
+   *
+   * @param clazz the interface class
+   * @return current instance of builder
+   */
+  public GenerationTargetClassDtoBuilder add2Interfaces(Class<?> clazz) {
+    return add2Interfaces(new InterfaceName(clazz.getPackageName(), clazz.getSimpleName()));
+  }
+
+  /**
+   * Adds an interface to be implemented by the generated class.
+   *
+   * @param packageName the package of the interface
+   * @param simpleName the simple name of the interface
+   * @return current instance of builder
+   */
+  public GenerationTargetClassDtoBuilder add2Interfaces(String packageName, String simpleName) {
+    return add2Interfaces(new InterfaceName(packageName, simpleName));
+  }
+
+  /**
+   * Adds an unbounded generic parameter with the given name.
+   *
+   * @param name the name of the generic parameter
+   * @return current instance of builder
+   */
+  public GenerationTargetClassDtoBuilder add2Generics(String name) {
+    return add2Generics(GenericParameterDtoBuilder.create().name(name).build());
+  }
+
+  /**
+   * Adds a generic parameter with the given name and upper bounds.
+   *
+   * @param name the name of the generic parameter
+   * @param upperBounds the upper bounds of the generic parameter
+   * @return current instance of builder
+   */
+  public GenerationTargetClassDtoBuilder add2Generics(String name, TypeName... upperBounds) {
+    return add2Generics(
+        GenericParameterDtoBuilder.create().name(name).upperBounds(upperBounds).build());
+  }
+
   @Override
   public GenerationTargetClassDto build() {
     GenerationTargetClassDto result = new GenerationTargetClassDto();

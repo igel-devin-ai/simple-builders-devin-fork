@@ -42,6 +42,7 @@ import org.javahelpers.codegen.model.annotation.AnnotationDto;
 import org.javahelpers.codegen.model.annotation.AnnotationDtoBuilder;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
+import org.javahelpers.codegen.model.type.TypeName;
 
 /**
  * Builder for {@code org.javahelpers.codegen.model.method.ConstructorDto}.
@@ -538,6 +539,52 @@ public class ConstructorDtoBuilder implements IBuilderBase<ConstructorDto> {
    * ConstructorDto result = builder.build();
    * }</pre>
    */
+  /**
+   * Adds a parameter with the given type and name.
+   *
+   * @param type the parameter type
+   * @param name the parameter name
+   * @return current instance of builder
+   */
+  public ConstructorDtoBuilder add2Parameters(Class<?> type, String name) {
+    return add2Parameters(
+        MethodParameterDtoBuilder.create().parameterTypeName(type).parameterName(name).build());
+  }
+
+  /**
+   * Adds a parameter with the given type and name.
+   *
+   * @param type the parameter type
+   * @param name the parameter name
+   * @return current instance of builder
+   */
+  public ConstructorDtoBuilder add2Parameters(TypeName type, String name) {
+    return add2Parameters(
+        MethodParameterDtoBuilder.create().parameterTypeName(type).parameterName(name).build());
+  }
+
+  /**
+   * Sets the constructor body code (shortcut for configuring the method code DTO).
+   *
+   * @param code codeformat with placeholders
+   * @return current instance of builder
+   */
+  public ConstructorDtoBuilder code(String code) {
+    return methodCodeDto(MethodCodeDtoBuilder.create().codeFormat(code).build());
+  }
+
+  /**
+   * Sets the constructor body code using a format string and arguments (shortcut for configuring
+   * the method code DTO).
+   *
+   * @param format codeformat with placeholders
+   * @param args arguments referenced by format specifiers
+   * @return current instance of builder
+   */
+  public ConstructorDtoBuilder code(String format, Object... args) {
+    return code(String.format(format, args));
+  }
+
   @Override
   public ConstructorDto build() {
     ConstructorDto result = new ConstructorDto();

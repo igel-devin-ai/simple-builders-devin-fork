@@ -45,6 +45,7 @@ import org.javahelpers.codegen.builders.IBuilderBase;
 import org.javahelpers.codegen.builders.TrackedValue;
 import org.javahelpers.codegen.model.imports.ImportStatement;
 import org.javahelpers.codegen.model.imports.RegularImport;
+import org.javahelpers.codegen.model.imports.StaticImport;
 import org.javahelpers.codegen.model.type.TypeName;
 
 /**
@@ -426,6 +427,43 @@ public class CodeTemplateDtoBuilder implements IBuilderBase<CodeTemplateDto> {
    * CodeTemplateDto result = builder.build();
    * }</pre>
    */
+  /**
+   * Adds a text placeholder argument for the code format (shortcut mirroring {@link
+   * CodeTemplateDto#addArgument(String, String)}).
+   *
+   * @param name name in codeformat
+   * @param value value to fill in codeformat
+   * @return current instance of builder
+   */
+  public CodeTemplateDtoBuilder add2CodeArguments(String name, String value) {
+    return add2CodeArguments(new MethodCodeStringPlaceholder(name, value));
+  }
+
+  /**
+   * Adds a type placeholder argument for the code format; the type is registered as code-block
+   * import (shortcut mirroring {@link CodeTemplateDto#addArgument(String, TypeName)}).
+   *
+   * @param name name in codeformat
+   * @param value type value to fill in codeformat
+   * @return current instance of builder
+   */
+  public CodeTemplateDtoBuilder add2CodeArguments(String name, TypeName value) {
+    add2CodeBlockImports(value);
+    return add2CodeArguments(new MethodCodeTypePlaceholder(name, value));
+  }
+
+  /**
+   * Adds a static import for a method/field used in the code block (shortcut mirroring {@link
+   * CodeTemplateDto#addStaticImport}).
+   *
+   * @param clazz the class containing the static member
+   * @param memberName the name of the static member
+   * @return current instance of builder
+   */
+  public CodeTemplateDtoBuilder add2StaticImports(Class<?> clazz, String memberName) {
+    return add2CodeBlockImports(new StaticImport(TypeName.of(clazz), memberName));
+  }
+
   @Override
   public CodeTemplateDto build() {
     CodeTemplateDto result = new CodeTemplateDto();

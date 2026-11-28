@@ -43,6 +43,7 @@ import org.javahelpers.codegen.builders.TrackedValue;
 import org.javahelpers.codegen.enums.AccessModifier;
 import org.javahelpers.codegen.model.imports.ImportStatement;
 import org.javahelpers.codegen.model.imports.RegularImport;
+import org.javahelpers.codegen.model.imports.StaticImport;
 import org.javahelpers.codegen.model.javadoc.JavadocDto;
 import org.javahelpers.codegen.model.javadoc.JavadocDtoBuilder;
 import org.javahelpers.codegen.model.type.TypeName;
@@ -696,6 +697,30 @@ public class ClassFieldDtoBuilder implements IBuilderBase<ClassFieldDto> {
    * ClassFieldDto result = builder.build();
    * }</pre>
    */
+  /**
+   * Adds a static import for a method/field used in the field initializer (shortcut mirroring
+   * {@link ClassFieldDto#addStaticImport(Class, String)}).
+   *
+   * @param clazz the class containing the static member
+   * @param memberName the name of the static member
+   * @return current instance of builder
+   */
+  public ClassFieldDtoBuilder add2StaticImports(Class<?> clazz, String memberName) {
+    return add2FieldTypeImports(new StaticImport(TypeName.of(clazz), memberName));
+  }
+
+  /**
+   * Adds a static import for a method/field used in the field initializer (shortcut mirroring
+   * {@link ClassFieldDto#addStaticImport(TypeName, String)}).
+   *
+   * @param type the type containing the static member
+   * @param memberName the name of the static member
+   * @return current instance of builder
+   */
+  public ClassFieldDtoBuilder add2StaticImports(TypeName type, String memberName) {
+    return add2FieldTypeImports(new StaticImport(type, memberName));
+  }
+
   @Override
   public ClassFieldDto build() {
     ClassFieldDto result = new ClassFieldDto();

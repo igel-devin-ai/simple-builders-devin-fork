@@ -372,6 +372,70 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    * JavadocDto result = builder.build();
    * }</pre>
    */
+  /**
+   * Adds a {@code @param} tag with formatted description (shortcut mirroring {@link
+   * JavadocDto#addParam}).
+   *
+   * @param paramName the parameter name
+   * @param descriptionFormat the format string for the parameter description
+   * @param args optional arguments referenced by format specifiers
+   * @return current instance of builder
+   */
+  public JavadocDtoBuilder param(String paramName, String descriptionFormat, Object... args) {
+    return add2Tags(
+        new JavadocTagDto("param", paramName + " " + String.format(descriptionFormat, args)));
+  }
+
+  /**
+   * Adds a {@code @return} tag with formatted description (shortcut mirroring {@link
+   * JavadocDto#addReturn}).
+   *
+   * @param descriptionFormat the format string for the return description
+   * @param args optional arguments referenced by format specifiers
+   * @return current instance of builder
+   */
+  public JavadocDtoBuilder returns(String descriptionFormat, Object... args) {
+    return add2Tags(new JavadocTagDto("return", String.format(descriptionFormat, args)));
+  }
+
+  /**
+   * Adds a {@code @throws} tag with formatted description (shortcut mirroring {@link
+   * JavadocDto#addThrows}).
+   *
+   * @param exceptionName the exception name
+   * @param descriptionFormat the format string for the exception description
+   * @param args optional arguments referenced by format specifiers
+   * @return current instance of builder
+   */
+  public JavadocDtoBuilder throwsTag(
+      String exceptionName, String descriptionFormat, Object... args) {
+    return add2Tags(
+        new JavadocTagDto("throws", exceptionName + " " + String.format(descriptionFormat, args)));
+  }
+
+  /**
+   * Adds a {@code @deprecated} tag with formatted description (shortcut mirroring {@link
+   * JavadocDto#addDeprecated}).
+   *
+   * @param descriptionFormat the format string for the deprecation description
+   * @param args optional arguments referenced by format specifiers
+   * @return current instance of builder
+   */
+  public JavadocDtoBuilder deprecated(String descriptionFormat, Object... args) {
+    return add2Tags(new JavadocTagDto("deprecated", String.format(descriptionFormat, args)));
+  }
+
+  /**
+   * Adds a tag with the given name and value (shortcut mirroring {@link JavadocDto#addTag}).
+   *
+   * @param tagName the tag name without @ prefix
+   * @param tagValue the tag value
+   * @return current instance of builder
+   */
+  public JavadocDtoBuilder add2Tags(String tagName, String tagValue) {
+    return add2Tags(new JavadocTagDto(tagName, tagValue));
+  }
+
   @Override
   public JavadocDto build() {
     JavadocDto result = new JavadocDto();
