@@ -41,6 +41,16 @@ public class StaticImport implements ImportStatement {
   private final String memberName;
 
   /**
+   * Creates a static import from a class.
+   *
+   * @param clazz the class containing the static member
+   * @param memberName the name of the static member (method or field)
+   */
+  public StaticImport(Class<?> clazz, String memberName) {
+    this(TypeName.of(clazz), memberName);
+  }
+
+  /**
    * Creates a static import.
    *
    * @param type the type containing the static member
