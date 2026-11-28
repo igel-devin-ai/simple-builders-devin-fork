@@ -89,7 +89,9 @@ public class JavadocDtoBuilder implements IBuilderBase<JavadocDto> {
    * @param instance object instance for initialisiation
    */
   public JavadocDtoBuilder(JavadocDto instance) {
-    this.format = initialValue(instance.getDescription().replace("%", "%%"));
+    if (instance.getDescription() != null) {
+      this.format = initialValue(instance.getDescription().replace("%", "%%"));
+    }
     this.args = initialValue(new Object[0]);
     this.exampleUsageCodeBlock = initialValue(instance.getExampleUsageCodeBlock());
     this.tags = initialValue(instance.getTags());

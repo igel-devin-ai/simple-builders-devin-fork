@@ -196,6 +196,25 @@ class CodegenDtoBuildersTest {
   }
 
   @Test
+  void copiesJavadocWithoutDescription() {
+    JavadocTagDto tag = new JavadocTagDto("since", "1.0");
+    JavadocDto original = new JavadocDto();
+    original.setTags(List.of(tag));
+
+    JavadocDtoBuilder copy = assertDoesNotThrow(() -> new JavadocDtoBuilder(original));
+    assertThrows(NullPointerException.class, copy::build);
+    assertThrows(NullPointerException.class, () -> JavadocDtoBuilder.create().build());
+    assertEquals(List.of(tag), copy.format("100%%").build().getTags());
+    assertEquals("100%", copy.build().getDescription());
+
+    JavadocDto modified = original.with(b -> b.format("Summary"));
+    assertEquals("Summary", modified.getDescription());
+    assertEquals(List.of(tag), modified.getTags());
+    assertNull(original.getDescription());
+    assertEquals(List.of(tag), original.getTags());
+  }
+
+  @Test
   void javadocFormatKeepsStringFormatSemantics() {
     assertEquals(
         "100%", JavadocDtoBuilder.create().format("100%%").args().build().getDescription());
